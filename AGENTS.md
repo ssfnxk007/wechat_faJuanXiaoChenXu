@@ -177,6 +177,14 @@
 - Validate the touched stack with real build/test commands.
 - If you discover a reusable rule or regression hotspot, update `Docs/OpenViking/` after the task.
 
+## Multi-Agent Collaboration Rule
+- For any non-trivial task that spans multiple files, modules, or stacks, prefer using multiple agents in parallel.
+- Default expectation: split backend, frontend, documentation, verification, or code exploration into separate agents when scopes are independent.
+- The main agent should still own the critical path, integrate results, and avoid duplicate work across agents.
+- If a task runs for a long time, provide progress updates proactively instead of waiting silently.
+- If there is no visible progress for a while, report current status, what is blocked, and the next action.
+- When a user explicitly asks for multi-agent execution, treat it as a high-priority workflow requirement for the rest of the task unless the user changes it.
+
 ## Work Log Rules
 - After any task that results in actual code, SQL, config, or documentation changes, update the current day's work log automatically.
 - Work log filename format: `Docs/YYYY-MM-DD-工作.md`.

@@ -1,0 +1,161 @@
+using FaJuan.Api.Contracts;
+using FaJuan.Api.Infrastructure.Auth;
+using FaJuan.Api.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace FaJuan.Api.Controllers;
+
+[AllowAnonymous]
+public class AdminAuthController(
+    IConfiguration configuration,
+    JwtTokenService jwtTokenService,
+    PasswordHashService passwordHashService,
+    AppDbContext dbContext) : ApiControllerBase
+{
+    [HttpPost("login")]
+    public async Task<ActionResult<ApiResponse<AdminLoginResultDto>>> Login([FromBody] AdminLoginRequest request, CancellationToken cancellationToken)
+    {
+        var hasDbAdmins = await dbContext.AdminUsers.AsNoTracking().AnyAsync(cancellationToken);
+        var adminUser = await dbContext.AdminUsers.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Username == request.Username && x.IsEnabled, cancellationToken);
+
+        if (adminUser is not null)
+        {
+            if (!passwordHashService.Verify(request.Password, adminUser.PasswordHash))
+            {
+                return Unauthorized(Failure<AdminLoginResultDto>("???????", 401));
+            }
+
+            var dbToken = jwtTokenService.CreateAdminToken(adminUser.Username);
+            return Ok(Success(new AdminLoginResultDto
+            {
+                AccessToken = dbToken.AccessToken,
+                Username = adminUser.Username,
+                ExpiresAt = dbToken.ExpiresAt,
+            }, "????"));
+        }
+
+        if (hasDbAdmins)
+        {
+            return Unauthorized(Failure<AdminLoginResultDto>("???????", 401));
+        }
+
+        var username = configuration["AdminAuth:Username"] ?? "admin";
+        var password = configuration["AdminAuth:Password"] ?? "123456";
+
+        if (!string.Equals(request.Username?.Trim(), username, StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(request.Password, password, StringComparison.Ordinal))
+        {
+            return Unauthorized(Failure<AdminLoginResultDto>("???????", 401));
+        }
+
+        var tokenResult = jwtTokenService.CreateAdminToken(username);
+        return Ok(Success(new AdminLoginResultDto
+        {
+            AccessToken = tokenResult.AccessToken,
+            Username = username,
+            ExpiresAt = tokenResult.ExpiresAt,
+        }, "????"));
+    }
+
+    [Authorize]
+    [HttpGet("profile")]
+    public async Task<ActionResult<ApiResponse<AdminAuthProfileDto>>> GetProfile(CancellationToken cancellationToken)
+    {
+        var username = User.Identity?.Name;
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            return Unauthorized(Failure<AdminAuthProfileDto>("???????", 401));
+        }
+
+        var adminUser = await dbContext.AdminUsers.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Username == username, cancellationToken);
+
+        if (adminUser is null)
+        {
+            var fallbackMenus = await dbContext.AdminMenus.AsNoTracking()
+                .Where(x => x.IsEnabled)
+                .OrderBy(x => x.Sort)
+                .ThenBy(x => x.Id)
+                .Select(x => x.Path)
+                .ToListAsync(cancellationToken);
+
+            return Ok(Success(new AdminAuthProfileDto
+            {
+                UserId = 0,
+                Username = username,
+                DisplayName = username,
+                IsFallbackAdmin = true,
+                RoleCodes = new[] { "super-admin" },
+                RoleNames = new[] { "?????" },
+                MenuPaths = fallbackMenus,
+                PermissionCodes = await dbContext.AdminPermissions.AsNoTracking().Where(x => x.IsEnabled).OrderBy(x => x.Sort).ThenBy(x => x.Id).Select(x => x.Code).ToListAsync(cancellationToken),
+            }));
+        }
+
+        var roleRows = await dbContext.AdminUserRoles.AsNoTracking()
+            .Where(x => x.AdminUserId == adminUser.Id)
+            .Join(
+                dbContext.AdminRoles.AsNoTracking().Where(x => x.IsEnabled),
+                userRole => userRole.AdminRoleId,
+                role => role.Id,
+                (userRole, role) => new
+                {
+                    role.Id,
+                    role.Code,
+                    role.Name,
+                })
+            .ToListAsync(cancellationToken);
+
+        var roleIds = roleRows.Select(x => x.Id).Distinct().ToArray();
+        IReadOnlyCollection<string> menuPaths;
+        if (roleIds.Length == 0)
+        {
+            menuPaths = Array.Empty<string>();
+        }
+        else
+        {
+            menuPaths = await dbContext.AdminRoleMenus.AsNoTracking()
+                .Where(x => roleIds.Contains(x.AdminRoleId))
+                .Join(
+                    dbContext.AdminMenus.AsNoTracking().Where(x => x.IsEnabled),
+                    roleMenu => roleMenu.AdminMenuId,
+                    menu => menu.Id,
+                    (roleMenu, menu) => menu.Path)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+        }
+
+        IReadOnlyCollection<string> permissionCodes;
+        if (roleIds.Length == 0)
+        {
+            permissionCodes = Array.Empty<string>();
+        }
+        else
+        {
+            permissionCodes = await dbContext.AdminRolePermissions.AsNoTracking()
+                .Where(x => roleIds.Contains(x.AdminRoleId))
+                .Join(
+                    dbContext.AdminPermissions.AsNoTracking().Where(x => x.IsEnabled),
+                    rolePermission => rolePermission.AdminPermissionId,
+                    permission => permission.Id,
+                    (rolePermission, permission) => permission.Code)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+        }
+
+        return Ok(Success(new AdminAuthProfileDto
+        {
+            UserId = adminUser.Id,
+            Username = adminUser.Username,
+            DisplayName = adminUser.DisplayName,
+            IsFallbackAdmin = false,
+            RoleCodes = roleRows.Select(x => x.Code).Distinct().ToArray(),
+            RoleNames = roleRows.Select(x => x.Name).Distinct().ToArray(),
+            MenuPaths = menuPaths,
+            PermissionCodes = permissionCodes,
+        }));
+    }
+}

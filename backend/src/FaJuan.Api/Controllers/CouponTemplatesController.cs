@@ -1,0 +1,161 @@
+﻿using FaJuan.Api.Application.Common.Models;
+using FaJuan.Api.Contracts;
+using FaJuan.Api.Domain.Entities;
+using FaJuan.Api.Domain.Enums;
+using FaJuan.Api.Infrastructure.Auth;
+using FaJuan.Api.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace FaJuan.Api.Controllers;
+
+[Authorize]
+[AdminMenuAuthorize("/coupon-templates")]
+public class CouponTemplatesController(AppDbContext dbContext) : ApiControllerBase
+{
+    [HttpGet]
+    public async Task<ActionResult<ApiResponse<PagedResult<CouponTemplateListItemDto>>>> GetList([FromQuery] string? keyword, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
+    {
+        var query = dbContext.CouponTemplates.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            query = query.Where(x => x.Name.Contains(keyword));
+        }
+
+        var totalCount = await query.CountAsync();
+        var items = await query.OrderByDescending(x => x.Id)
+            .Skip((pageIndex - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => new CouponTemplateListItemDto
+            {
+                Id = x.Id,
+                Name = x.Name,
+                TemplateType = x.TemplateType,
+                ValidPeriodType = x.ValidPeriodType,
+                DiscountAmount = x.DiscountAmount,
+                ThresholdAmount = x.ThresholdAmount,
+                ValidDays = x.ValidDays,
+                ValidFrom = x.ValidFrom,
+                ValidTo = x.ValidTo,
+                IsNewUserOnly = x.IsNewUserOnly,
+                IsAllStores = x.IsAllStores,
+                PerUserLimit = x.PerUserLimit,
+                IsEnabled = x.IsEnabled,
+                Remark = x.Remark,
+                CreatedAt = x.CreatedAt,
+            })
+            .ToListAsync();
+
+        return Ok(Success(new PagedResult<CouponTemplateListItemDto>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageIndex = pageIndex,
+            PageSize = pageSize,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+        }));
+    }
+
+    [AdminPermissionAuthorize("coupon-template.create")]
+    [HttpPost]
+    public async Task<ActionResult<ApiResponse<long>>> Create([FromBody] SaveCouponTemplateRequest request)
+    {
+        var validationError = ValidateRequest(request);
+        if (validationError is not null)
+        {
+            return BadRequest(Failure<long>(validationError));
+        }
+
+        var entity = new CouponTemplate
+        {
+            Name = request.Name.Trim(),
+            TemplateType = request.TemplateType,
+            ValidPeriodType = request.ValidPeriodType,
+            DiscountAmount = request.DiscountAmount,
+            ThresholdAmount = request.ThresholdAmount,
+            ValidDays = request.ValidDays,
+            ValidFrom = request.ValidFrom,
+            ValidTo = request.ValidTo,
+            IsNewUserOnly = request.IsNewUserOnly,
+            IsAllStores = request.IsAllStores,
+            PerUserLimit = request.PerUserLimit,
+            IsEnabled = request.IsEnabled,
+            Remark = request.Remark?.Trim(),
+        };
+
+        dbContext.CouponTemplates.Add(entity);
+        await dbContext.SaveChangesAsync();
+        return Ok(Success(entity.Id, "创建成功"));
+    }
+
+    [AdminPermissionAuthorize("coupon-template.edit")]
+    [HttpPut("{id:long}")]
+    public async Task<ActionResult<ApiResponse<long>>> Update(long id, [FromBody] SaveCouponTemplateRequest request)
+    {
+        var validationError = ValidateRequest(request);
+        if (validationError is not null)
+        {
+            return BadRequest(Failure<long>(validationError));
+        }
+
+        var entity = await dbContext.CouponTemplates.FirstOrDefaultAsync(x => x.Id == id);
+        if (entity is null)
+        {
+            return NotFound(Failure<long>("券模板不存在"));
+        }
+
+        entity.Name = request.Name.Trim();
+        entity.TemplateType = request.TemplateType;
+        entity.ValidPeriodType = request.ValidPeriodType;
+        entity.DiscountAmount = request.DiscountAmount;
+        entity.ThresholdAmount = request.ThresholdAmount;
+        entity.ValidDays = request.ValidDays;
+        entity.ValidFrom = request.ValidFrom;
+        entity.ValidTo = request.ValidTo;
+        entity.IsNewUserOnly = request.IsNewUserOnly;
+        entity.IsAllStores = request.IsAllStores;
+        entity.PerUserLimit = request.PerUserLimit;
+        entity.IsEnabled = request.IsEnabled;
+        entity.Remark = request.Remark?.Trim();
+
+        await dbContext.SaveChangesAsync();
+        return Ok(Success(entity.Id, "更新成功"));
+    }
+
+    [AdminPermissionAuthorize("coupon-template.delete")]
+    [HttpDelete("{id:long}")]
+    public async Task<ActionResult<ApiResponse<bool>>> Delete(long id)
+    {
+        var entity = await dbContext.CouponTemplates.FirstOrDefaultAsync(x => x.Id == id);
+        if (entity is null)
+        {
+            return NotFound(Failure<bool>("券模板不存在"));
+        }
+
+        dbContext.CouponTemplates.Remove(entity);
+        await dbContext.SaveChangesAsync();
+        return Ok(Success(true, "删除成功"));
+    }
+
+    private static string? ValidateRequest(SaveCouponTemplateRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            return "券模板名称不能为空";
+        }
+
+        if (request.ValidPeriodType == CouponValidPeriodType.FixedDateRange && (!request.ValidFrom.HasValue || !request.ValidTo.HasValue))
+        {
+            return "固定日期范围券必须设置开始和结束时间";
+        }
+
+        if (request.ValidPeriodType == CouponValidPeriodType.AfterReceiveDays && (!request.ValidDays.HasValue || request.ValidDays <= 0))
+        {
+            return "按领取后天数生效的券必须设置有效天数";
+        }
+
+        return null;
+    }
+}

@@ -1,0 +1,6 @@
+@FaJuan.Api_HostAddress = http://localhost:5265
+
+GET {{FaJuan.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

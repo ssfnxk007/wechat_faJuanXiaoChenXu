@@ -1,0 +1,57 @@
+﻿# 数据库迁移说明
+
+## 已生成内容
+
+- EF 首个迁移：`backend/src/FaJuan.Api/Infrastructure/Persistence/Migrations/20260408175041_InitialCreate.cs`
+- EF 后台权限迁移：`backend/src/FaJuan.Api/Infrastructure/Persistence/Migrations/20260409052645_AddAdminAuthTables.cs`
+- 数据库模型快照：`backend/src/FaJuan.Api/Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs`
+- 初版业务建表 SQL：`database/migrations/001-initial.sql`
+- 后台权限表 SQL：`database/migrations/002-admin-auth.sql`
+- 后台权限初始化 SQL：`database/migrations/002-admin-auth-seed.sql`
+- 按钮权限表 SQL：`database/migrations/003-admin-permission.sql`
+- 按钮权限初始化 SQL：`database/migrations/003-admin-permission-seed.sql`
+
+## 建议执行顺序
+
+1. 确认 SQL Server 2008 R2 数据库已创建，例如：`FaJuanDb`
+2. 先检查连接字符串与部署环境是否一致
+3. 在测试环境按顺序执行：
+   - `database/migrations/001-initial.sql`
+   - `database/migrations/002-admin-auth.sql`
+   - `database/migrations/002-admin-auth-seed.sql`
+   - `database/migrations/003-admin-permission.sql`
+   - `database/migrations/003-admin-permission-seed.sql`
+4. 验证核心表是否创建成功：
+   - `AppUser`
+   - `Store`
+   - `Product`
+   - `CouponTemplate`
+   - `CouponPack`
+   - `CouponPackItem`
+   - `CouponOrder`
+   - `UserCoupon`
+   - `PaymentTransaction`
+   - `CouponWriteOffRecord`
+5. 额外验证后台权限表是否创建成功：
+   - `AdminUser`
+   - `AdminRole`
+   - `AdminMenu`
+   - `AdminUserRole`
+   - `AdminRoleMenu`
+   - `AdminPermission`
+   - `AdminRolePermission`
+6. 后续每次实体变更后，重新生成迁移与 SQL
+
+## 常用命令
+
+- 生成迁移：
+  - `dotnet dotnet-ef migrations add <MigrationName> --project backend/src/FaJuan.Api/FaJuan.Api.csproj --startup-project backend/src/FaJuan.Api/FaJuan.Api.csproj --output-dir Infrastructure/Persistence/Migrations`
+- 导出 SQL：
+  - `dotnet dotnet-ef migrations script --project backend/src/FaJuan.Api/FaJuan.Api.csproj --startup-project backend/src/FaJuan.Api/FaJuan.Api.csproj -o database/migrations/<file>.sql`
+
+## 注意事项
+
+- 后台管理员、角色、菜单、按钮权限现已全部落数据库表
+- `002-admin-auth-seed.sql` 会初始化 `admin` 管理员、`super_admin` 角色及菜单授权
+- `003-admin-permission-seed.sql` 会初始化按钮权限点，并将全部权限点授权给 `super_admin`
+- 执行生产脚本前，建议先在测试库完整验证登录、创建订单、模拟支付、发券、核销主链路
