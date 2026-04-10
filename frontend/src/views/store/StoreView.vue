@@ -1,84 +1,83 @@
 <template>
-  <div class="business-page">
+  <div class="business-page store-page-v2">
     <div class="page-header-row">
       <div>
         <h2>门店管理</h2>
-        <p>维护可核销门店基础资料，支持弹窗编辑、删除和服务端分页。</p>
+        <p>维护可参与发券、领券与核销链路的门店基础资料，支持分页查询、弹窗编辑与状态管理。</p>
       </div>
-      <div class="inline-actions">
+      <div class="toolbar-actions">
         <button type="button" class="ghost-button" @click="loadData">刷新列表</button>
         <button v-if="canCreate" type="button" @click="openCreateDialog">新增门店</button>
       </div>
     </div>
 
-    <div class="stats-grid">
-      <article class="stat-card">
+    <section class="stats-grid stats-grid-v2">
+      <article class="stat-card accent-blue">
         <span class="label">门店总数</span>
         <strong class="stat-value">{{ totalCount }}</strong>
-        <span class="stat-footnote">服务端分页统计总记录数</span>
+        <span class="stat-footnote">服务端分页返回的门店总记录数</span>
       </article>
-      <article class="stat-card">
-        <span class="label">当前页</span>
+      <article class="stat-card accent-indigo">
+        <span class="label">当前页码</span>
         <strong class="stat-value">{{ pageIndex }}</strong>
         <span class="stat-footnote">共 {{ totalPages }} 页</span>
       </article>
-      <article class="stat-card">
+      <article class="stat-card accent-green">
         <span class="label">启用门店</span>
         <strong class="stat-value">{{ enabledCount }}</strong>
-        <span class="stat-footnote">当前页启用状态统计</span>
+        <span class="stat-footnote">当前页中处于启用状态的门店数量</span>
       </article>
-      <article class="stat-card">
+      <article class="stat-card accent-amber">
         <span class="label">查询条件</span>
         <strong class="stat-value">{{ query.keyword || '全部' }}</strong>
-        <span class="stat-footnote">按编码或名称搜索</span>
+        <span class="stat-footnote">按门店编码或门店名称搜索</span>
       </article>
-    </div>
+    </section>
 
-    <div class="card toolbar-card">
+    <section class="card toolbar-card card-v2">
       <div class="toolbar-row">
         <div class="toolbar-title">
-          <h3>筛选与统计</h3>
-          <p class="section-tip">使用服务端分页查询，统一第四轮弹窗编辑与删除操作体验。</p>
+          <h3>筛选与分页</h3>
+          <p class="section-tip">按关键词进行服务端查询，并结合页大小控制列表密度。</p>
         </div>
         <div class="summary-inline">
           <span class="badge info">总数 {{ totalCount }}</span>
           <span class="badge success">第 {{ pageIndex }} / {{ totalPages }} 页</span>
         </div>
       </div>
-      <div class="filter-grid">
-        <input v-model.trim="query.keyword" type="text" placeholder="搜索门店编码或名称" @keyup.enter="handleSearch" />
+
+      <div class="filter-grid store-filter-grid">
+        <input v-model.trim="query.keyword" type="text" placeholder="搜索门店编码或门店名称" />
         <select v-model.number="pageSize" @change="handlePageSizeChange">
           <option :value="10">每页 10 条</option>
           <option :value="20">每页 20 条</option>
           <option :value="50">每页 50 条</option>
         </select>
-        <input :value="querySummary" type="text" readonly />
-        <div class="toolbar-actions">
-          <button type="button" @click="handleSearch">查询</button>
-          <button type="button" class="ghost-button" @click="resetQuery">重置</button>
-        </div>
       </div>
-    </div>
 
-    <div class="card">
+      <div class="toolbar-actions">
+        <button type="button" @click="handleSearch">执行查询</button>
+        <button type="button" class="ghost-button" @click="resetQuery">重置条件</button>
+      </div>
+    </section>
+
+    <section class="card data-card card-v2">
       <div class="section-head">
         <div class="section-head-main">
           <h3>门店列表</h3>
-          <p class="section-tip">支持新增、编辑、删除，删除后自动刷新当前分页数据。</p>
+          <p class="section-tip">统一查看门店编码、联系人、启用状态与创建时间，支撑券适用门店范围配置。</p>
         </div>
-        <div class="inline-metrics">
-          <span class="badge info">当前页 {{ items.length }}</span>
-          <span class="badge warning">每页 {{ pageSize }}</span>
+        <div class="summary-inline">
+          <span class="badge info">{{ querySummary }}</span>
         </div>
       </div>
 
-      <div class="table-wrap">
+      <div class="table-wrap table-wrap-v2">
         <table class="table">
           <thead>
             <tr>
               <th>ID</th>
-              <th>门店编码</th>
-              <th>门店名称</th>
+              <th>门店信息</th>
               <th>联系人</th>
               <th>联系电话</th>
               <th>状态</th>
@@ -89,8 +88,12 @@
           <tbody>
             <tr v-for="item in items" :key="item.id">
               <td class="cell-strong">{{ item.id }}</td>
-              <td class="cell-mono">{{ item.code }}</td>
-              <td>{{ item.name }}</td>
+              <td>
+                <div class="table-primary-cell">
+                  <strong>{{ item.name }}</strong>
+                  <span>{{ item.code }}</span>
+                </div>
+              </td>
               <td>{{ item.contactName || '-' }}</td>
               <td>{{ item.contactPhone || '-' }}</td>
               <td>
@@ -107,45 +110,45 @@
               </td>
             </tr>
             <tr v-if="items.length === 0">
-              <td colspan="8" class="empty-text">暂无数据</td>
+              <td colspan="7" class="empty-text">暂无门店数据</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div class="pager">
-        <div class="pager-info">第 {{ pageIndex }} 页 / 共 {{ totalPages }} 页，共 {{ totalCount }} 条</div>
+      <div class="pager pager-v2">
+        <div class="pager-info">第 {{ pageIndex }} 页 / 共 {{ totalPages }} 页，共 {{ totalCount }} 条记录</div>
         <div class="pager-actions">
           <button type="button" class="ghost-button" :disabled="pageIndex <= 1" @click="goPrevPage">上一页</button>
           <button type="button" class="ghost-button" :disabled="pageIndex >= totalPages" @click="goNextPage">下一页</button>
         </div>
       </div>
-    </div>
+    </section>
 
     <div v-if="dialogVisible" class="dialog-mask" @click.self="closeDialog">
-      <div class="dialog-card">
+      <div class="dialog-card dialog-card-v2">
         <div class="dialog-head">
           <div class="dialog-head-main">
             <h3>{{ editingId ? '编辑门店' : '新增门店' }}</h3>
-            <p>{{ editingId ? '修改门店基础信息并即时刷新列表。' : '录入新门店资料并保存。' }}</p>
+            <p>{{ editingId ? '维护门店基础资料并同步刷新列表。' : '录入新的门店资料，纳入发券与核销适用范围。' }}</p>
           </div>
           <button type="button" class="ghost-button" @click="closeDialog">关闭</button>
         </div>
 
         <div class="grid-form dialog-form">
-          <input v-model.trim="form.code" type="text" placeholder="门店编码" />
-          <input v-model.trim="form.name" type="text" placeholder="门店名称" />
-          <input v-model.trim="form.contactName" type="text" placeholder="联系人" />
-          <input v-model.trim="form.contactPhone" type="text" placeholder="联系电话" />
-          <label class="checkbox-field">
+          <input v-model.trim="form.code" type="text" placeholder="请输入门店编码" />
+          <input v-model.trim="form.name" type="text" placeholder="请输入门店名称" />
+          <input v-model.trim="form.contactName" type="text" placeholder="请输入联系人" />
+          <input v-model.trim="form.contactPhone" type="text" placeholder="请输入联系电话" />
+          <label class="checkbox-field field-span-2">
             <input v-model="form.isEnabled" type="checkbox" />
             <span>启用门店</span>
           </label>
         </div>
 
         <div class="dialog-actions">
-          <button type="button" class="ghost-button" @click="closeDialog">取消</button>
-          <button v-if="editingId ? canEdit : canCreate" type="button" @click="submit">{{ editingId ? '保存修改' : '保存新增' }}</button>
+          <button type="button" class="ghost-button" :disabled="submitting || deleting" @click="closeDialog">取消</button>
+          <button v-if="editingId ? canEdit : canCreate" type="button" :disabled="submitting || deleting" @click="submit">{{ submitting ? '提交中...' : (editingId ? '保存修改' : '保存新增') }}</button>
         </div>
       </div>
     </div>
@@ -167,6 +170,8 @@ const totalPages = ref(1)
 const pageSize = ref(10)
 const dialogVisible = ref(false)
 const editingId = ref<number | null>(null)
+const submitting = ref(false)
+const deleting = ref(false)
 
 const query = reactive({
   keyword: '',
@@ -268,6 +273,11 @@ const closeDialog = () => {
 }
 
 const submit = async () => {
+  if (submitting.value) {
+    return
+  }
+
+  submitting.value = true
   try {
     if (editingId.value) {
       await updateStore(editingId.value, { ...form })
@@ -282,6 +292,8 @@ const submit = async () => {
     await loadData()
   } catch (error) {
     notify.error(getErrorMessage(error, editingId.value ? '门店修改失败' : '门店创建失败'))
+  } finally {
+    submitting.value = false
   }
 }
 
@@ -294,12 +306,19 @@ const removeItem = async (item: StoreListItemDto) => {
     pageIndex.value -= 1
   }
 
+  if (deleting.value) {
+    return
+  }
+
+  deleting.value = true
   try {
     await deleteStore(item.id)
     await loadData()
     notify.success('门店删除成功')
   } catch (error) {
     notify.error(getErrorMessage(error, '门店删除失败'))
+  } finally {
+    deleting.value = false
   }
 }
 
@@ -309,7 +328,18 @@ onMounted(loadData)
 </script>
 
 <style scoped>
+.store-filter-grid {
+  grid-template-columns: 2fr 1fr;
+}
+
 .dialog-form {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 1280px) {
+  .store-filter-grid,
+  .dialog-form {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

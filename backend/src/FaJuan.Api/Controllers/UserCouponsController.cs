@@ -1,3 +1,4 @@
+using FaJuan.Api.Application.Common;
 using FaJuan.Api.Application.Common.Models;
 using FaJuan.Api.Application.UserCoupons;
 using FaJuan.Api.Contracts;
@@ -258,9 +259,7 @@ public class UserCouponsController(AppDbContext dbContext, UserCouponGrantServic
         }
 
         var totalCount = await query.CountAsync();
-        var items = await query.OrderByDescending(x => x.Id)
-            .Skip((pageIndex - 1) * pageSize)
-            .Take(pageSize)
+        var items = await query.ApplyLegacyPaging(pageIndex, pageSize, x => x.Id)
             .Select(x => new UserCouponListItemDto
             {
                 Id = x.Id,

@@ -1,4 +1,5 @@
-﻿using FaJuan.Api.Application.Common.Models;
+using FaJuan.Api.Application.Common;
+using FaJuan.Api.Application.Common.Models;
 using FaJuan.Api.Contracts;
 using FaJuan.Api.Domain.Entities;
 using FaJuan.Api.Infrastructure.Auth;
@@ -6,6 +7,7 @@ using FaJuan.Api.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace FaJuan.Api.Controllers;
 
@@ -24,23 +26,53 @@ public class ProductsController(AppDbContext dbContext) : ApiControllerBase
         }
 
         var totalCount = await query.CountAsync();
-        var items = await query.OrderByDescending(x => x.Id)
-            .Skip((pageIndex - 1) * pageSize)
-            .Take(pageSize)
-            .Select(x => new ProductListItemDto
+        var items = await query.ApplyLegacyPaging(pageIndex, pageSize, x => x.Id)
+            .Select(x => new
+            {
+                x.Id,
+                x.Name,
+                x.ErpProductCode,
+                x.MainImageAssetId,
+                x.DetailImageAssetIds,
+                x.SalePrice,
+                x.IsEnabled,
+                x.CreatedAt,
+            })
+            .ToListAsync();
+
+        var assetIds = items
+            .SelectMany(x => ParseDetailImageAssetIds(x.DetailImageAssetIds).Concat(x.MainImageAssetId.HasValue ? [x.MainImageAssetId.Value] : []))
+            .Distinct()
+            .ToArray();
+
+        var assetMap = assetIds.Length == 0
+            ? new Dictionary<long, string>()
+            : await dbContext.MediaAssets.AsNoTracking()
+                .Where(x => assetIds.Contains(x.Id))
+                .ToDictionaryAsync(x => x.Id, x => x.FileUrl);
+
+        var resultItems = items.Select(x =>
+        {
+            var detailAssetIds = ParseDetailImageAssetIds(x.DetailImageAssetIds);
+
+            return new ProductListItemDto
             {
                 Id = x.Id,
                 Name = x.Name,
                 ErpProductCode = x.ErpProductCode,
+                MainImageAssetId = x.MainImageAssetId,
+                MainImageUrl = x.MainImageAssetId.HasValue && assetMap.TryGetValue(x.MainImageAssetId.Value, out var mainImageUrl) ? mainImageUrl : null,
+                DetailImageAssetIds = detailAssetIds,
+                DetailImageUrls = detailAssetIds.Where(assetMap.ContainsKey).Select(assetId => assetMap[assetId]).ToArray(),
                 SalePrice = x.SalePrice,
                 IsEnabled = x.IsEnabled,
                 CreatedAt = x.CreatedAt,
-            })
-            .ToListAsync();
+            };
+        }).ToList();
 
         return Ok(Success(new PagedResult<ProductListItemDto>
         {
-            Items = items,
+            Items = resultItems,
             TotalCount = totalCount,
             PageIndex = pageIndex,
             PageSize = pageSize,
@@ -69,6 +101,8 @@ public class ProductsController(AppDbContext dbContext) : ApiControllerBase
         {
             Name = request.Name.Trim(),
             ErpProductCode = normalizedCode,
+            MainImageAssetId = request.MainImageAssetId,
+            DetailImageAssetIds = SerializeDetailImageAssetIds(request.DetailImageAssetIds),
             SalePrice = request.SalePrice,
             IsEnabled = request.IsEnabled,
         };
@@ -103,6 +137,8 @@ public class ProductsController(AppDbContext dbContext) : ApiControllerBase
 
         entity.Name = request.Name.Trim();
         entity.ErpProductCode = normalizedCode;
+        entity.MainImageAssetId = request.MainImageAssetId;
+        entity.DetailImageAssetIds = SerializeDetailImageAssetIds(request.DetailImageAssetIds);
         entity.SalePrice = request.SalePrice;
         entity.IsEnabled = request.IsEnabled;
 
@@ -132,6 +168,43 @@ public class ProductsController(AppDbContext dbContext) : ApiControllerBase
             return "商品名称和 ERP 商品编码不能为空";
         }
 
+        if (request.MainImageAssetId.HasValue && request.MainImageAssetId.Value <= 0)
+        {
+            return "商品主图素材无效";
+        }
+
         return null;
+    }
+
+    private static string? SerializeDetailImageAssetIds(IReadOnlyCollection<long>? values)
+    {
+        if (values is null)
+        {
+            return null;
+        }
+
+        var normalized = values
+            .Where(x => x > 0)
+            .Distinct()
+            .ToArray();
+
+        return normalized.Length == 0 ? null : JsonSerializer.Serialize(normalized);
+    }
+
+    private static IReadOnlyCollection<long> ParseDetailImageAssetIds(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return [];
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<long[]>(value) ?? [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
     }
 }

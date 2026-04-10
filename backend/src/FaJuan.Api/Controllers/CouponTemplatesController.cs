@@ -1,4 +1,5 @@
-﻿using FaJuan.Api.Application.Common.Models;
+using FaJuan.Api.Application.Common;
+using FaJuan.Api.Application.Common.Models;
 using FaJuan.Api.Contracts;
 using FaJuan.Api.Domain.Entities;
 using FaJuan.Api.Domain.Enums;
@@ -25,13 +26,12 @@ public class CouponTemplatesController(AppDbContext dbContext) : ApiControllerBa
         }
 
         var totalCount = await query.CountAsync();
-        var items = await query.OrderByDescending(x => x.Id)
-            .Skip((pageIndex - 1) * pageSize)
-            .Take(pageSize)
+        var items = await query.ApplyLegacyPaging(pageIndex, pageSize, x => x.Id)
             .Select(x => new CouponTemplateListItemDto
             {
                 Id = x.Id,
                 Name = x.Name,
+                ImageAssetId = x.ImageAssetId,
                 TemplateType = x.TemplateType,
                 ValidPeriodType = x.ValidPeriodType,
                 DiscountAmount = x.DiscountAmount,
@@ -48,6 +48,13 @@ public class CouponTemplatesController(AppDbContext dbContext) : ApiControllerBa
             })
             .ToListAsync();
 
+        var assetIds = items.Where(x => x.ImageAssetId.HasValue).Select(x => x.ImageAssetId!.Value).Distinct().ToArray();
+        var assetMap = assetIds.Length == 0
+            ? new Dictionary<long, string>()
+            : await dbContext.MediaAssets.AsNoTracking()
+                .Where(x => assetIds.Contains(x.Id))
+                .ToDictionaryAsync(x => x.Id, x => x.FileUrl);
+
         var templateIds = items.Select(x => x.Id).ToHashSet();
         var scopes = items.Count == 0
             ? new Dictionary<long, IReadOnlyCollection<long>>()
@@ -62,6 +69,8 @@ public class CouponTemplatesController(AppDbContext dbContext) : ApiControllerBa
         {
             Id = x.Id,
             Name = x.Name,
+            ImageAssetId = x.ImageAssetId,
+            ImageUrl = x.ImageAssetId.HasValue && assetMap.TryGetValue(x.ImageAssetId.Value, out var imageUrl) ? imageUrl : null,
             TemplateType = x.TemplateType,
             ValidPeriodType = x.ValidPeriodType,
             DiscountAmount = x.DiscountAmount,
@@ -101,6 +110,7 @@ public class CouponTemplatesController(AppDbContext dbContext) : ApiControllerBa
         var entity = new CouponTemplate
         {
             Name = request.Name.Trim(),
+            ImageAssetId = request.ImageAssetId,
             TemplateType = request.TemplateType,
             ValidPeriodType = request.ValidPeriodType,
             DiscountAmount = request.DiscountAmount,
@@ -138,6 +148,7 @@ public class CouponTemplatesController(AppDbContext dbContext) : ApiControllerBa
         }
 
         entity.Name = request.Name.Trim();
+        entity.ImageAssetId = request.ImageAssetId;
         entity.TemplateType = request.TemplateType;
         entity.ValidPeriodType = request.ValidPeriodType;
         entity.DiscountAmount = request.DiscountAmount;
@@ -225,4 +236,5 @@ public class CouponTemplatesController(AppDbContext dbContext) : ApiControllerBa
 
         return null;
     }
+
 }

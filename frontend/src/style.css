@@ -672,6 +672,35 @@ button {
   flex-wrap: wrap;
 }
 
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.surface-note {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(228, 231, 236, 0.9);
+  background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+}
+
+.surface-note h4,
+.surface-note p {
+  margin: 0;
+}
+
+.surface-note h4 {
+  font-size: 16px;
+}
+
+.surface-note p {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
 .empty-text {
   padding: 24px;
   text-align: center;
@@ -920,6 +949,34 @@ button {
   color: var(--text);
 }
 
+@media (max-width: 1440px) {
+  .stats-grid,
+  .summary-grid,
+  .overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1080px) {
+  .hero-panel,
+  .stats-grid,
+  .summary-grid,
+  .overview-grid,
+  .filter-grid,
+  .grid-form {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header-row,
+  .toolbar-row,
+  .section-head,
+  .data-meta,
+  .pager {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
 .checkbox-card {
   padding: 0 14px;
   border: 1px solid var(--line-strong);
@@ -952,6 +1009,33 @@ button {
   display: grid;
   gap: 4px;
   cursor: pointer;
+}
+
+.toast-item-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toast-mark {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.16);
+}
+
+.toast-mark.success {
+  background: #dcfce7;
+}
+
+.toast-mark.error {
+  background: #fee2e2;
+}
+
+.toast-mark.info {
+  background: #dbeafe;
 }
 
 .toast-item.success {
@@ -1011,6 +1095,16 @@ button {
   justify-content: space-between;
 }
 
+.login-visual-copy {
+  display: grid;
+  gap: 12px;
+}
+
+.login-kicker {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
 .login-visual h1 {
   margin: 12px 0;
   font-size: 38px;
@@ -1055,6 +1149,7 @@ button {
   flex-direction: column;
   justify-content: center;
   gap: 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
 }
 
 .login-panel-head {
@@ -1075,6 +1170,28 @@ button {
   border: 1px solid var(--line);
   color: var(--muted);
   font-size: 13px;
+}
+
+.login-submit {
+  width: 100%;
+  justify-content: center;
+}
+
+.empty-text {
+  padding: 28px 20px;
+  text-align: center;
+  color: var(--muted);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.8), rgba(255, 255, 255, 0.96));
+}
+
+button:disabled,
+.ghost-button:disabled,
+.primary-button:disabled,
+.danger-button:disabled,
+.action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  box-shadow: none;
 }
 
 .error-text {

@@ -6,6 +6,8 @@ public class CouponTemplateListItemDto
 {
     public long Id { get; init; }
     public string Name { get; init; } = string.Empty;
+    public long? ImageAssetId { get; init; }
+    public string? ImageUrl { get; init; }
     public CouponTemplateType TemplateType { get; init; }
     public CouponValidPeriodType ValidPeriodType { get; init; }
     public decimal? DiscountAmount { get; init; }
@@ -25,6 +27,7 @@ public class CouponTemplateListItemDto
 public class SaveCouponTemplateRequest
 {
     public string Name { get; init; } = string.Empty;
+    public long? ImageAssetId { get; init; }
     public CouponTemplateType TemplateType { get; init; }
     public CouponValidPeriodType ValidPeriodType { get; init; }
     public decimal? DiscountAmount { get; init; }

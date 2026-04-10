@@ -1,4 +1,5 @@
-﻿using FaJuan.Api.Application.Common.Models;
+using FaJuan.Api.Application.Common;
+using FaJuan.Api.Application.Common.Models;
 using FaJuan.Api.Contracts;
 using FaJuan.Api.Domain.Entities;
 using FaJuan.Api.Infrastructure.Auth;
@@ -24,9 +25,7 @@ public class StoresController(AppDbContext dbContext) : ApiControllerBase
         }
 
         var totalCount = await query.CountAsync();
-        var items = await query.OrderByDescending(x => x.Id)
-            .Skip((pageIndex - 1) * pageSize)
-            .Take(pageSize)
+        var items = await query.ApplyLegacyPaging(pageIndex, pageSize, x => x.Id)
             .Select(x => new StoreListItemDto
             {
                 Id = x.Id,

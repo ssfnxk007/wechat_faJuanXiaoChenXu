@@ -6,7 +6,10 @@
       :class="['toast-item', item.type]"
       @click="notify.remove(item.id)"
     >
-      <strong>{{ titleMap[item.type] }}</strong>
+      <div class="toast-item-head">
+        <span :class="['toast-mark', item.type]"></span>
+        <strong>{{ titleMap[item.type] }}</strong>
+      </div>
       <span>{{ item.message }}</span>
     </div>
   </div>
@@ -16,8 +19,8 @@
 import { notify } from '@/utils/notify'
 
 const titleMap = {
-  success: '成功',
-  error: '失败',
-  info: '提示',
+  success: '操作成功',
+  error: '处理失败',
+  info: '提示信息',
 }
 </script>

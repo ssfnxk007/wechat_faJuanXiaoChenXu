@@ -1,133 +1,155 @@
-﻿<template>
-  <div class="business-page">
-    <div class="page-header-row">
-      <div>
+<template>
+  <div class="business-page page-v2 user-page-v2">
+    <section class="hero-panel user-hero">
+      <div class="hero-copy">
+        <span class="page-kicker">用户中心</span>
         <h2>用户管理</h2>
-        <p>查看小程序用户建档情况，并维护手机号绑定信息。</p>
+        <p>维护小程序用户建档结果与手机号辅助匹配信息，为发券、导入识别、订单归属和 ERP 核销提供基础数据。</p>
+        <div class="hero-tags">
+          <span class="badge info">OpenId 主标识</span>
+          <span class="badge success">手机号辅助匹配</span>
+          <span class="badge warning">支持运营检索</span>
+        </div>
       </div>
-      <button type="button" @click="loadData">刷新列表</button>
-    </div>
+      <div class="hero-side hero-side-stack">
+        <article class="quick-card quick-card-spotlight">
+          <span class="quick-card-label">用户总数</span>
+          <strong>{{ items.length }}</strong>
+          <p>当前已建档的小程序用户数量。</p>
+        </article>
+        <div class="hero-side-grid">
+          <article class="quick-card compact">
+            <span class="quick-card-label">已绑手机号</span>
+            <strong>{{ boundMobileCount }}</strong>
+            <p>可用于导入辅助匹配</p>
+          </article>
+          <article class="quick-card compact">
+            <span class="quick-card-label">当前命中</span>
+            <strong>{{ filteredItems.length }}</strong>
+            <p>符合筛选条件的用户数</p>
+          </article>
+        </div>
+      </div>
+    </section>
 
-    <div class="card form-card">
+    <section class="stats-grid stats-grid-v2">
+      <article class="stat-card accent-blue">
+        <span class="label">用户总数</span>
+        <strong class="stat-value">{{ items.length }}</strong>
+        <span class="stat-footnote">当前已建档的小程序用户数量</span>
+      </article>
+      <article class="stat-card accent-indigo">
+        <span class="label">已绑手机号</span>
+        <strong class="stat-value">{{ boundMobileCount }}</strong>
+        <span class="stat-footnote">可用于运营导入辅助匹配</span>
+      </article>
+      <article class="stat-card accent-green">
+        <span class="label">当前命中</span>
+        <strong class="stat-value">{{ filteredItems.length }}</strong>
+        <span class="stat-footnote">当前筛选条件命中数</span>
+      </article>
+      <article class="stat-card accent-amber">
+        <span class="label">未绑手机号</span>
+        <strong class="stat-value">{{ items.length - boundMobileCount }}</strong>
+        <span class="stat-footnote">建议后续补齐辅助识别信息</span>
+      </article>
+    </section>
+
+    <section class="card toolbar-card card-v2 operations-card">
+      <div class="toolbar-row">
+        <div class="toolbar-title">
+          <span class="section-kicker">业务筛选</span>
+          <h3>用户检索与状态筛选</h3>
+          <p class="section-tip">按 OpenId、昵称、手机号和绑定状态快速定位用户，不在主页面暴露开发式建档与绑定入口。</p>
+        </div>
+        <div class="toolbar-actions">
+          <button type="button" class="ghost-button" @click="resetFilters">重置筛选</button>
+          <button type="button" class="ghost-button" @click="loadData">刷新列表</button>
+        </div>
+      </div>
+
+      <div class="filter-panel-grid user-filter-grid">
+        <label class="field-card filter-field">
+          <span class="field-label">综合关键词</span>
+          <input v-model.trim="filters.keyword" type="text" placeholder="搜索 OpenId / 昵称 / 手机号" />
+        </label>
+        <label class="field-card filter-field">
+          <span class="field-label">昵称</span>
+          <input v-model.trim="filters.nickname" type="text" placeholder="按昵称进一步过滤" />
+        </label>
+        <label class="field-card filter-field compact-field">
+          <span class="field-label">手机号状态</span>
+          <select v-model="filters.mobileStatus">
+            <option value="all">全部状态</option>
+            <option value="bound">仅已绑定手机号</option>
+            <option value="unbound">仅未绑定手机号</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="surface-note">
+        <strong>说明</strong>
+        <p>用户建档、手机号绑定属于系统接入链路，不作为运营主页面的常用表单入口展示；正式后台以查询和查看结果为主。</p>
+      </div>
+    </section>
+
+    <section class="card card-v2 data-card">
       <div class="section-head">
         <div class="section-head-main">
-          <h3>用户建档</h3>
-          <p class="section-tip">录入登录参数并完成用户建档，后续可切换到真实微信登录链路。</p>
-        </div>
-        <div class="inline-metrics">
-          <span class="badge info">OpenId 建档</span>
-          <span class="badge warning">建档入口</span>
-        </div>
-      </div>
-
-      <div class="grid-form">
-        <input v-model="loginForm.code" type="text" placeholder="登录 code" />
-        <input v-model="loginForm.nickname" type="text" placeholder="昵称" />
-      </div>
-
-      <button type="button" @click="submitLogin">登录建档</button>
-      <p v-if="loginResult" class="helper-text">
-        最近登录用户：<span class="cell-strong">{{ loginResult.userId }}</span>
-        /
-        <span class="cell-mono">{{ loginResult.miniOpenId }}</span>
-      </p>
-    </div>
-
-    <div class="card form-card">
-      <div class="section-head">
-        <div class="section-head-main">
-          <h3>绑定手机号</h3>
-          <p class="section-tip">手机号作为辅助匹配字段，便于 ERP 导入用户时做关联。</p>
-        </div>
-        <div class="inline-metrics">
-          <span class="badge success">辅助匹配</span>
-        </div>
-      </div>
-
-      <div class="grid-form">
-        <input v-model.number="bindForm.userId" type="number" placeholder="用户ID" />
-        <input v-model="bindForm.mobile" type="text" placeholder="手机号" />
-      </div>
-
-      <button type="button" @click="submitBind">绑定手机号</button>
-    </div>
-
-    <div class="card form-card">
-      <div class="section-head">
-        <div class="section-head-main">
-          <h3>筛选工具</h3>
-          <p class="section-tip">当前为前端本地筛选，不改后端接口参数。</p>
-        </div>
-        <div class="inline-metrics">
-          <span class="badge info">总数 {{ items.length }}</span>
-          <span class="badge success">命中 {{ filteredItems.length }}</span>
-          <span class="badge warning">已绑手机号 {{ boundMobileCount }}</span>
-        </div>
-      </div>
-
-      <div class="grid-form">
-        <input v-model.trim="filters.keyword" type="text" placeholder="搜索 OpenId / 昵称 / 手机号" />
-        <select v-model="filters.mobileStatus">
-          <option value="all">全部手机号状态</option>
-          <option value="bound">仅已绑定手机号</option>
-          <option value="unbound">仅未绑定手机号</option>
-        </select>
-        <input v-model.trim="filters.nickname" type="text" placeholder="按昵称筛选" />
-      </div>
-
-      <div class="inline-actions">
-        <button type="button" @click="resetFilters">重置筛选</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="section-head">
-        <div class="section-head-main">
+          <span class="section-kicker">用户档案</span>
           <h3>用户列表</h3>
-          <p class="section-tip">以小程序 OpenId 为主标识，手机号为辅助信息。当前展示 {{ filteredItems.length }} 条。</p>
+          <p class="section-tip">展示 OpenId、昵称、手机号和建档时间，用于运营识别和发券匹配。</p>
+        </div>
+        <div class="inline-metrics">
+          <span class="badge info">当前展示 {{ filteredItems.length }} 条</span>
+          <span class="badge warning">未绑手机号 {{ items.length - boundMobileCount }}</span>
         </div>
       </div>
 
-      <div class="table-wrap">
+      <div class="table-wrap table-wrap-v2">
         <table class="table">
           <thead>
             <tr>
               <th>ID</th>
-              <th>小程序 OpenId</th>
+              <th>用户信息</th>
               <th>手机号</th>
-              <th>昵称</th>
-              <th>创建时间</th>
+              <th>建档时间</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="item in filteredItems" :key="item.id">
               <td class="cell-strong">{{ item.id }}</td>
-              <td class="cell-mono">{{ item.miniOpenId }}</td>
-              <td>{{ item.mobile || '-' }}</td>
-              <td>{{ item.nickname || '-' }}</td>
-              <td>{{ item.createdAt }}</td>
+              <td>
+                <div class="table-primary-cell">
+                  <strong>{{ item.nickname || '未设置昵称' }}</strong>
+                  <span class="cell-mono">{{ item.miniOpenId }}</span>
+                </div>
+              </td>
+              <td>
+                <span :class="['status-badge', item.mobile ? 'success' : 'warning']">
+                  {{ item.mobile || '未绑定手机号' }}
+                </span>
+              </td>
+              <td>{{ formatDate(item.createdAt) }}</td>
             </tr>
             <tr v-if="filteredItems.length === 0">
-              <td colspan="5" class="muted-text">暂无符合筛选条件的数据</td>
+              <td colspan="4" class="empty-text">当前没有符合条件的用户记录</td>
             </tr>
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { bindMobile, getUserList, miniProgramLogin } from '@/api/user'
-import type { AuthLoginResultDto, UserListItemDto } from '@/types/user'
+import { getUserList } from '@/api/user'
+import type { UserListItemDto } from '@/types/user'
 import { getErrorMessage } from '@/utils/http-error'
 import { notify } from '@/utils/notify'
 
 const items = ref<UserListItemDto[]>([])
-const loginResult = ref<AuthLoginResultDto | null>(null)
-const loginForm = reactive({ code: '', nickname: '' })
-const bindForm = reactive({ userId: 0, mobile: '' })
 const filters = reactive({
   keyword: '',
   nickname: '',
@@ -169,28 +191,6 @@ const loadData = async () => {
   }
 }
 
-const submitLogin = async () => {
-  try {
-    const response = await miniProgramLogin({ ...loginForm })
-    loginResult.value = response.data
-    bindForm.userId = response.data.userId
-    await loadData()
-    notify.success('用户建档成功')
-  } catch (error) {
-    notify.error(getErrorMessage(error, '用户建档失败'))
-  }
-}
-
-const submitBind = async () => {
-  try {
-    await bindMobile({ ...bindForm })
-    await loadData()
-    notify.success('手机号绑定成功')
-  } catch (error) {
-    notify.error(getErrorMessage(error, '手机号绑定失败'))
-  }
-}
-
 const resetFilters = () => {
   filters.keyword = ''
   filters.nickname = ''
@@ -198,5 +198,94 @@ const resetFilters = () => {
   notify.info('已重置用户筛选条件')
 }
 
+const formatDate = (value?: string) => (value ? value.replace('T', ' ').slice(0, 19) : '-')
+
 onMounted(loadData)
 </script>
+
+<style scoped>
+.user-hero {
+  background:
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.14), transparent 28%),
+    linear-gradient(135deg, #ffffff 0%, #f8fbff 52%, #f4f7fb 100%);
+}
+
+.hero-side-stack {
+  align-content: stretch;
+}
+
+.hero-side-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.quick-card-spotlight {
+  min-height: 148px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(16, 185, 129, 0.03));
+  border: 1px solid rgba(59, 130, 246, 0.14);
+}
+
+.quick-card.compact {
+  min-height: 112px;
+}
+
+.quick-card-label {
+  display: inline-flex;
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.user-filter-grid {
+  grid-template-columns: 1.4fr 1fr 0.8fr;
+}
+
+.field-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(226, 232, 240, 0.96);
+  background: linear-gradient(180deg, #fff 0%, #fbfdff 100%);
+}
+
+.field-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #475467;
+  letter-spacing: 0.04em;
+}
+
+.surface-note {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.96);
+  background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
+}
+
+.surface-note p,
+.surface-note strong {
+  margin: 0;
+}
+
+@media (max-width: 1100px) {
+  .hero-side-grid,
+  .user-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 820px) {
+  .hero-side-grid,
+  .user-filter-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

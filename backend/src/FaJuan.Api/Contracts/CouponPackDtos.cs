@@ -4,6 +4,8 @@ public class CouponPackListItemDto
 {
     public long Id { get; init; }
     public string Name { get; init; } = string.Empty;
+    public long? ImageAssetId { get; init; }
+    public string? ImageUrl { get; init; }
     public decimal SalePrice { get; init; }
     public int Status { get; init; }
     public int PerUserLimit { get; init; }
@@ -16,6 +18,7 @@ public class CouponPackListItemDto
 public class SaveCouponPackRequest
 {
     public string Name { get; init; } = string.Empty;
+    public long? ImageAssetId { get; init; }
     public decimal SalePrice { get; init; }
     public int Status { get; init; } = 1;
     public int PerUserLimit { get; init; } = 1;

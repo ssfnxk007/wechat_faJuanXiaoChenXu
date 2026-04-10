@@ -11,6 +11,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<CouponTemplate> CouponTemplates => Set<CouponTemplate>();
     public DbSet<CouponTemplateProductScope> CouponTemplateProductScopes => Set<CouponTemplateProductScope>();
     public DbSet<CouponPack> CouponPacks => Set<CouponPack>();
+    public DbSet<MediaAsset> MediaAssets => Set<MediaAsset>();
+    public DbSet<Banner> Banners => Set<Banner>();
     public DbSet<CouponPackItem> CouponPackItems => Set<CouponPackItem>();
     public DbSet<CouponOrder> CouponOrders => Set<CouponOrder>();
     public DbSet<UserCoupon> UserCoupons => Set<UserCoupon>();
@@ -60,6 +62,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Name).HasMaxLength(100).IsRequired();
             entity.Property(x => x.ErpProductCode).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.DetailImageAssetIds).HasColumnType("nvarchar(max)");
             entity.Property(x => x.SalePrice).HasColumnType("decimal(18,2)");
             entity.Property(x => x.CreatedAt).HasColumnType("datetime");
             entity.HasIndex(x => x.ErpProductCode).IsUnique();
@@ -76,6 +79,29 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(x => x.ValidTo).HasColumnType("datetime");
             entity.Property(x => x.Remark).HasMaxLength(500);
             entity.Property(x => x.CreatedAt).HasColumnType("datetime");
+        });
+
+        modelBuilder.Entity<MediaAsset>(entity =>
+        {
+            entity.ToTable("MediaAsset");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Name).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.FileUrl).HasMaxLength(500).IsRequired();
+            entity.Property(x => x.MediaType).HasMaxLength(20).IsRequired();
+            entity.Property(x => x.BucketType).HasMaxLength(20).IsRequired();
+            entity.Property(x => x.Tags).HasMaxLength(500);
+            entity.Property(x => x.CreatedAt).HasColumnType("datetime");
+            entity.HasIndex(x => new { x.BucketType, x.IsEnabled, x.Sort, x.Id });
+        });
+
+        modelBuilder.Entity<Banner>(entity =>
+        {
+            entity.ToTable("Banner");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Title).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.LinkUrl).HasMaxLength(500);
+            entity.Property(x => x.CreatedAt).HasColumnType("datetime");
+            entity.HasIndex(x => new { x.IsEnabled, x.Sort, x.Id });
         });
 
         modelBuilder.Entity<CouponTemplateProductScope>(entity =>

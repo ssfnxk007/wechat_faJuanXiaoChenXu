@@ -1,87 +1,98 @@
 <template>
-  <div class="business-page">
-    <div class="page-header-row">
-      <div>
-        <h2>券包明细管理</h2>
-        <p>为指定券包配置明细，支持弹窗新增/编辑、删除和快速重载。</p>
+  <div class="business-page page-v2 coupon-pack-item-page">
+    <section class="hero-panel item-hero">
+      <div class="hero-copy">
+        <span class="page-kicker">券包配置</span>
+        <h2>券包明细</h2>
+        <p>维护券包内包含的券模板与数量，确保销售后的发券内容清晰、稳定、可追踪。</p>
+        <div class="hero-tags">
+          <span class="badge info">按券包维度维护</span>
+          <span class="badge success">支持数量配置</span>
+          <span class="badge warning">影响券包发放内容</span>
+        </div>
       </div>
-      <div class="inline-actions">
-        <button type="button" class="ghost-button" @click="loadData">刷新列表</button>
-        <button v-if="canCreate" type="button" :disabled="query.couponPackId <= 0" @click="openCreateDialog">新增明细</button>
+      <div class="hero-side hero-side-stack">
+        <article class="quick-card quick-card-spotlight">
+          <span class="quick-card-label">当前明细数</span>
+          <strong>{{ items.length }}</strong>
+          <p>当前券包下已配置的模板条目数量。</p>
+        </article>
+        <div class="hero-side-grid">
+          <article class="quick-card compact">
+            <span class="quick-card-label">当前券包</span>
+            <strong>{{ selectedCouponPackName || '-' }}</strong>
+            <p>列表与表单均围绕当前券包维护。</p>
+          </article>
+          <article class="quick-card compact">
+            <span class="quick-card-label">总数量</span>
+            <strong>{{ totalQuantity }}</strong>
+            <p>当前券包内各券模板张数合计。</p>
+          </article>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <div class="stats-grid">
-      <article class="stat-card">
-        <span class="label">当前券包</span>
-        <strong class="stat-value">{{ query.couponPackId || '-' }}</strong>
-        <span class="stat-footnote">先指定券包 ID 再查看明细</span>
-      </article>
-      <article class="stat-card">
-        <span class="label">明细数量</span>
-        <strong class="stat-value">{{ items.length }}</strong>
-        <span class="stat-footnote">当前券包下已配置明细条数</span>
-      </article>
-      <article class="stat-card">
-        <span class="label">总发券张数</span>
-        <strong class="stat-value">{{ totalQuantity }}</strong>
-        <span class="stat-footnote">支付成功后预计发券总张数</span>
-      </article>
-      <article class="stat-card">
-        <span class="label">当前模式</span>
-        <strong class="stat-value">CRUD</strong>
-        <span class="stat-footnote">支持新增、编辑和删除</span>
-      </article>
-    </div>
-
-    <div class="card toolbar-card">
+    <section class="card toolbar-card card-v2 operations-card">
       <div class="toolbar-row">
         <div class="toolbar-title">
-          <h3>查询工具</h3>
-          <p class="section-tip">按券包 ID 加载该券包下的全部模板明细。</p>
+          <span class="section-kicker">配置入口</span>
+          <h3>券包明细筛选与维护</h3>
+          <p class="section-tip">优先选择券包，再维护券模板与数量，减少直接填写编号带来的配置误差。</p>
         </div>
-        <div class="summary-inline">
-          <span class="badge info">券包明细</span>
-          <span class="badge success">当前 {{ items.length }} 条</span>
-        </div>
-      </div>
-      <div class="filter-grid">
-        <input v-model.number="query.couponPackId" type="number" min="0" placeholder="请输入券包ID" @keyup.enter="loadData" />
-        <input :value="querySummary" type="text" readonly />
         <div class="toolbar-actions">
-          <button type="button" @click="loadData">查询</button>
-          <button type="button" class="ghost-button" @click="resetQuery">重置</button>
+          <button type="button" class="ghost-button" @click="loadData">刷新列表</button>
+          <button v-if="canCreate" type="button" class="primary-button" @click="openCreateDialog">新增明细</button>
         </div>
       </div>
-    </div>
 
-    <div class="card">
+      <div class="filter-panel-grid">
+        <label class="field-card filter-field compact-field">
+          <span class="field-label">券包</span>
+          <RemoteSelectField v-model="couponPackId" v-model:keyword="selectorQuery.couponPackKeyword" placeholder="输入券包名称后搜索" empty-label="请选择券包" :options="couponPackSelectOptions" @search="searchCouponPacks" />
+        </label>
+        <div class="field-card summary-field">
+          <span class="field-label">当前说明</span>
+          <strong>{{ selectedCouponPackName || '请选择券包' }}</strong>
+          <p>明细列表会按当前券包查询，不混合展示其他券包的配置。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-v2 data-card archive-card">
       <div class="section-head">
         <div class="section-head-main">
-          <h3>明细列表</h3>
-          <p class="section-tip">同一券包下同一券模板只保留一条记录，数量用于控制发放张数。</p>
+          <span class="section-kicker">明细档案</span>
+          <h3>券包明细列表</h3>
+          <p class="section-tip">展示券模板名称、发放数量与所属券包，便于运营核对券包内容。</p>
+        </div>
+        <div class="inline-metrics">
+          <span class="badge info">条目 {{ items.length }}</span>
+          <span class="badge warning">总数量 {{ totalQuantity }}</span>
         </div>
       </div>
 
-      <div class="table-wrap">
+      <div class="table-wrap table-wrap-v2">
         <table class="table">
           <thead>
             <tr>
               <th>ID</th>
-              <th>券包ID</th>
-              <th>券模板ID</th>
-              <th>券模板名称</th>
+              <th>券模板信息</th>
               <th>数量</th>
+              <th>所属券包</th>
               <th>操作</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="item in items" :key="item.id">
               <td class="cell-strong">{{ item.id }}</td>
-              <td>{{ item.couponPackId }}</td>
-              <td>{{ item.couponTemplateId }}</td>
-              <td>{{ item.couponTemplateName }}</td>
-              <td><span class="badge info">{{ item.quantity }} 张</span></td>
+              <td>
+                <div class="table-primary-cell">
+                  <strong>{{ item.couponTemplateName }}</strong>
+                  <span>券模板配置</span>
+                </div>
+              </td>
+              <td><span class="badge success">{{ item.quantity }} 张</span></td>
+              <td>{{ selectedCouponPackName || `券包 #${item.couponPackId}` }}</td>
               <td>
                 <div class="table-actions">
                   <button v-if="canEdit" type="button" class="action-button" @click="openEditDialog(item)">编辑</button>
@@ -90,32 +101,42 @@
               </td>
             </tr>
             <tr v-if="items.length === 0">
-              <td colspan="6" class="empty-text">暂无明细，请先输入券包 ID 并查询。</td>
+              <td colspan="5" class="empty-text">当前券包没有明细记录</td>
             </tr>
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
 
     <div v-if="dialogVisible" class="dialog-mask" @click.self="closeDialog">
-      <div class="dialog-card">
+      <div class="dialog-card dialog-card-v2 item-dialog">
         <div class="dialog-head">
           <div class="dialog-head-main">
+            <span class="section-kicker">明细表单</span>
             <h3>{{ editingId ? '编辑券包明细' : '新增券包明细' }}</h3>
-            <p>{{ editingId ? '修改券包明细并同步列表。' : '为当前券包新增模板明细。' }}</p>
+            <p>{{ editingId ? '调整券模板与数量配置。' : '为当前券包新增券模板配置。' }}</p>
           </div>
           <button type="button" class="ghost-button" @click="closeDialog">关闭</button>
         </div>
 
-        <div class="grid-form dialog-form">
-          <input v-model.number="form.couponPackId" type="number" min="1" placeholder="券包ID" />
-          <input v-model.number="form.couponTemplateId" type="number" min="1" placeholder="券模板ID" />
-          <input v-model.number="form.quantity" type="number" min="1" placeholder="数量" />
+        <div class="grid-form dialog-form item-form-grid">
+          <label>
+            <span>所属券包</span>
+            <RemoteSelectField v-model="form.couponPackId" v-model:keyword="selectorQuery.couponPackKeyword" placeholder="输入券包名称后搜索" empty-label="请选择券包" :options="couponPackSelectOptions" @search="searchCouponPacks" />
+          </label>
+          <label>
+            <span>券模板</span>
+            <RemoteSelectField v-model="form.couponTemplateId" v-model:keyword="selectorQuery.couponTemplateKeyword" placeholder="输入模板名称后搜索" empty-label="请选择券模板" :options="couponTemplateSelectOptions" @search="searchCouponTemplates" />
+          </label>
+          <label>
+            <span>数量</span>
+            <input v-model.number="form.quantity" type="number" min="1" step="1" placeholder="请输入数量" />
+          </label>
         </div>
 
         <div class="dialog-actions">
-          <button type="button" class="ghost-button" @click="closeDialog">取消</button>
-          <button v-if="editingId ? canEdit : canCreate" type="button" @click="submit">{{ editingId ? '保存修改' : '保存新增' }}</button>
+          <button type="button" class="ghost-button" :disabled="submitting || deleting" @click="closeDialog">取消</button>
+          <button type="button" class="primary-button" :disabled="submitting || deleting" @click="submit">{{ submitting ? '提交中...' : (editingId ? '保存修改' : '保存新增') }}</button>
         </div>
       </div>
     </div>
@@ -123,73 +144,82 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import RemoteSelectField from '@/components/RemoteSelectField.vue'
+import { getCouponPackList } from '@/api/coupon-pack'
 import { deleteCouponPackItem, getCouponPackItemList, saveCouponPackItem, updateCouponPackItem } from '@/api/coupon-pack-item'
+import { getCouponTemplateList } from '@/api/coupon-template'
+import type { CouponTemplateListItemDto } from '@/types/coupon'
+import type { CouponPackListItemDto } from '@/types/coupon-pack'
 import type { CouponPackItemDto, SaveCouponPackItemRequest } from '@/types/coupon-pack-item'
 import { getErrorMessage } from '@/utils/http-error'
 import { authStorage } from '@/utils.auth'
 import { notify } from '@/utils/notify'
 
 const items = ref<CouponPackItemDto[]>([])
+const couponPackId = ref(0)
 const dialogVisible = ref(false)
 const editingId = ref<number | null>(null)
+const form = reactive<SaveCouponPackItemRequest>({ couponPackId: 0, couponTemplateId: 0, quantity: 1 })
+const couponPackOptions = ref<CouponPackListItemDto[]>([])
+const couponTemplateOptions = ref<CouponTemplateListItemDto[]>([])
+const selectorQuery = reactive({ couponPackKeyword: '', couponTemplateKeyword: '' })
+const submitting = ref(false)
+const deleting = ref(false)
 
-const query = reactive({
-  couponPackId: 0,
-})
-
-const createEmptyForm = (): SaveCouponPackItemRequest => ({
-  couponPackId: query.couponPackId || 0,
-  couponTemplateId: 0,
-  quantity: 1,
-})
-
-const form = reactive<SaveCouponPackItemRequest>(createEmptyForm())
 const canCreate = authStorage.hasPermission('coupon-pack-item.create')
 const canEdit = authStorage.hasPermission('coupon-pack-item.edit')
 const canDelete = authStorage.hasPermission('coupon-pack-item.delete')
-
-const totalQuantity = computed(() => items.value.reduce((sum, item) => sum + item.quantity, 0))
-const querySummary = computed(() => `券包ID：${query.couponPackId || '未指定'} / 当前明细：${items.value.length} 条`)
+const templateTypeMap: Record<number, string> = { 1: '新人券', 2: '无门槛券', 3: '指定商品券', 4: '满减券' }
+const couponPackSelectOptions = computed(() => couponPackOptions.value.map((pack) => ({ value: pack.id, label: `${pack.name} / ¥${Number(pack.salePrice || 0).toFixed(2)}` })))
+const couponTemplateSelectOptions = computed(() => couponTemplateOptions.value.map((template) => ({ value: template.id, label: `${template.name} / ${templateTypeMap[template.templateType] || '券模板'}` })))
+const totalQuantity = computed(() => items.value.reduce((sum, item) => sum + Number(item.quantity || 0), 0))
+const selectedCouponPackName = computed(() => couponPackOptions.value.find((item) => item.id === couponPackId.value)?.name || '')
 
 const resetForm = () => {
-  Object.assign(form, createEmptyForm())
+  form.couponPackId = couponPackId.value || 0
+  form.couponTemplateId = 0
+  form.quantity = 1
 }
 
+const loadCouponPackOptions = async () => {
+  const response = await getCouponPackList({ keyword: selectorQuery.couponPackKeyword || undefined, pageIndex: 1, pageSize: 50 })
+  couponPackOptions.value = response.data.items
+}
+
+const loadCouponTemplateOptions = async () => {
+  const response = await getCouponTemplateList({ keyword: selectorQuery.couponTemplateKeyword || undefined, pageIndex: 1, pageSize: 50 })
+  couponTemplateOptions.value = response.data.items
+}
+
+const searchCouponPacks = async () => { await loadCouponPackOptions() }
+const searchCouponTemplates = async () => { await loadCouponTemplateOptions() }
+
 const loadData = async () => {
-  if (query.couponPackId <= 0) {
+  if (!couponPackId.value || couponPackId.value <= 0) {
     items.value = []
     return
   }
 
   try {
-    const response = await getCouponPackItemList(query.couponPackId)
+    const response = await getCouponPackItemList(couponPackId.value)
     items.value = response.data
   } catch (error) {
     notify.error(getErrorMessage(error, '加载券包明细失败'))
   }
 }
 
-const resetQuery = () => {
-  query.couponPackId = 0
-  items.value = []
-  notify.info('已重置券包明细查询条件')
-}
-
 const openCreateDialog = () => {
   editingId.value = null
   resetForm()
-  form.couponPackId = query.couponPackId
   dialogVisible.value = true
 }
 
 const openEditDialog = (item: CouponPackItemDto) => {
   editingId.value = item.id
-  Object.assign(form, {
-    couponPackId: item.couponPackId,
-    couponTemplateId: item.couponTemplateId,
-    quantity: item.quantity,
-  })
+  form.couponPackId = item.couponPackId
+  form.couponTemplateId = item.couponTemplateId
+  form.quantity = item.quantity
   dialogVisible.value = true
 }
 
@@ -200,40 +230,76 @@ const closeDialog = () => {
 }
 
 const submit = async () => {
+  if (form.couponPackId <= 0) return notify.info('请选择券包')
+  if (form.couponTemplateId <= 0) return notify.info('请选择券模板')
+  if (form.quantity <= 0) return notify.info('数量必须大于 0')
+  if (submitting.value) return
+  submitting.value = true
+
   try {
     if (editingId.value) {
       await updateCouponPackItem(editingId.value, { ...form })
-      notify.success('券包明细修改成功')
+      notify.success('券包明细已更新')
     } else {
       await saveCouponPackItem({ ...form })
-      notify.success('券包明细保存成功')
+      notify.success('券包明细已创建')
     }
 
-    query.couponPackId = form.couponPackId
+    couponPackId.value = form.couponPackId
     closeDialog()
     await loadData()
   } catch (error) {
-    notify.error(getErrorMessage(error, editingId.value ? '券包明细修改失败' : '券包明细保存失败'))
+    notify.error(getErrorMessage(error, editingId.value ? '保存券包明细失败' : '新增券包明细失败'))
+  } finally {
+    submitting.value = false
   }
 }
 
 const removeItem = async (item: CouponPackItemDto) => {
-  if (!window.confirm(`确认删除模板“${item.couponTemplateName}”的券包明细吗？`)) {
-    return
-  }
+  if (!window.confirm(`确认删除模板“${item.couponTemplateName}”的明细吗？`)) return
+  if (deleting.value) return
+  deleting.value = true
 
   try {
     await deleteCouponPackItem(item.id)
+    notify.success('券包明细已删除')
     await loadData()
-    notify.success('券包明细删除成功')
   } catch (error) {
-    notify.error(getErrorMessage(error, '券包明细删除失败'))
+    notify.error(getErrorMessage(error, '删除券包明细失败'))
+  } finally {
+    deleting.value = false
   }
 }
+
+onMounted(async () => {
+  try {
+    await Promise.all([loadCouponPackOptions(), loadCouponTemplateOptions()])
+  } catch (error) {
+    notify.error(getErrorMessage(error, '加载业务选项失败'))
+  }
+
+  resetForm()
+})
 </script>
 
 <style scoped>
-.dialog-form {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
+.item-hero { background: radial-gradient(circle at top right, rgba(20,184,166,.12), transparent 28%), linear-gradient(135deg, #ffffff 0%, #f7fffd 52%, #f4f8fb 100%); }
+.hero-side-stack { align-content: stretch; }
+.hero-side-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+.quick-card-spotlight { min-height: 148px; background: linear-gradient(135deg, rgba(20,184,166,.08), rgba(59,130,246,.03)); border: 1px solid rgba(20,184,166,.14); }
+.quick-card.compact { min-height: 112px; }
+.quick-card-label { display: inline-flex; width: fit-content; padding: 4px 10px; border-radius: 999px; background: rgba(37,99,235,.08); color: var(--primary); font-size: 12px; font-weight: 700; }
+.filter-panel-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: 14px; }
+.field-card { display: grid; gap: 10px; padding: 16px; border-radius: 18px; border: 1px solid rgba(226,232,240,.96); background: linear-gradient(180deg,#fff 0%,#fbfdff 100%); }
+.field-label { font-size: 12px; font-weight: 700; color: #475467; letter-spacing: .04em; }
+.summary-field strong { font-size: 16px; }
+.summary-field p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.item-dialog { width: min(760px, calc(100vw - 48px)); }
+.item-form-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+.dialog-form>label { display: grid; gap: 8px; }
+.dialog-form>label>span { font-size: 13px; font-weight: 700; color: #344054; }
+.dialog-form input,
+.dialog-form select { width: 100%; height: 44px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 12px; background: #fff; }
+@media (max-width:1100px){ .filter-panel-grid,.item-form-grid,.hero-side-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width:820px){ .filter-panel-grid,.item-form-grid,.hero-side-grid{ grid-template-columns: 1fr; } }
 </style>

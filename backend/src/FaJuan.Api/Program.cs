@@ -7,6 +7,7 @@ using FaJuan.Api.Infrastructure.Persistence;
 using FaJuan.Api.Infrastructure.WeChat;
 using FaJuan.Api.Infrastructure.WeChatPay;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -81,6 +82,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+var webRootPath = app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+Directory.CreateDirectory(webRootPath);
+Directory.CreateDirectory(Path.Combine(webRootPath, "uploads"));
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(webRootPath),
+    RequestPath = ""
+});
 
 app.UseHttpsRedirection();
 app.UseCors("AdminWeb");

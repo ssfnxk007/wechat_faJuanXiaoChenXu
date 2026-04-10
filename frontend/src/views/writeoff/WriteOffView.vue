@@ -23,12 +23,12 @@
       </article>
       <article class="stat-card">
         <span class="label">当前门店</span>
-        <strong class="stat-value">{{ form.storeId || '-' }}</strong>
+        <strong class="stat-value">{{ currentStoreName }}</strong>
         <span class="stat-footnote">用于确认本次核销所属门店</span>
       </article>
       <article class="stat-card">
         <span class="label">当前商品</span>
-        <strong class="stat-value">{{ form.productId || '-' }}</strong>
+        <strong class="stat-value">{{ currentProductName }}</strong>
         <span class="stat-footnote">指定商品券核销时携带商品编号</span>
       </article>
     </div>
@@ -76,15 +76,15 @@
 
       <div class="grid-form writeoff-form-grid">
         <input v-model.trim="form.couponCode" type="text" placeholder="券码" />
-        <input v-model.number="form.storeId" type="number" min="0" placeholder="门店ID" />
-        <input v-model.number="form.productId" type="number" min="0" placeholder="商品ID（选填）" />
+        <RemoteSelectField v-model="form.storeId" v-model:keyword="selectorQuery.storeKeyword" placeholder="搜索门店名称 / 编码" empty-label="请选择门店" :options="storeSelectOptions" @search="searchStores" />
+        <RemoteSelectField v-model="selectedProductId" v-model:keyword="selectorQuery.productKeyword" placeholder="搜索商品名称 / ERP 编码" empty-label="全部商品或非指定商品券" :options="productSelectOptions" @search="searchProducts" />
         <input v-model.trim="form.operatorName" type="text" placeholder="操作人" />
         <input v-model.trim="form.deviceCode" type="text" placeholder="设备号" />
       </div>
 
       <div class="toolbar-actions">
-        <button v-if="canExecute" type="button" @click="submit">执行核销</button>
-        <button type="button" class="ghost-button" @click="fillDemo">快速填充</button>
+        <button v-if="canExecute" type="button" :disabled="submitting" @click="submit">{{ submitting ? '核销中...' : '执行核销' }}</button>
+        <button type="button" class="ghost-button" :disabled="submitting" @click="fillDemo">快速填充</button>
       </div>
     </div>
 
@@ -119,21 +119,31 @@
         <span class="badge warning">记录门店与设备</span>
       </div>
       <div class="muted-text">
-        建议 ERP 实际接入时携带门店编号、商品ID、操作人、设备号，并将返回的核销结果写回 ERP 日志，便于后续追踪。
+        建议 ERP 实际接入时通过门店、商品选择器或系统映射带入业务数据，并将返回的核销结果写回 ERP 日志，便于后续追踪。
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import RemoteSelectField from '@/components/RemoteSelectField.vue'
+import { getProductList } from '@/api/product'
+import { getStoreList } from '@/api/store'
 import { writeOffCoupon } from '@/api/user-coupon'
+import type { ProductListItemDto } from '@/types/product'
+import type { StoreListItemDto } from '@/types/store'
 import type { CouponWriteOffRequest, CouponWriteOffResultDto } from '@/types/user-coupon'
 import { getErrorMessage } from '@/utils/http-error'
 import { authStorage } from '@/utils.auth'
 import { notify } from '@/utils/notify'
 
 const result = ref<CouponWriteOffResultDto | null>(null)
+const storeOptions = ref<StoreListItemDto[]>([])
+const productOptions = ref<ProductListItemDto[]>([])
+const selectedProductId = ref(0)
+const selectorQuery = reactive({ storeKeyword: '', productKeyword: '' })
+const submitting = ref(false)
 const canExecute = authStorage.hasPermission('writeoff.execute')
 const form = reactive<CouponWriteOffRequest>({
   couponCode: '',
@@ -143,10 +153,36 @@ const form = reactive<CouponWriteOffRequest>({
   deviceCode: '',
 })
 
+const currentStoreName = computed(() => storeOptions.value.find((item) => item.id === form.storeId)?.name || '-')
+const currentProductName = computed(() => productOptions.value.find((item) => item.id === selectedProductId.value)?.name || '-')
+const storeSelectOptions = computed(() => storeOptions.value.map((store) => ({ value: store.id, label: `${store.name} / ${store.code}` })))
+const productSelectOptions = computed(() => productOptions.value.map((product) => ({ value: product.id, label: `${product.name} / ${product.erpProductCode}` })))
+
+watch(selectedProductId, (value) => {
+  form.productId = value > 0 ? value : undefined
+})
+
+const loadOptions = async () => {
+  try {
+    const [storeResponse, productResponse] = await Promise.all([
+      getStoreList({ keyword: selectorQuery.storeKeyword || undefined, pageIndex: 1, pageSize: 50 }),
+      getProductList({ keyword: selectorQuery.productKeyword || undefined, pageIndex: 1, pageSize: 50 }),
+    ])
+    storeOptions.value = storeResponse.data.items
+    productOptions.value = productResponse.data.items
+  } catch (error) {
+    notify.error(getErrorMessage(error, '加载门店或商品选项失败'))
+  }
+}
+
+const searchStores = async () => { await loadOptions() }
+const searchProducts = async () => { await loadOptions() }
+
 const resetForm = () => {
   form.couponCode = ''
   form.storeId = 0
   form.productId = undefined
+  selectedProductId.value = 0
   form.operatorName = ''
   form.deviceCode = ''
   result.value = null
@@ -156,25 +192,40 @@ const resetForm = () => {
 const fillDemo = () => {
   form.couponCode = form.couponCode || 'TEST-COUPON-CODE'
   form.storeId = form.storeId || 1
-  form.productId = form.productId || 1001
+  selectedProductId.value = selectedProductId.value || 0
   form.operatorName = form.operatorName || 'ERP操作员'
   form.deviceCode = form.deviceCode || 'POS-01'
   notify.info('已填充常用参数')
 }
 
 const submit = async () => {
+  if (submitting.value) return
+  submitting.value = true
   try {
     const response = await writeOffCoupon({ ...form })
     result.value = response.data
     notify.success('核销执行成功')
   } catch (error) {
     notify.error(getErrorMessage(error, '核销失败'))
+  } finally {
+    submitting.value = false
   }
 }
+
+onMounted(loadOptions)
 </script>
 
 <style scoped>
 .writeoff-form-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.writeoff-form-grid select,
+.writeoff-form-grid input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: #fff;
 }
 </style>

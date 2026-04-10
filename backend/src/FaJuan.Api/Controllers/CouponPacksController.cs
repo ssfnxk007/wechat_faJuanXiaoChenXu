@@ -1,4 +1,5 @@
-﻿using FaJuan.Api.Application.Common.Models;
+using FaJuan.Api.Application.Common;
+using FaJuan.Api.Application.Common.Models;
 using FaJuan.Api.Contracts;
 using FaJuan.Api.Domain.Entities;
 using FaJuan.Api.Domain.Enums;
@@ -25,13 +26,12 @@ public class CouponPacksController(AppDbContext dbContext) : ApiControllerBase
         }
 
         var totalCount = await query.CountAsync();
-        var items = await query.OrderByDescending(x => x.Id)
-            .Skip((pageIndex - 1) * pageSize)
-            .Take(pageSize)
+        var items = await query.ApplyLegacyPaging(pageIndex, pageSize, x => x.Id)
             .Select(x => new CouponPackListItemDto
             {
                 Id = x.Id,
                 Name = x.Name,
+                ImageAssetId = x.ImageAssetId,
                 SalePrice = x.SalePrice,
                 Status = (int)x.Status,
                 PerUserLimit = x.PerUserLimit,
@@ -41,6 +41,28 @@ public class CouponPacksController(AppDbContext dbContext) : ApiControllerBase
                 CreatedAt = x.CreatedAt,
             })
             .ToListAsync();
+
+        var assetIds = items.Where(x => x.ImageAssetId.HasValue).Select(x => x.ImageAssetId!.Value).Distinct().ToArray();
+        var assetMap = assetIds.Length == 0
+            ? new Dictionary<long, string>()
+            : await dbContext.MediaAssets.AsNoTracking()
+                .Where(x => assetIds.Contains(x.Id))
+                .ToDictionaryAsync(x => x.Id, x => x.FileUrl);
+
+        items = items.Select(x => new CouponPackListItemDto
+        {
+            Id = x.Id,
+            Name = x.Name,
+            ImageAssetId = x.ImageAssetId,
+            ImageUrl = x.ImageAssetId.HasValue && assetMap.TryGetValue(x.ImageAssetId.Value, out var imageUrl) ? imageUrl : null,
+            SalePrice = x.SalePrice,
+            Status = x.Status,
+            PerUserLimit = x.PerUserLimit,
+            SaleStartTime = x.SaleStartTime,
+            SaleEndTime = x.SaleEndTime,
+            Remark = x.Remark,
+            CreatedAt = x.CreatedAt,
+        }).ToList();
 
         return Ok(Success(new PagedResult<CouponPackListItemDto>
         {
@@ -65,6 +87,7 @@ public class CouponPacksController(AppDbContext dbContext) : ApiControllerBase
         var entity = new CouponPack
         {
             Name = request.Name.Trim(),
+            ImageAssetId = request.ImageAssetId,
             SalePrice = request.SalePrice,
             Status = (CouponPackStatus)request.Status,
             PerUserLimit = request.PerUserLimit,
@@ -95,6 +118,7 @@ public class CouponPacksController(AppDbContext dbContext) : ApiControllerBase
         }
 
         entity.Name = request.Name.Trim();
+        entity.ImageAssetId = request.ImageAssetId;
         entity.SalePrice = request.SalePrice;
         entity.Status = (CouponPackStatus)request.Status;
         entity.PerUserLimit = request.PerUserLimit;

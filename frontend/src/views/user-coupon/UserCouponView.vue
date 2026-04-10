@@ -60,7 +60,7 @@
         <div class="toolbar-title">
           <span class="section-kicker">检索与动作</span>
           <h3>用户券查询台</h3>
-          <p class="section-tip">按用户 ID 或券码快速定位记录，并在同一入口完成发券动作与结果核对。</p>
+          <p class="section-tip">按用户或券码快速定位记录，并在同一入口完成发券动作与结果核对。</p>
         </div>
         <div class="toolbar-actions">
           <button type="button" class="ghost-button" @click="loadData">刷新列表</button>
@@ -71,8 +71,11 @@
 
       <div class="filter-panel-grid user-coupon-filter-grid">
         <label class="field-card filter-field compact-field">
-          <span class="field-label">用户 ID</span>
-          <input v-model.number="query.userId" type="number" min="1" placeholder="输入用户 ID" @keyup.enter="handleSearch" />
+          <span class="field-label">用户</span>
+          <select v-model.number="query.userId" @change="handleSearch">
+            <option :value="0">全部用户</option>
+            <option v-for="user in userOptions" :key="user.id" :value="user.id">{{ formatUserLabel(user) }}</option>
+          </select>
         </label>
         <label class="field-card filter-field">
           <span class="field-label">券码</span>
@@ -204,23 +207,42 @@
           <div class="dialog-head-main">
             <span class="section-kicker">人工发券</span>
             <h3>手动发券</h3>
-            <p>输入券模板 ID 与用户 ID 列表，系统将按每用户数量进行批量发放。</p>
+            <p>选择券模板与目标用户，系统将按每用户数量进行批量发放。</p>
           </div>
         </div>
 
         <div class="grid-form dialog-form user-coupon-form-grid">
           <label>
-            <span>券模板 ID</span>
-            <input v-model.number="grantForm.couponTemplateId" type="number" min="1" placeholder="例如：3" />
+            <span>券模板</span>
+            <RemoteSelectField v-model="grantForm.couponTemplateId" v-model:keyword="selectorQuery.templateKeyword" placeholder="输入模板名称后搜索" empty-label="请选择券模板" :options="couponTemplateSelectOptions" @search="searchTemplates" />
           </label>
           <label>
             <span>每用户发放张数</span>
             <input v-model.number="grantForm.quantityPerUser" type="number" min="1" step="1" />
           </label>
           <label class="field-span-2">
-            <span>用户 ID 列表</span>
-            <textarea v-model.trim="grantForm.appUserIdsText" rows="6" placeholder="多个用户 ID 可用逗号、空格或换行分隔"></textarea>
+            <span>用户检索</span>
+            <div class="search-inline"><input v-model.trim="grantUserKeyword" type="text" placeholder="按手机号、昵称、OpenId 搜索用户" @keyup.enter="searchUsers" /><button type="button" class="ghost-button" @click="searchUsers">搜索</button></div>
           </label>
+          <div class="field-span-2 selector-field-card">
+            <div class="selector-field-head">
+              <span>选择发券用户</span>
+              <strong>已选 {{ selectedGrantUserIds.length }} 人</strong>
+            </div>
+            <div v-if="filteredGrantUserOptions.length > 0" class="selection-grid user-selection-grid">
+              <button
+                v-for="user in filteredGrantUserOptions"
+                :key="user.id"
+                type="button"
+                :class="['selection-card', { active: selectedGrantUserIds.includes(user.id) }]"
+                @click="toggleGrantUser(user.id)"
+              >
+                <strong>{{ formatUserLabel(user) }}</strong>
+                <span>{{ user.miniOpenId || '未绑定小程序 OpenId' }}</span>
+              </button>
+            </div>
+            <div v-else class="empty-text">没有匹配的用户</div>
+          </div>
         </div>
 
         <div v-if="grantResult" class="result-board">
@@ -239,8 +261,8 @@
         </div>
 
         <div class="dialog-actions">
-          <button type="button" class="ghost-button" @click="closeGrantDialog">关闭</button>
-          <button type="button" class="primary-button" @click="submitGrant">确认发券</button>
+          <button type="button" class="ghost-button" :disabled="grantSubmitting" @click="closeGrantDialog">关闭</button>
+          <button type="button" class="primary-button" :disabled="grantSubmitting" @click="submitGrant">{{ grantSubmitting ? '发券中...' : '确认发券' }}</button>
         </div>
       </div>
     </div>
@@ -258,10 +280,8 @@
 
         <div class="grid-form dialog-form user-coupon-form-grid">
           <label>
-            <span>券模板 ID</span>
-            <input v-model.number="importForm.couponTemplateId" type="number" min="1" placeholder="例如：3" />
-          </label>
-          <label>
+            <span>券模板</span>
+            <RemoteSelectField v-model="importForm.couponTemplateId" v-model:keyword="selectorQuery.templateKeyword" placeholder="输入模板名称后搜索" empty-label="请选择券模板" :options="couponTemplateSelectOptions" @search="searchTemplates" />
             <span>每用户发放张数</span>
             <input v-model.number="importForm.quantityPerUser" type="number" min="1" step="1" />
           </label>
@@ -309,8 +329,8 @@
         </div>
 
         <div class="dialog-actions">
-          <button type="button" class="ghost-button" @click="closeImportDialog">关闭</button>
-          <button type="button" class="primary-button" @click="submitImport">开始导入</button>
+          <button type="button" class="ghost-button" :disabled="importSubmitting" @click="closeImportDialog">关闭</button>
+          <button type="button" class="primary-button" :disabled="importSubmitting" @click="submitImport">{{ importSubmitting ? '导入中...' : '开始导入' }}</button>
         </div>
       </div>
     </div>
@@ -480,6 +500,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import QRCode from 'qrcode'
+import RemoteSelectField from '@/components/RemoteSelectField.vue'
 import {
   getUserCouponDetail,
   getUserCouponList,
@@ -487,6 +508,10 @@ import {
   importGrantUserCoupons,
   manualGrantUserCoupons,
 } from '@/api/user-coupon'
+import { getCouponTemplateList } from '@/api/coupon-template'
+import { getUserList } from '@/api/user'
+import type { CouponTemplateListItemDto } from '@/types/coupon'
+import type { UserListItemDto } from '@/types/user'
 import type {
   CouponWriteOffRecordDto,
   ImportGrantUserCouponsResultDto,
@@ -516,16 +541,22 @@ const grantResult = ref<ManualGrantUserCouponsResultDto | null>(null)
 const importResult = ref<ImportGrantUserCouponsResultDto | null>(null)
 const importFile = ref<File | null>(null)
 const qrCodeDataUrl = ref('')
+const couponTemplateOptions = ref<CouponTemplateListItemDto[]>([])
+const userOptions = ref<UserListItemDto[]>([])
+const grantUserKeyword = ref('')
+const selectedGrantUserIds = ref<number[]>([])
+const selectorQuery = reactive({ templateKeyword: '' })
+const grantSubmitting = ref(false)
+const importSubmitting = ref(false)
 
 const query = reactive({
-  userId: undefined as number | undefined,
+  userId: 0,
   couponCode: '',
 })
 
 const grantForm = reactive({
   couponTemplateId: 0,
   quantityPerUser: 1,
-  appUserIdsText: '',
 })
 
 const importForm = reactive({
@@ -564,11 +595,22 @@ const canGrant = authStorage.hasPermission('user-coupon.grant')
 const unusedCount = computed(() => items.value.filter((item) => item.status === 1).length)
 const usedCount = computed(() => items.value.filter((item) => item.status === 2).length)
 const expiredCount = computed(() => items.value.filter((item) => item.status === 3 || item.status === 4).length)
+const couponTemplateSelectOptions = computed(() => couponTemplateOptions.value.map((template) => ({ value: template.id, label: formatTemplateLabel(template) })))
 
 const querySummary = computed(() => {
-  const user = query.userId ? `用户 #${query.userId}` : '全部用户'
+  const user = query.userId ? formatUserLabel(userOptions.value.find((item) => item.id === query.userId) || { id: query.userId, miniOpenId: '', createdAt: '' }) : '全部用户'
   const code = query.couponCode ? `券码 ${query.couponCode}` : '全部券码'
   return `${user} / ${code} / 每页 ${pageSize.value} 条`
+})
+
+const filteredGrantUserOptions = computed(() => {
+  const keyword = grantUserKeyword.value.trim().toLowerCase()
+  if (!keyword) return userOptions.value.slice(0, 24)
+
+  return userOptions.value.filter((item) => {
+    const text = [item.mobile, item.nickname, item.miniOpenId, String(item.id)].filter(Boolean).join(' ').toLowerCase()
+    return text.includes(keyword)
+  }).slice(0, 48)
 })
 
 const lastGrantSummary = computed(() => {
@@ -583,21 +625,32 @@ const lastImportSummary = computed(() => {
 
 const formatDate = (value?: string) => (value ? value.replace('T', ' ').slice(0, 19) : '-')
 const formatMoney = (value?: number) => (typeof value === 'number' ? `¥${value.toFixed(2)}` : '-')
+const formatUserLabel = (user: Pick<UserListItemDto, 'id' | 'miniOpenId' | 'mobile' | 'nickname'>) => user.mobile ? `${user.mobile} / 用户 #${user.id}` : (user.nickname?.trim() || user.miniOpenId || `用户 #${user.id}`)
+const formatTemplateLabel = (template: CouponTemplateListItemDto) => `${template.name} / ${templateTypeMap[template.templateType] || '券模板'}`
 
-const parseAppUserIds = (text: string) =>
-  Array.from(
-    new Set(
-      text
-        .split(/[\s,]+/)
-        .map((item) => Number(item.trim()))
-        .filter((item) => Number.isInteger(item) && item > 0),
-    ),
-  )
+const toggleGrantUser = (userId: number) => {
+  selectedGrantUserIds.value = selectedGrantUserIds.value.includes(userId)
+    ? selectedGrantUserIds.value.filter((item) => item !== userId)
+    : [...selectedGrantUserIds.value, userId]
+}
+
+const loadCouponTemplateOptions = async () => {
+  const response = await getCouponTemplateList({ keyword: selectorQuery.templateKeyword || undefined, pageIndex: 1, pageSize: 50 })
+  couponTemplateOptions.value = response.data.items
+}
+
+const loadUserOptions = async () => {
+  const response = await getUserList({ keyword: grantUserKeyword.value || undefined, pageIndex: 1, pageSize: 50 })
+  userOptions.value = response.data.items
+}
+
+const searchTemplates = async () => { await loadCouponTemplateOptions() }
+const searchUsers = async () => { await loadUserOptions() }
 
 const loadData = async () => {
   try {
     const response = await getUserCouponList({
-      userId: query.userId,
+      userId: query.userId || undefined,
       couponCode: query.couponCode || undefined,
       pageIndex: pageIndex.value,
       pageSize: pageSize.value,
@@ -644,7 +697,8 @@ const closeGrantDialog = () => {
   grantResult.value = null
   grantForm.couponTemplateId = 0
   grantForm.quantityPerUser = 1
-  grantForm.appUserIdsText = ''
+  grantUserKeyword.value = ''
+  selectedGrantUserIds.value = []
 }
 
 const openImportDialog = () => {
@@ -677,10 +731,10 @@ const downloadImportTemplate = () => {
 }
 
 const submitGrant = async () => {
-  const appUserIds = parseAppUserIds(grantForm.appUserIdsText)
+  const appUserIds = selectedGrantUserIds.value
 
   if (grantForm.couponTemplateId <= 0) {
-    notify.info('请输入券模板 ID')
+    notify.info('请选择券模板')
     return
   }
 
@@ -690,9 +744,12 @@ const submitGrant = async () => {
   }
 
   if (appUserIds.length === 0) {
-    notify.info('请至少输入一个用户 ID')
+    notify.info('请至少选择一个用户')
     return
   }
+
+  if (grantSubmitting.value) return
+  grantSubmitting.value = true
 
   try {
     const response = await manualGrantUserCoupons({
@@ -705,12 +762,14 @@ const submitGrant = async () => {
     await loadData()
   } catch (error) {
     notify.error(getErrorMessage(error, '手动发券失败'))
+  } finally {
+    grantSubmitting.value = false
   }
 }
 
 const submitImport = async () => {
   if (importForm.couponTemplateId <= 0) {
-    notify.info('请输入券模板 ID')
+    notify.info('请选择券模板')
     return
   }
 
@@ -724,6 +783,9 @@ const submitImport = async () => {
     return
   }
 
+  if (importSubmitting.value) return
+  importSubmitting.value = true
+
   try {
     const response = await importGrantUserCoupons(importFile.value, importForm.couponTemplateId, importForm.quantityPerUser)
     importResult.value = response.data
@@ -731,6 +793,8 @@ const submitImport = async () => {
     await loadData()
   } catch (error) {
     notify.error(getErrorMessage(error, '导入发券失败'))
+  } finally {
+    importSubmitting.value = false
   }
 }
 
@@ -784,7 +848,15 @@ const copyCouponCode = async (couponCode: string) => {
   }
 }
 
-onMounted(loadData)
+onMounted(async () => {
+  try {
+    await Promise.all([loadCouponTemplateOptions(), loadUserOptions()])
+  } catch (error) {
+    notify.error(getErrorMessage(error, '加载发券选项失败'))
+  }
+
+  await loadData()
+})
 </script>
 
 <style scoped>
@@ -956,6 +1028,66 @@ onMounted(loadData)
   padding: 0 14px;
 }
 
+.search-inline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.selector-field-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(226, 232, 240, 0.96);
+  background: linear-gradient(180deg, #fff 0%, #fbfdff 100%);
+}
+
+.selector-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.selector-field-head span,
+.selector-field-head strong {
+  color: #344054;
+}
+
+.selection-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.selection-card {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.96);
+  background: #fff;
+  text-align: left;
+  transition: all 0.18s ease;
+}
+
+.selection-card strong,
+.selection-card span {
+  margin: 0;
+}
+
+.selection-card span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.selection-card.active {
+  border-color: rgba(37, 99, 235, 0.5);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+  background: linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%);
+}
+
 .file-field input {
   height: auto;
   padding: 10px 12px;
@@ -1080,6 +1212,7 @@ onMounted(loadData)
   .operation-grid,
   .detail-grid,
   .result-board-list,
+  .selection-grid,
   .user-coupon-filter-grid,
   .hero-side-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1090,6 +1223,7 @@ onMounted(loadData)
   .operation-grid,
   .detail-grid,
   .result-board-list,
+  .selection-grid,
   .user-coupon-filter-grid,
   .user-coupon-form-grid,
   .import-result-grid,

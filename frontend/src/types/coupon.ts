@@ -1,6 +1,8 @@
 export interface CouponTemplateListItemDto {
   id: number
   name: string
+  imageAssetId?: number
+  imageUrl?: string
   templateType: number
   validPeriodType: number
   discountAmount?: number
@@ -19,6 +21,7 @@ export interface CouponTemplateListItemDto {
 
 export interface SaveCouponTemplateRequest {
   name: string
+  imageAssetId?: number
   templateType: number
   validPeriodType: number
   discountAmount?: number

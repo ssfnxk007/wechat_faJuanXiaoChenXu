@@ -146,8 +146,8 @@
         </div>
 
         <div class="dialog-actions">
-          <button type="button" class="ghost-button" @click="closeDialog">取消</button>
-          <button v-if="editingId ? canEdit : canCreate" type="button" @click="submit">{{ editingId ? '保存修改' : '保存新增' }}</button>
+          <button type="button" class="ghost-button" :disabled="submitting || deleting" @click="closeDialog">取消</button>
+          <button v-if="editingId ? canEdit : canCreate" type="button" :disabled="submitting || deleting" @click="submit">{{ submitting ? '提交中...' : (editingId ? '保存修改' : '保存新增') }}</button>
         </div>
       </div>
     </div>
@@ -169,6 +169,8 @@ const totalPages = ref(1)
 const pageSize = ref(10)
 const dialogVisible = ref(false)
 const editingId = ref<number | null>(null)
+const submitting = ref(false)
+const deleting = ref(false)
 
 const query = reactive({
   keyword: '',
@@ -284,6 +286,8 @@ const buildPayload = (): SaveCouponPackRequest => ({
 })
 
 const submit = async () => {
+  if (submitting.value) return
+  submitting.value = true
   try {
     const payload = buildPayload()
 
@@ -300,6 +304,8 @@ const submit = async () => {
     await loadData()
   } catch (error) {
     notify.error(getErrorMessage(error, editingId.value ? '券包修改失败' : '券包创建失败'))
+  } finally {
+    submitting.value = false
   }
 }
 
@@ -307,6 +313,9 @@ const removeItem = async (item: CouponPackListItemDto) => {
   if (!window.confirm(`确认删除券包“${item.name}”吗？`)) {
     return
   }
+
+  if (deleting.value) return
+  deleting.value = true
 
   if (items.value.length === 1 && pageIndex.value > 1) {
     pageIndex.value -= 1
@@ -318,6 +327,8 @@ const removeItem = async (item: CouponPackListItemDto) => {
     notify.success('券包删除成功')
   } catch (error) {
     notify.error(getErrorMessage(error, '券包删除失败'))
+  } finally {
+    deleting.value = false
   }
 }
 

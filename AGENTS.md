@@ -216,6 +216,12 @@
 - Any PowerShell-generated markdown, SQL, Vue, TypeScript, C#, or config file must be reviewed for garbled text before hand-off.
 - Prefer `apply_patch` for file edits. Do not use PowerShell direct-write editing for normal code/doc changes unless there is no safe alternative.
 - If a file can be updated with `apply_patch`, that path is mandatory over PowerShell text replacement.
+- This machine has confirmed history of `powershell.exe 5.1` opening with a non-UTF-8 pipeline by default; do not assume PowerShell is safe for Chinese text just because Windows Terminal or PowerShell 7 is installed.
+- Preferred tool order for Chinese-text-safe edits is: `apply_patch` > `python` > `pwsh` > `powershell.exe`.
+- If you must use PowerShell for file I/O, prefer `pwsh` first. Treat `powershell.exe 5.1` as compatibility-only and high risk for Chinese text workflows.
+- Before trusting a PowerShell session for Chinese output or file writes, verify all three are `utf-8`: `[Console]::InputEncoding`, `[Console]::OutputEncoding`, and `$OutputEncoding`.
+- On this machine, the UTF-8 bootstrap profile has already been installed for both `WindowsPowerShell` and `PowerShell 7`; if encoding looks wrong again, open a fresh shell session before doing any repair.
+- Do not try to solve this by uninstalling `PowerShell 5.1`; that may break system scripts and does not guarantee Codex will switch shells.
 
 ## Error Memory Rule
 - Repeated pitfalls and root-cause findings must be recorded in `Docs/Error.md`.

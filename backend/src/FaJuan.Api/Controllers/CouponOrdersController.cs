@@ -1,4 +1,5 @@
-﻿using FaJuan.Api.Application.Common.Models;
+using FaJuan.Api.Application.Common;
+using FaJuan.Api.Application.Common.Models;
 using FaJuan.Api.Contracts;
 using FaJuan.Api.Domain.Entities;
 using FaJuan.Api.Domain.Enums;
@@ -15,13 +16,18 @@ namespace FaJuan.Api.Controllers;
 public class CouponOrdersController(AppDbContext dbContext) : ApiControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<ApiResponse<PagedResult<CouponOrderListItemDto>>>> GetList([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
+    public async Task<ActionResult<ApiResponse<PagedResult<CouponOrderListItemDto>>>> GetList([FromQuery] string? keyword, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
     {
         var query = dbContext.CouponOrders.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            var normalizedKeyword = keyword.Trim();
+            query = query.Where(x => x.OrderNo.Contains(normalizedKeyword));
+        }
+
         var totalCount = await query.CountAsync();
-        var items = await query.OrderByDescending(x => x.Id)
-            .Skip((pageIndex - 1) * pageSize)
-            .Take(pageSize)
+        var items = await query.ApplyLegacyPaging(pageIndex, pageSize, x => x.Id)
             .Select(x => new CouponOrderListItemDto
             {
                 Id = x.Id,

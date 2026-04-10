@@ -1,3 +1,4 @@
+using FaJuan.Api.Application.Common;
 using FaJuan.Api.Application.Common.Models;
 using FaJuan.Api.Contracts;
 using FaJuan.Api.Domain.Entities;
@@ -24,9 +25,7 @@ public class AdminUsersController(AppDbContext dbContext, PasswordHashService pa
         }
 
         var totalCount = await query.CountAsync();
-        var items = await query.OrderByDescending(x => x.Id)
-            .Skip((pageIndex - 1) * pageSize)
-            .Take(pageSize)
+        var items = await query.ApplyLegacyPaging(pageIndex, pageSize, x => x.Id)
             .Select(x => new AdminUserListItemDto
             {
                 Id = x.Id,

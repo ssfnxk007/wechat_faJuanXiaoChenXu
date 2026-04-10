@@ -6,6 +6,7 @@ public class CouponTemplate
 {
     public long Id { get; set; }
     public string Name { get; set; } = string.Empty;
+    public long? ImageAssetId { get; set; }
     public CouponTemplateType TemplateType { get; set; }
     public CouponValidPeriodType ValidPeriodType { get; set; }
     public decimal? DiscountAmount { get; set; }

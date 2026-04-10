@@ -1,6 +1,8 @@
 export interface CouponPackListItemDto {
   id: number
   name: string
+  imageAssetId?: number
+  imageUrl?: string
   salePrice: number
   status: number
   perUserLimit: number
@@ -12,6 +14,7 @@ export interface CouponPackListItemDto {
 
 export interface SaveCouponPackRequest {
   name: string
+  imageAssetId?: number
   salePrice: number
   status: number
   perUserLimit: number

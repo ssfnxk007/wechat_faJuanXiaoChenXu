@@ -10,6 +10,7 @@ export interface CouponPackListQuery {
 }
 
 export interface CouponOrderListQuery {
+  keyword?: string
   pageIndex?: number
   pageSize?: number
 }
