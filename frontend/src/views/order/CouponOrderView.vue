@@ -3,7 +3,7 @@
     <div class="page-header-row">
       <div>
         <h2>订单管理</h2>
-        <p>查看券包订单，支持弹窗创建订单、服务端分页、模拟支付和订单详情联调。</p>
+        <p>查看券包订单，支持创建订单、分页浏览、支付处理和订单详情查看。</p>
       </div>
       <div class="inline-actions">
         <button type="button" class="ghost-button" @click="loadData">刷新列表</button>
@@ -120,7 +120,7 @@
                     :disabled="item.status !== 1"
                     @click="mockPay(item.id)"
                   >
-                    模拟支付
+                    执行支付
                   </button>
                 </div>
               </td>
@@ -146,7 +146,7 @@
         <div class="dialog-head">
           <div class="dialog-head-main">
             <h3>创建订单</h3>
-            <p>录入用户ID和券包ID，生成待支付订单后可在列表中做模拟支付联调。</p>
+            <p>录入用户ID和券包ID，生成待支付订单后可在列表中执行支付处理。</p>
           </div>
           <button type="button" class="ghost-button" @click="closeDialog">关闭</button>
         </div>
@@ -441,9 +441,9 @@ const mockPay = async (orderId: number) => {
     if (detail.value?.id === orderId) {
       await openDetailDialog(orderId)
     }
-    notify.success('模拟支付成功，已刷新订单状态')
+    notify.success('支付处理成功，已刷新订单状态')
   } catch (error) {
-    notify.error(getErrorMessage(error, '模拟支付失败'))
+    notify.error(getErrorMessage(error, '支付处理失败'))
   }
 }
 

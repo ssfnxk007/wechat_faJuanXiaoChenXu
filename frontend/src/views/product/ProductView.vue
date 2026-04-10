@@ -1,9 +1,9 @@
 <template>
-  <div class="business-page">
+  <div class="business-page product-page">
     <div class="page-header-row">
       <div>
         <h2>商品管理</h2>
-        <p>维护 ERP 商品编码与售价信息，支持弹窗编辑、删除和服务端分页。</p>
+        <p>维护 ERP 商品映射、售价信息与指定商品券的基础商品数据。</p>
       </div>
       <div class="inline-actions">
         <button type="button" class="ghost-button" @click="loadData">刷新列表</button>
@@ -29,8 +29,8 @@
       </article>
       <article class="stat-card">
         <span class="label">均价</span>
-        <strong class="stat-value">{{ averagePrice }}</strong>
-        <span class="stat-footnote">当前页商品售价平均值</span>
+        <strong class="stat-value">{{ averagePriceDisplay }}</strong>
+        <span class="stat-footnote">当前页有售价商品的平均值</span>
       </article>
     </div>
 
@@ -38,14 +38,15 @@
       <div class="toolbar-row">
         <div class="toolbar-title">
           <h3>筛选与统计</h3>
-          <p class="section-tip">按商品名称或 ERP 编码查询，统一第四轮编辑与删除操作。</p>
+          <p class="section-tip">支持按商品名称或 ERP 编码查询，并统一分页浏览。</p>
         </div>
         <div class="summary-inline">
-          <span class="badge info">总数 {{ totalCount }}</span>
+          <span class="badge info">关键词查询</span>
           <span class="badge success">第 {{ pageIndex }} / {{ totalPages }} 页</span>
         </div>
       </div>
-      <div class="filter-grid">
+
+      <div class="filter-grid filter-grid-product">
         <input v-model.trim="query.keyword" type="text" placeholder="搜索商品名称或 ERP 编码" @keyup.enter="handleSearch" />
         <select v-model.number="pageSize" @change="handlePageSizeChange">
           <option :value="10">每页 10 条</option>
@@ -60,14 +61,14 @@
       </div>
     </div>
 
-    <div class="card">
+    <div class="card table-card">
       <div class="section-head">
         <div class="section-head-main">
           <h3>商品列表</h3>
-          <p class="section-tip">支持弹窗维护商品信息和 ERP 编码，删除后保持分页体验一致。</p>
+          <p class="section-tip">统一维护商品资料，供券模板配置和业务核销使用。</p>
         </div>
         <div class="inline-metrics">
-          <span class="badge info">当前页 {{ items.length }}</span>
+          <span class="badge info">总数 {{ totalCount }}</span>
           <span class="badge warning">每页 {{ pageSize }}</span>
         </div>
       </div>
@@ -90,7 +91,7 @@
               <td class="cell-strong">{{ item.id }}</td>
               <td>{{ item.name }}</td>
               <td class="cell-mono">{{ item.erpProductCode }}</td>
-              <td>{{ formatAmount(item.salePrice) }}</td>
+              <td>{{ formatPrice(item.salePrice) }}</td>
               <td>
                 <span :class="['status-badge', item.isEnabled ? 'success' : 'danger']">
                   {{ item.isEnabled ? '启用' : '停用' }}
@@ -105,7 +106,7 @@
               </td>
             </tr>
             <tr v-if="items.length === 0">
-              <td colspan="7" class="empty-text">暂无数据</td>
+              <td colspan="7" class="empty-text">暂无商品数据</td>
             </tr>
           </tbody>
         </table>
@@ -121,11 +122,11 @@
     </div>
 
     <div v-if="dialogVisible" class="dialog-mask" @click.self="closeDialog">
-      <div class="dialog-card">
+      <div class="dialog-card product-dialog-card">
         <div class="dialog-head">
           <div class="dialog-head-main">
             <h3>{{ editingId ? '编辑商品' : '新增商品' }}</h3>
-            <p>{{ editingId ? '修改商品资料并同步列表。' : '录入新商品资料并保存。' }}</p>
+            <p>{{ editingId ? '更新商品基础资料并同步列表展示。' : '录入商品基础资料，供运营配置与核销链路使用。' }}</p>
           </div>
           <button type="button" class="ghost-button" @click="closeDialog">关闭</button>
         </div>
@@ -181,19 +182,20 @@ const form = reactive<SaveProductRequest>(createEmptyForm())
 const canCreate = authStorage.hasPermission('product.create')
 const canEdit = authStorage.hasPermission('product.edit')
 const canDelete = authStorage.hasPermission('product.delete')
+
 const enabledCount = computed(() => items.value.filter((item) => item.isEnabled).length)
 const averagePrice = computed(() => {
-  const validPrices = items.value
+  const values = items.value
     .map((item) => Number(item.salePrice || 0))
     .filter((value) => value > 0)
 
-  if (validPrices.length === 0) {
-    return '-'
+  if (values.length === 0) {
+    return null
   }
 
-  const total = validPrices.reduce((sum, value) => sum + value, 0)
-  return total / validPrices.length
+  return values.reduce((sum, value) => sum + value, 0) / values.length
 })
+const averagePriceDisplay = computed(() => (averagePrice.value === null ? '-' : `¥${averagePrice.value.toFixed(2)}`))
 const querySummary = computed(() => `关键词：${query.keyword || '全部'} / 每页：${pageSize.value}`)
 
 const resetForm = () => {
@@ -236,17 +238,13 @@ const handlePageSizeChange = async () => {
 }
 
 const goPrevPage = async () => {
-  if (pageIndex.value <= 1) {
-    return
-  }
+  if (pageIndex.value <= 1) return
   pageIndex.value -= 1
   await loadData()
 }
 
 const goNextPage = async () => {
-  if (pageIndex.value >= totalPages.value) {
-    return
-  }
+  if (pageIndex.value >= totalPages.value) return
   pageIndex.value += 1
   await loadData()
 }
@@ -310,13 +308,21 @@ const removeItem = async (item: ProductListItemDto) => {
   }
 }
 
-const formatAmount = (value?: number) => (value ? value.toFixed(2) : '-')
 const formatDate = (value?: string) => (value ? value.replace('T', ' ').slice(0, 19) : '-')
+const formatPrice = (value?: number) => (value !== undefined ? `¥${value.toFixed(2)}` : '-')
 
 onMounted(loadData)
 </script>
 
 <style scoped>
+.filter-grid-product {
+  grid-template-columns: minmax(260px, 1.4fr) 220px minmax(280px, 1fr) auto;
+}
+
+.product-dialog-card {
+  max-width: 760px;
+}
+
 .dialog-form {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

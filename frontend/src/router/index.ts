@@ -20,7 +20,7 @@ import { authStorage } from '@/utils.auth'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/login', name: 'login', component: LoginView, meta: { title: '后台登录', subtitle: '登录后进入发券后台管理系统' } },
+    { path: '/login', name: 'login', component: LoginView, meta: { title: '后台登录', subtitle: '登录后进入发券运营管理系统' } },
     {
       path: '/',
       component: AdminLayout,
@@ -32,9 +32,9 @@ const router = createRouter({
         { path: 'coupon-templates', name: 'couponTemplates', component: CouponTemplateView, meta: { title: '券模板管理', subtitle: '配置新人券、无门槛券、商品券、满减券规则' } },
         { path: 'coupon-packs', name: 'couponPacks', component: CouponPackView, meta: { title: '券包管理', subtitle: '配置可售卖券包与价格、限购规则' } },
         { path: 'coupon-pack-items', name: 'couponPackItems', component: CouponPackItemView, meta: { title: '券包明细', subtitle: '维护券包内包含的券模板与数量' } },
-        { path: 'coupon-orders', name: 'couponOrders', component: CouponOrderView, meta: { title: '订单管理', subtitle: '查看券包订单并联调支付与发券流程' } },
+        { path: 'coupon-orders', name: 'couponOrders', component: CouponOrderView, meta: { title: '订单管理', subtitle: '查看券包订单与支付发券流程' } },
         { path: 'user-coupons', name: 'userCoupons', component: UserCouponView, meta: { title: '用户券', subtitle: '查看发券结果、券码与有效期状态' } },
-        { path: 'writeoff', name: 'writeOff', component: WriteOffView, meta: { title: '核销中心', subtitle: '模拟 ERP 扫码核销与门店使用场景' } },
+        { path: 'writeoff', name: 'writeOff', component: WriteOffView, meta: { title: '核销中心', subtitle: '处理门店核销、券码校验与使用结果确认' } },
         { path: 'admin-users', name: 'adminUsers', component: AdminUserView, meta: { title: '权限管理', subtitle: '管理后台账号、角色分配与账号状态' } },
         { path: 'admin-roles', name: 'adminRoles', component: AdminRoleView, meta: { title: '角色管理', subtitle: '维护角色和菜单授权关系' } },
         { path: 'admin-menus', name: 'adminMenus', component: AdminMenuView, meta: { title: '菜单管理', subtitle: '维护后台菜单树、路由和组件映射' } },

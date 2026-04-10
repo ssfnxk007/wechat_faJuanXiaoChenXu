@@ -10,6 +10,8 @@
 - 后台权限初始化 SQL：`database/migrations/002-admin-auth-seed.sql`
 - 按钮权限表 SQL：`database/migrations/003-admin-permission.sql`
 - 按钮权限初始化 SQL：`database/migrations/003-admin-permission-seed.sql`
+- 按钮权限 EF 迁移脚本：`database/migrations/004-ef-admin-permission.sql`
+- 券模板商品范围 EF 迁移脚本：`database/migrations/005-coupon-template-product-scope.sql`
 
 ## 建议执行顺序
 
@@ -21,6 +23,8 @@
    - `database/migrations/002-admin-auth-seed.sql`
    - `database/migrations/003-admin-permission.sql`
    - `database/migrations/003-admin-permission-seed.sql`
+   - `database/migrations/004-ef-admin-permission.sql`（如需按 EF 迁移历史收口）
+   - `database/migrations/005-coupon-template-product-scope.sql`
 4. 验证核心表是否创建成功：
    - `AppUser`
    - `Store`
@@ -41,6 +45,7 @@
    - `AdminPermission`
    - `AdminRolePermission`
 6. 后续每次实体变更后，重新生成迁移与 SQL
+7. 若需要“指定商品券”完整核销校验，必须先执行 `005-coupon-template-product-scope.sql`
 
 ## 常用命令
 
@@ -54,4 +59,5 @@
 - 后台管理员、角色、菜单、按钮权限现已全部落数据库表
 - `002-admin-auth-seed.sql` 会初始化 `admin` 管理员、`super_admin` 角色及菜单授权
 - `003-admin-permission-seed.sql` 会初始化按钮权限点，并将全部权限点授权给 `super_admin`
+- `005-coupon-template-product-scope.sql` 会新增 `CouponTemplateProductScope` 表，用于指定商品券的适用商品范围校验
 - 执行生产脚本前，建议先在测试库完整验证登录、创建订单、模拟支付、发券、核销主链路

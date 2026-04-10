@@ -1,9 +1,9 @@
 <template>
-  <div class="business-page">
+  <div class="business-page writeoff-page">
     <div class="page-header-row">
       <div>
-        <h2>核销工作台</h2>
-        <p>模拟 ERP 扫码后的核销操作台，包含输入区、结果区和流程说明。</p>
+        <h2>核销中心</h2>
+        <p>处理券码核销、门店确认、商品校验与结果回写场景。</p>
       </div>
       <div class="inline-actions">
         <button type="button" class="ghost-button" @click="resetForm">重置表单</button>
@@ -14,33 +14,30 @@
       <article class="stat-card">
         <span class="label">核销模式</span>
         <strong class="stat-value">ERP</strong>
-        <span class="stat-footnote">用户出示券码或二维码，ERP 扫码后调用接口</span>
+        <span class="stat-footnote">用户出示券码或二维码，ERP 调用接口完成核销</span>
       </article>
       <article class="stat-card">
         <span class="label">执行状态</span>
-        <strong class="stat-value">{{ result ? '已返回' : '待执行' }}</strong>
-        <span class="stat-footnote">执行后会展示核销结果和关联券信息</span>
+        <strong class="stat-value">{{ result ? '已返回' : '待处理' }}</strong>
+        <span class="stat-footnote">执行后展示核销结果和关联券信息</span>
       </article>
       <article class="stat-card">
         <span class="label">当前门店</span>
         <strong class="stat-value">{{ form.storeId || '-' }}</strong>
-        <span class="stat-footnote">用于模拟门店核销范围</span>
+        <span class="stat-footnote">用于确认本次核销所属门店</span>
       </article>
       <article class="stat-card">
-        <span class="label">当前券码</span>
-        <strong class="stat-value">{{ form.couponCode || '-' }}</strong>
-        <span class="stat-footnote">支持直接粘贴扫码得到的券码</span>
+        <span class="label">当前商品</span>
+        <strong class="stat-value">{{ form.productId || '-' }}</strong>
+        <span class="stat-footnote">指定商品券核销时携带商品编号</span>
       </article>
     </div>
 
     <div class="hero-panel">
       <div class="hero-copy">
         <div class="badge warning">核销操作台</div>
-        <h2>ERP 调用核销接口的联调入口</h2>
-        <p>
-          按照你的业务流程，ERP 扫描用户出示的二维码或券码后，调用我们的核销接口完成核销。
-          这里保留手工录入方式，方便后台联调和排查问题。
-        </p>
+        <h2>ERP 核销接口操作入口</h2>
+        <p>按照业务流程，ERP 扫描用户出示的二维码或券码后，携带门店、商品、操作人和设备信息调用核销接口完成处理。页面保留人工录入入口，便于后台核查与补录。</p>
         <div class="hero-tags">
           <span class="tag">扫码后调用接口</span>
           <span class="tag">门店维度核销</span>
@@ -51,16 +48,16 @@
 
       <div class="hero-side">
         <div class="quick-card">
-          <strong>流程说明</strong>
-          <p>1. ERP 扫码得到券码 2. 带上门店与操作人调用核销接口 3. 成功后回写 ERP。</p>
+          <strong>标准流程</strong>
+          <p>1. ERP 获取券码 2. 携带门店、商品和操作人调用核销接口 3. 成功后回写业务系统。</p>
         </div>
         <div class="quick-card">
           <strong>适用场景</strong>
-          <p>门店收银、会员服务台、促销活动现场核销。</p>
+          <p>门店收银、会员服务台、活动现场与人工补录核销场景。</p>
         </div>
         <div class="quick-card">
-          <strong>当前能力</strong>
-          <p>支持开发联调和返回核销结果，后续可继续接扫码枪与 ERP 客户端。</p>
+          <strong>结果输出</strong>
+          <p>返回用户券、券模板与业务提示，便于 ERP 保存核销日志。</p>
         </div>
       </div>
     </div>
@@ -69,24 +66,25 @@
       <div class="section-head">
         <div class="section-head-main">
           <h3>核销输入</h3>
-          <p class="section-tip">输入券码、门店、操作人和设备号后执行核销。</p>
+          <p class="section-tip">输入券码、门店、商品、操作人和设备号后执行核销。</p>
         </div>
         <div class="inline-metrics">
-          <span class="badge warning">ERP 调用接口</span>
-          <span class="badge info">扫码后核销</span>
+          <span class="badge warning">接口调用</span>
+          <span class="badge info">核销处理</span>
         </div>
       </div>
 
-      <div class="grid-form">
+      <div class="grid-form writeoff-form-grid">
         <input v-model.trim="form.couponCode" type="text" placeholder="券码" />
         <input v-model.number="form.storeId" type="number" min="0" placeholder="门店ID" />
+        <input v-model.number="form.productId" type="number" min="0" placeholder="商品ID（选填）" />
         <input v-model.trim="form.operatorName" type="text" placeholder="操作人" />
         <input v-model.trim="form.deviceCode" type="text" placeholder="设备号" />
       </div>
 
       <div class="toolbar-actions">
         <button v-if="canExecute" type="button" @click="submit">执行核销</button>
-        <button type="button" class="ghost-button" @click="fillDemo">填充示例</button>
+        <button type="button" class="ghost-button" @click="fillDemo">快速填充</button>
       </div>
     </div>
 
@@ -107,21 +105,21 @@
           <span class="badge info">模板ID：{{ result.couponTemplateId }}</span>
         </div>
       </div>
-      <div v-else class="empty-text">尚未执行核销，可先填写上方表单进行联调。</div>
+      <div v-else class="empty-text">尚未执行核销，请先填写上方表单。</div>
     </div>
 
     <div class="card toolbar-card">
       <div class="toolbar-title">
         <h3>使用说明</h3>
-        <p class="section-tip">这块保留给后台运营、实施或 ERP 对接同事查看联调方式。</p>
+        <p class="section-tip">供后台运营、实施与 ERP 对接同事查看标准调用方式。</p>
       </div>
       <div class="summary-inline">
         <span class="badge info">先扫码</span>
-        <span class="badge success">再调用接口</span>
+        <span class="badge success">再调接口</span>
         <span class="badge warning">记录门店与设备</span>
       </div>
       <div class="muted-text">
-        建议 ERP 实际接入时携带门店编号、操作人、设备号，并将返回的核销结果写回 ERP 日志，便于后续追踪。
+        建议 ERP 实际接入时携带门店编号、商品ID、操作人、设备号，并将返回的核销结果写回 ERP 日志，便于后续追踪。
       </div>
     </div>
   </div>
@@ -130,16 +128,17 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { writeOffCoupon } from '@/api/user-coupon'
-import type { CouponWriteOffResultDto } from '@/types/user-coupon'
+import type { CouponWriteOffRequest, CouponWriteOffResultDto } from '@/types/user-coupon'
 import { getErrorMessage } from '@/utils/http-error'
 import { authStorage } from '@/utils.auth'
 import { notify } from '@/utils/notify'
 
 const result = ref<CouponWriteOffResultDto | null>(null)
 const canExecute = authStorage.hasPermission('writeoff.execute')
-const form = reactive({
+const form = reactive<CouponWriteOffRequest>({
   couponCode: '',
   storeId: 0,
+  productId: undefined,
   operatorName: '',
   deviceCode: '',
 })
@@ -147,6 +146,7 @@ const form = reactive({
 const resetForm = () => {
   form.couponCode = ''
   form.storeId = 0
+  form.productId = undefined
   form.operatorName = ''
   form.deviceCode = ''
   result.value = null
@@ -156,9 +156,10 @@ const resetForm = () => {
 const fillDemo = () => {
   form.couponCode = form.couponCode || 'TEST-COUPON-CODE'
   form.storeId = form.storeId || 1
+  form.productId = form.productId || 1001
   form.operatorName = form.operatorName || 'ERP操作员'
   form.deviceCode = form.deviceCode || 'POS-01'
-  notify.info('已填充示例数据')
+  notify.info('已填充常用参数')
 }
 
 const submit = async () => {
@@ -171,3 +172,9 @@ const submit = async () => {
   }
 }
 </script>
+
+<style scoped>
+.writeoff-form-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+</style>

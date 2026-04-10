@@ -48,6 +48,36 @@ public class CouponTemplatesController(AppDbContext dbContext) : ApiControllerBa
             })
             .ToListAsync();
 
+        var templateIds = items.Select(x => x.Id).ToHashSet();
+        var scopes = items.Count == 0
+            ? new Dictionary<long, IReadOnlyCollection<long>>()
+            : (await dbContext.CouponTemplateProductScopes.AsNoTracking()
+                .GroupBy(x => x.CouponTemplateId)
+                .Select(x => new { x.Key, ProductIds = x.Select(y => y.ProductId).ToList() })
+                .ToListAsync())
+                .Where(x => templateIds.Contains(x.Key))
+                .ToDictionary(x => x.Key, x => (IReadOnlyCollection<long>)x.ProductIds);
+
+        items = items.Select(x => new CouponTemplateListItemDto
+        {
+            Id = x.Id,
+            Name = x.Name,
+            TemplateType = x.TemplateType,
+            ValidPeriodType = x.ValidPeriodType,
+            DiscountAmount = x.DiscountAmount,
+            ThresholdAmount = x.ThresholdAmount,
+            ValidDays = x.ValidDays,
+            ValidFrom = x.ValidFrom,
+            ValidTo = x.ValidTo,
+            IsNewUserOnly = x.IsNewUserOnly,
+            IsAllStores = x.IsAllStores,
+            PerUserLimit = x.PerUserLimit,
+            IsEnabled = x.IsEnabled,
+            Remark = x.Remark,
+            ProductIds = scopes.TryGetValue(x.Id, out var productIds) ? productIds : [],
+            CreatedAt = x.CreatedAt,
+        }).ToList();
+
         return Ok(Success(new PagedResult<CouponTemplateListItemDto>
         {
             Items = items,
@@ -87,6 +117,7 @@ public class CouponTemplatesController(AppDbContext dbContext) : ApiControllerBa
 
         dbContext.CouponTemplates.Add(entity);
         await dbContext.SaveChangesAsync();
+        await SyncProductScopesAsync(entity.Id, request);
         return Ok(Success(entity.Id, "创建成功"));
     }
 
@@ -121,6 +152,7 @@ public class CouponTemplatesController(AppDbContext dbContext) : ApiControllerBa
         entity.Remark = request.Remark?.Trim();
 
         await dbContext.SaveChangesAsync();
+        await SyncProductScopesAsync(entity.Id, request);
         return Ok(Success(entity.Id, "更新成功"));
     }
 
@@ -134,9 +166,39 @@ public class CouponTemplatesController(AppDbContext dbContext) : ApiControllerBa
             return NotFound(Failure<bool>("券模板不存在"));
         }
 
+        var scopes = await dbContext.CouponTemplateProductScopes.Where(x => x.CouponTemplateId == id).ToListAsync();
+        if (scopes.Count > 0)
+        {
+            dbContext.CouponTemplateProductScopes.RemoveRange(scopes);
+        }
+
         dbContext.CouponTemplates.Remove(entity);
         await dbContext.SaveChangesAsync();
         return Ok(Success(true, "删除成功"));
+    }
+
+    private async Task SyncProductScopesAsync(long couponTemplateId, SaveCouponTemplateRequest request)
+    {
+        var oldScopes = await dbContext.CouponTemplateProductScopes.Where(x => x.CouponTemplateId == couponTemplateId).ToListAsync();
+        if (oldScopes.Count > 0)
+        {
+            dbContext.CouponTemplateProductScopes.RemoveRange(oldScopes);
+        }
+
+        if (request.TemplateType == CouponTemplateType.Product)
+        {
+            var productIds = request.ProductIds.Where(x => x > 0).Distinct().ToArray();
+            if (productIds.Length > 0)
+            {
+                dbContext.CouponTemplateProductScopes.AddRange(productIds.Select(productId => new CouponTemplateProductScope
+                {
+                    CouponTemplateId = couponTemplateId,
+                    ProductId = productId,
+                }));
+            }
+        }
+
+        await dbContext.SaveChangesAsync();
     }
 
     private static string? ValidateRequest(SaveCouponTemplateRequest request)
@@ -144,6 +206,11 @@ public class CouponTemplatesController(AppDbContext dbContext) : ApiControllerBa
         if (string.IsNullOrWhiteSpace(request.Name))
         {
             return "券模板名称不能为空";
+        }
+
+        if (request.TemplateType == CouponTemplateType.Product && request.ProductIds.Where(x => x > 0).Distinct().Count() == 0)
+        {
+            return "指定商品券必须至少配置一个商品";
         }
 
         if (request.ValidPeriodType == CouponValidPeriodType.FixedDateRange && (!request.ValidFrom.HasValue || !request.ValidTo.HasValue))

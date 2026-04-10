@@ -117,13 +117,18 @@ public class AdminAuthController(
         }
         else
         {
-            menuPaths = await dbContext.AdminRoleMenus.AsNoTracking()
-                .Where(x => roleIds.Contains(x.AdminRoleId))
+            menuPaths = await dbContext.AdminUserRoles.AsNoTracking()
+                .Where(x => x.AdminUserId == adminUser.Id)
+                .Join(
+                    dbContext.AdminRoleMenus.AsNoTracking(),
+                    userRole => userRole.AdminRoleId,
+                    roleMenu => roleMenu.AdminRoleId,
+                    (userRole, roleMenu) => roleMenu.AdminMenuId)
                 .Join(
                     dbContext.AdminMenus.AsNoTracking().Where(x => x.IsEnabled),
-                    roleMenu => roleMenu.AdminMenuId,
+                    menuId => menuId,
                     menu => menu.Id,
-                    (roleMenu, menu) => menu.Path)
+                    (_, menu) => menu.Path)
                 .Distinct()
                 .ToListAsync(cancellationToken);
         }
@@ -135,13 +140,18 @@ public class AdminAuthController(
         }
         else
         {
-            permissionCodes = await dbContext.AdminRolePermissions.AsNoTracking()
-                .Where(x => roleIds.Contains(x.AdminRoleId))
+            permissionCodes = await dbContext.AdminUserRoles.AsNoTracking()
+                .Where(x => x.AdminUserId == adminUser.Id)
+                .Join(
+                    dbContext.AdminRolePermissions.AsNoTracking(),
+                    userRole => userRole.AdminRoleId,
+                    rolePermission => rolePermission.AdminRoleId,
+                    (userRole, rolePermission) => rolePermission.AdminPermissionId)
                 .Join(
                     dbContext.AdminPermissions.AsNoTracking().Where(x => x.IsEnabled),
-                    rolePermission => rolePermission.AdminPermissionId,
+                    permissionId => permissionId,
                     permission => permission.Id,
-                    (rolePermission, permission) => permission.Code)
+                    (_, permission) => permission.Code)
                 .Distinct()
                 .ToListAsync(cancellationToken);
         }

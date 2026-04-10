@@ -13,6 +13,7 @@ export interface CouponTemplateListItemDto {
   perUserLimit: number
   isEnabled: boolean
   remark?: string
+  productIds?: number[]
   createdAt: string
 }
 
@@ -30,4 +31,5 @@ export interface SaveCouponTemplateRequest {
   perUserLimit: number
   isEnabled: boolean
   remark?: string
+  productIds?: number[]
 }

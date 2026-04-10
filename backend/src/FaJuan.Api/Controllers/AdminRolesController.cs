@@ -37,28 +37,33 @@ public class AdminRolesController(AppDbContext dbContext) : ApiControllerBase
             })
             .ToListAsync();
 
-        var roleIds = items.Select(x => x.Id).ToArray();
-        var userCounts = roleIds.Length == 0
+        var roleIds = items.Select(x => x.Id).ToHashSet();
+        var userCounts = items.Count == 0
             ? new Dictionary<long, int>()
-            : await dbContext.AdminUserRoles.AsNoTracking()
-                .Where(x => roleIds.Contains(x.AdminRoleId))
+            : (await dbContext.AdminUserRoles.AsNoTracking()
                 .GroupBy(x => x.AdminRoleId)
                 .Select(x => new { RoleId = x.Key, Count = x.Count() })
-                .ToDictionaryAsync(x => x.RoleId, x => x.Count);
+                .ToListAsync())
+                .Where(x => roleIds.Contains(x.RoleId))
+                .ToDictionary(x => x.RoleId, x => x.Count);
 
-        var roleMenus = roleIds.Length == 0
+        var roleMenus = items.Count == 0
             ? new List<dynamic>()
-            : await dbContext.AdminRoleMenus.AsNoTracking()
-                .Where(x => roleIds.Contains(x.AdminRoleId))
+            : (await dbContext.AdminRoleMenus.AsNoTracking()
                 .Select(x => new { x.AdminRoleId, x.AdminMenuId })
-                .ToListAsync<dynamic>();
-
-        var rolePermissions = roleIds.Length == 0
-            ? new List<dynamic>()
-            : await dbContext.AdminRolePermissions.AsNoTracking()
+                .ToListAsync())
                 .Where(x => roleIds.Contains(x.AdminRoleId))
+                .Cast<dynamic>()
+                .ToList();
+
+        var rolePermissions = items.Count == 0
+            ? new List<dynamic>()
+            : (await dbContext.AdminRolePermissions.AsNoTracking()
                 .Select(x => new { x.AdminRoleId, x.AdminPermissionId })
-                .ToListAsync<dynamic>();
+                .ToListAsync())
+                .Where(x => roleIds.Contains(x.AdminRoleId))
+                .Cast<dynamic>()
+                .ToList();
 
         foreach (var item in items)
         {
@@ -101,7 +106,8 @@ public class AdminRolesController(AppDbContext dbContext) : ApiControllerBase
         var menuIds = request.MenuIds.Distinct().ToArray();
         if (menuIds.Length > 0)
         {
-            var menuCount = await dbContext.AdminMenus.CountAsync(x => menuIds.Contains(x.Id));
+            var existingMenuIds = await dbContext.AdminMenus.AsNoTracking().Select(x => x.Id).ToListAsync();
+            var menuCount = existingMenuIds.Count(x => menuIds.Contains(x));
             if (menuCount != menuIds.Length)
             {
                 return BadRequest(Failure<long>("???????????"));
@@ -111,7 +117,8 @@ public class AdminRolesController(AppDbContext dbContext) : ApiControllerBase
         var permissionIds = request.PermissionIds.Distinct().ToArray();
         if (permissionIds.Length > 0)
         {
-            var permissionCount = await dbContext.AdminPermissions.CountAsync(x => permissionIds.Contains(x.Id));
+            var existingPermissionIds = await dbContext.AdminPermissions.AsNoTracking().Select(x => x.Id).ToListAsync();
+            var permissionCount = existingPermissionIds.Count(x => permissionIds.Contains(x));
             if (permissionCount != permissionIds.Length)
             {
                 return BadRequest(Failure<long>("????????????"));
@@ -179,7 +186,8 @@ public class AdminRolesController(AppDbContext dbContext) : ApiControllerBase
         var menuIds = request.MenuIds.Distinct().ToArray();
         if (menuIds.Length > 0)
         {
-            var menuCount = await dbContext.AdminMenus.CountAsync(x => menuIds.Contains(x.Id));
+            var existingMenuIds = await dbContext.AdminMenus.AsNoTracking().Select(x => x.Id).ToListAsync();
+            var menuCount = existingMenuIds.Count(x => menuIds.Contains(x));
             if (menuCount != menuIds.Length)
             {
                 return BadRequest(Failure<long>("???????????"));
@@ -189,7 +197,8 @@ public class AdminRolesController(AppDbContext dbContext) : ApiControllerBase
         var permissionIds = request.PermissionIds.Distinct().ToArray();
         if (permissionIds.Length > 0)
         {
-            var permissionCount = await dbContext.AdminPermissions.CountAsync(x => permissionIds.Contains(x.Id));
+            var existingPermissionIds = await dbContext.AdminPermissions.AsNoTracking().Select(x => x.Id).ToListAsync();
+            var permissionCount = existingPermissionIds.Count(x => permissionIds.Contains(x));
             if (permissionCount != permissionIds.Length)
             {
                 return BadRequest(Failure<long>("????????????"));

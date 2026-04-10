@@ -36,6 +36,7 @@ export interface UserCouponDetailDto {
 export interface CouponWriteOffRequest {
   couponCode: string
   storeId: number
+  productId?: number
   operatorName?: string
   deviceCode?: string
 }
@@ -77,5 +78,16 @@ export interface ManualGrantUserCouponsResultDto {
   couponTemplateId: number
   successCount: number
   failureCount: number
+  items: ManualGrantUserCouponItemDto[]
+}
+
+export interface ImportGrantUserCouponsResultDto {
+  couponTemplateId: number
+  quantityPerUser: number
+  totalRows: number
+  parsedUserCount: number
+  successCount: number
+  failureCount: number
+  invalidRows: string[]
   items: ManualGrantUserCouponItemDto[]
 }

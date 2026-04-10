@@ -2,7 +2,7 @@
 import { authStorage } from '@/utils.auth'
 
 const http = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://localhost:5001/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5265/api',
   timeout: 15000,
 })
 

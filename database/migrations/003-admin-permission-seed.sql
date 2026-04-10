@@ -58,6 +58,7 @@ VALUES
     (N'创建订单', 'coupon-order.create', '/coupon-orders', 10),
     (N'发起支付', 'coupon-order.pay', '/coupon-orders', 20),
 
+    (N'手动发券', 'user-coupon.grant', '/user-coupons', 10),
     (N'执行核销', 'writeoff.execute', '/writeoff', 10);
 
 INSERT INTO [dbo].[AdminPermission] ([Name], [Code], [MenuPath], [Sort], [IsEnabled], [CreatedAt])

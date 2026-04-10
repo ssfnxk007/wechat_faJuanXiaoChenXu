@@ -38,29 +38,38 @@ public class AdminMenuAuthorizeFilter(AppDbContext dbContext, IConfiguration con
             return;
         }
 
-        var roleIds = await dbContext.AdminUserRoles.AsNoTracking()
+        var hasRole = await dbContext.AdminUserRoles.AsNoTracking()
             .Where(x => x.AdminUserId == adminUser.Id)
             .Join(
                 dbContext.AdminRoles.AsNoTracking().Where(x => x.IsEnabled),
                 userRole => userRole.AdminRoleId,
                 role => role.Id,
-                (userRole, role) => role.Id)
-            .Distinct()
-            .ToListAsync();
+                (_, _) => 1)
+            .AnyAsync();
 
-        if (roleIds.Count == 0)
+        if (!hasRole)
         {
             context.Result = new ObjectResult(ApiResponse<object>.Fail("?????????", 403)) { StatusCode = 403 };
             return;
         }
 
-        var hasMenuPermission = await dbContext.AdminRoleMenus.AsNoTracking()
-            .Where(x => roleIds.Contains(x.AdminRoleId))
+        var hasMenuPermission = await dbContext.AdminUserRoles.AsNoTracking()
+            .Where(x => x.AdminUserId == adminUser.Id)
+            .Join(
+                dbContext.AdminRoles.AsNoTracking().Where(x => x.IsEnabled),
+                userRole => userRole.AdminRoleId,
+                role => role.Id,
+                (userRole, _) => userRole.AdminRoleId)
+            .Join(
+                dbContext.AdminRoleMenus.AsNoTracking(),
+                roleId => roleId,
+                roleMenu => roleMenu.AdminRoleId,
+                (_, roleMenu) => roleMenu.AdminMenuId)
             .Join(
                 dbContext.AdminMenus.AsNoTracking().Where(x => x.IsEnabled),
-                roleMenu => roleMenu.AdminMenuId,
+                menuId => menuId,
                 menu => menu.Id,
-                (roleMenu, menu) => menu.Path)
+                (_, menu) => menu.Path)
             .AnyAsync(path => path == attribute.MenuPath);
 
         if (!hasMenuPermission)

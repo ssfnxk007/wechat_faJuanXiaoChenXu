@@ -1,7 +1,7 @@
 import http from './http'
 import type { ApiResponse } from '@/types/api'
 import type { PagedResult } from '@/types/paged'
-import type { CouponWriteOffRecordDto, CouponWriteOffRequest, CouponWriteOffResultDto, ManualGrantUserCouponsRequest, ManualGrantUserCouponsResultDto, UserCouponDetailDto, UserCouponListItemDto } from '@/types/user-coupon'
+import type { CouponWriteOffRecordDto, CouponWriteOffRequest, CouponWriteOffResultDto, ImportGrantUserCouponsResultDto, ManualGrantUserCouponsRequest, ManualGrantUserCouponsResultDto, UserCouponDetailDto, UserCouponListItemDto } from '@/types/user-coupon'
 
 export interface UserCouponListQuery {
   userId?: number
@@ -24,3 +24,16 @@ export const writeOffCoupon = (payload: CouponWriteOffRequest) =>
 
 export const manualGrantUserCoupons = (payload: ManualGrantUserCouponsRequest) =>
   http.post<ManualGrantUserCouponsRequest, ApiResponse<ManualGrantUserCouponsResultDto>>('/usercoupons/manual-grant', payload)
+
+export const importGrantUserCoupons = (file: File, couponTemplateId: number, quantityPerUser: number) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('couponTemplateId', String(couponTemplateId))
+  formData.append('quantityPerUser', String(quantityPerUser))
+
+  return http.post<FormData, ApiResponse<ImportGrantUserCouponsResultDto>>('/usercoupons/import-grant', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+}

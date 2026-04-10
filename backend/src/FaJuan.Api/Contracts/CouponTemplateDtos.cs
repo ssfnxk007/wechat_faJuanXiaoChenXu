@@ -18,6 +18,7 @@ public class CouponTemplateListItemDto
     public int PerUserLimit { get; init; }
     public bool IsEnabled { get; init; }
     public string? Remark { get; init; }
+    public IReadOnlyCollection<long> ProductIds { get; init; } = [];
     public DateTime CreatedAt { get; init; }
 }
 
@@ -36,4 +37,5 @@ public class SaveCouponTemplateRequest
     public int PerUserLimit { get; init; } = 1;
     public bool IsEnabled { get; init; } = true;
     public string? Remark { get; init; }
+    public IReadOnlyCollection<long> ProductIds { get; init; } = [];
 }

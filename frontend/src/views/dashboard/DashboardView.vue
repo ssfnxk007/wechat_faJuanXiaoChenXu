@@ -5,7 +5,7 @@
         <div class="badge info">后台 V1 视觉方案</div>
         <h2>发券、售券、核销统一运营台</h2>
         <p>
-          这一版先把后台管理系统的视觉风格统一下来，方便后续继续叠加权限、真实支付、真实微信登录和 ERP 核销联调。
+          这一版先把后台管理系统的视觉风格统一下来，方便后续继续叠加权限、支付、微信登录和 ERP 核销能力。
         </p>
         <div class="hero-tags">
           <span class="tag">微信小程序登录</span>
@@ -18,7 +18,7 @@
       <div class="hero-side">
         <div class="quick-card">
           <strong>当前阶段</strong>
-          <p>后台管理 UI 统一改造，继续承接现有 API 联调流程。</p>
+          <p>后台管理 UI 统一改造，继续承接现有业务能力与接口流程。</p>
         </div>
         <div class="quick-card">
           <strong>接口健康</strong>

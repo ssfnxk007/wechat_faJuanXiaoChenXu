@@ -3,7 +3,7 @@
     <div class="page-header-row">
       <div>
         <h2>用户管理</h2>
-        <p>查看小程序用户、模拟登录并测试手机号绑定。</p>
+        <p>查看小程序用户建档情况，并维护手机号绑定信息。</p>
       </div>
       <button type="button" @click="loadData">刷新列表</button>
     </div>
@@ -11,17 +11,17 @@
     <div class="card form-card">
       <div class="section-head">
         <div class="section-head-main">
-          <h3>模拟小程序登录</h3>
-          <p class="section-tip">当前用于开发联调，后续会切换为真实微信 `code2Session` 登录。</p>
+          <h3>用户建档</h3>
+          <p class="section-tip">录入登录参数并完成用户建档，后续可切换到真实微信登录链路。</p>
         </div>
         <div class="inline-metrics">
           <span class="badge info">OpenId 建档</span>
-          <span class="badge warning">开发联调</span>
+          <span class="badge warning">建档入口</span>
         </div>
       </div>
 
       <div class="grid-form">
-        <input v-model="loginForm.code" type="text" placeholder="模拟 code" />
+        <input v-model="loginForm.code" type="text" placeholder="登录 code" />
         <input v-model="loginForm.nickname" type="text" placeholder="昵称" />
       </div>
 
@@ -175,9 +175,9 @@ const submitLogin = async () => {
     loginResult.value = response.data
     bindForm.userId = response.data.userId
     await loadData()
-    notify.success('模拟登录建档成功')
+    notify.success('用户建档成功')
   } catch (error) {
-    notify.error(getErrorMessage(error, '模拟登录建档失败'))
+    notify.error(getErrorMessage(error, '用户建档失败'))
   }
 }
 

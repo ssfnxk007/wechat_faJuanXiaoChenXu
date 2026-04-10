@@ -37,21 +37,38 @@ public class AdminPermissionAuthorizeFilter(AppDbContext dbContext, IConfigurati
             return;
         }
 
-        var roleIds = await dbContext.AdminUserRoles.AsNoTracking()
+        var hasRole = await dbContext.AdminUserRoles.AsNoTracking()
             .Where(x => x.AdminUserId == adminUser.Id)
-            .Join(dbContext.AdminRoles.AsNoTracking().Where(x => x.IsEnabled), x => x.AdminRoleId, x => x.Id, (userRole, role) => role.Id)
-            .Distinct()
-            .ToListAsync();
+            .Join(
+                dbContext.AdminRoles.AsNoTracking().Where(x => x.IsEnabled),
+                userRole => userRole.AdminRoleId,
+                role => role.Id,
+                (_, _) => 1)
+            .AnyAsync();
 
-        if (roleIds.Count == 0)
+        if (!hasRole)
         {
             context.Result = new ObjectResult(ApiResponse<object>.Fail("当前账号未分配角色", 403)) { StatusCode = 403 };
             return;
         }
 
-        var hasPermission = await dbContext.AdminRolePermissions.AsNoTracking()
-            .Where(x => roleIds.Contains(x.AdminRoleId))
-            .Join(dbContext.AdminPermissions.AsNoTracking().Where(x => x.IsEnabled), x => x.AdminPermissionId, x => x.Id, (rolePermission, permission) => permission.Code)
+        var hasPermission = await dbContext.AdminUserRoles.AsNoTracking()
+            .Where(x => x.AdminUserId == adminUser.Id)
+            .Join(
+                dbContext.AdminRoles.AsNoTracking().Where(x => x.IsEnabled),
+                userRole => userRole.AdminRoleId,
+                role => role.Id,
+                (userRole, _) => userRole.AdminRoleId)
+            .Join(
+                dbContext.AdminRolePermissions.AsNoTracking(),
+                roleId => roleId,
+                rolePermission => rolePermission.AdminRoleId,
+                (_, rolePermission) => rolePermission.AdminPermissionId)
+            .Join(
+                dbContext.AdminPermissions.AsNoTracking().Where(x => x.IsEnabled),
+                permissionId => permissionId,
+                permission => permission.Id,
+                (_, permission) => permission.Code)
             .AnyAsync(x => x == attribute.PermissionCode);
 
         if (!hasPermission)

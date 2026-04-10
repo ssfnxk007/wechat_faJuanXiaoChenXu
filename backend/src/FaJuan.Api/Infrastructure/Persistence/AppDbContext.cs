@@ -9,6 +9,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Store> Stores => Set<Store>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<CouponTemplate> CouponTemplates => Set<CouponTemplate>();
+    public DbSet<CouponTemplateProductScope> CouponTemplateProductScopes => Set<CouponTemplateProductScope>();
     public DbSet<CouponPack> CouponPacks => Set<CouponPack>();
     public DbSet<CouponPackItem> CouponPackItems => Set<CouponPackItem>();
     public DbSet<CouponOrder> CouponOrders => Set<CouponOrder>();
@@ -75,6 +76,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(x => x.ValidTo).HasColumnType("datetime");
             entity.Property(x => x.Remark).HasMaxLength(500);
             entity.Property(x => x.CreatedAt).HasColumnType("datetime");
+        });
+
+        modelBuilder.Entity<CouponTemplateProductScope>(entity =>
+        {
+            entity.ToTable("CouponTemplateProductScope");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.CreatedAt).HasColumnType("datetime");
+            entity.HasIndex(x => new { x.CouponTemplateId, x.ProductId }).IsUnique();
         });
 
         modelBuilder.Entity<CouponPack>(entity =>

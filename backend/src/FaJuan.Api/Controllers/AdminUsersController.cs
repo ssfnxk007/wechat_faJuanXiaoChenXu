@@ -37,11 +37,10 @@ public class AdminUsersController(AppDbContext dbContext, PasswordHashService pa
             })
             .ToListAsync();
 
-        var userIds = items.Select(x => x.Id).ToArray();
-        var roleRows = userIds.Length == 0
+        var userIds = items.Select(x => x.Id).ToHashSet();
+        var roleRows = items.Count == 0
             ? new List<dynamic>()
-            : await dbContext.AdminUserRoles.AsNoTracking()
-                .Where(x => userIds.Contains(x.AdminUserId))
+            : (await dbContext.AdminUserRoles.AsNoTracking()
                 .Join(
                     dbContext.AdminRoles.AsNoTracking(),
                     userRole => userRole.AdminRoleId,
@@ -52,7 +51,10 @@ public class AdminUsersController(AppDbContext dbContext, PasswordHashService pa
                         RoleId = role.Id,
                         RoleName = role.Name,
                     })
-                .ToListAsync<dynamic>();
+                .ToListAsync())
+                .Where(x => userIds.Contains(x.AdminUserId))
+                .Cast<dynamic>()
+                .ToList();
 
         foreach (var item in items)
         {
@@ -91,7 +93,10 @@ public class AdminUsersController(AppDbContext dbContext, PasswordHashService pa
         var roleIds = request.RoleIds.Distinct().ToArray();
         if (roleIds.Length > 0)
         {
-            var roleCount = await dbContext.AdminRoles.CountAsync(x => roleIds.Contains(x.Id));
+            var existingRoleIds = await dbContext.AdminRoles.AsNoTracking()
+                .Select(x => x.Id)
+                .ToListAsync();
+            var roleCount = existingRoleIds.Count(x => roleIds.Contains(x));
             if (roleCount != roleIds.Length)
             {
                 return BadRequest(Failure<long>("???????????"));
@@ -151,7 +156,10 @@ public class AdminUsersController(AppDbContext dbContext, PasswordHashService pa
         var roleIds = request.RoleIds.Distinct().ToArray();
         if (roleIds.Length > 0)
         {
-            var roleCount = await dbContext.AdminRoles.CountAsync(x => roleIds.Contains(x.Id));
+            var existingRoleIds = await dbContext.AdminRoles.AsNoTracking()
+                .Select(x => x.Id)
+                .ToListAsync();
+            var roleCount = existingRoleIds.Count(x => roleIds.Contains(x));
             if (roleCount != roleIds.Length)
             {
                 return BadRequest(Failure<long>("???????????"));

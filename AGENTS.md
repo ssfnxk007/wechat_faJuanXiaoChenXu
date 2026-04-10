@@ -169,6 +169,9 @@
 - Favor idempotent SQL when possible.
 - Preserve legacy compatibility where current scripts already follow that pattern.
 - When changing report/session logic, document execution order and rollback impact in task notes.
+- All EF-generated migration SQL must be reviewed for `SQL Server 2008 R2` compatibility before hand-off.
+- Do not assume newer SQL Server syntax is available; avoid emitting unsupported features without fallback or manual rewrite.
+- When exporting EF migration scripts for this project, explicitly verify statements, index syntax, default constraints, and DDL are compatible with `SQL Server 2008 R2`.
 
 ## Practical Workflow For Agents
 - Read relevant OpenViking notes before editing.
@@ -203,3 +206,18 @@
 - New pages/menus include SQL if they require DB menu setup.
 - Frontend/POS text is not garbled.
 - Relevant builds succeeded, or any unrun validation is clearly called out.
+
+## PowerShell Encoding Rule
+- All PowerShell file writes MUST use `UTF-8` only.
+- Do NOT use `utf8BOM` / `utf-8-sig` / UTF with BOM / Unicode / UTF-16 / ANSI / Default / OEM or any other encoding for file output.
+- When using `Set-Content`, `Add-Content`, `Out-File`, or redirection workflows from PowerShell, explicitly ensure the output is plain `UTF-8`.
+- If a file already contains Chinese text, treat encoding safety as a first-class requirement and re-check the file after writing.
+- If encoding corruption appears, stop feature work first and repair encoding before continuing.
+- Any PowerShell-generated markdown, SQL, Vue, TypeScript, C#, or config file must be reviewed for garbled text before hand-off.
+- Prefer `apply_patch` for file edits. Do not use PowerShell direct-write editing for normal code/doc changes unless there is no safe alternative.
+- If a file can be updated with `apply_patch`, that path is mandatory over PowerShell text replacement.
+
+## Error Memory Rule
+- Repeated pitfalls and root-cause findings must be recorded in `Docs/Error.md`.
+- Update `Docs/Error.md` after fixing any issue that is likely to recur, especially encoding problems, build traps, migration pitfalls, permission mismatches, or agent workflow mistakes.
+- Each entry should include: date, symptom, root cause, fix, and prevention rule.

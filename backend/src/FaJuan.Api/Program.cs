@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using FaJuan.Api.Application.Orders;
+using FaJuan.Api.Application.UserCoupons;
 using FaJuan.Api.Contracts;
 using FaJuan.Api.Infrastructure.Auth;
 using FaJuan.Api.Infrastructure.Persistence;
@@ -19,7 +20,13 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AdminWeb", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "https://localhost:5173")
+        policy.WithOrigins(
+                "http://localhost:5173",
+                "https://localhost:5173",
+                "http://localhost:5180",
+                "https://localhost:5180",
+                "http://127.0.0.1:5180",
+                "https://127.0.0.1:5180")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -51,10 +58,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("Default"),
+        sqlOptions =>
+        {
+            // The current deployment database behaves like SQL Server 2008 R2, so force legacy-compatible SQL generation.
+            sqlOptions.UseCompatibilityLevel(100);
+        }));
 
 builder.Services.AddHealthChecks();
 builder.Services.AddScoped<OrderPaymentService>();
+builder.Services.AddScoped<UserCouponGrantService>();
 builder.Services.AddSingleton<JwtTokenService>();
 builder.Services.AddSingleton<PasswordHashService>();
 builder.Services.AddHttpClient<WeChatMiniProgramService>();

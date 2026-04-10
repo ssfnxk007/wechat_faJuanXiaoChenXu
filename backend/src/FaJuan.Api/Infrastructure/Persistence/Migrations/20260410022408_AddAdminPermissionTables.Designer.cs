@@ -4,6 +4,7 @@ using FaJuan.Api.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FaJuan.Api.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260410022408_AddAdminPermissionTables")]
+    partial class AddAdminPermissionTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -454,31 +457,6 @@ namespace FaJuan.Api.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("CouponTemplate", (string)null);
-                });
-
-            modelBuilder.Entity("FaJuan.Api.Domain.Entities.CouponTemplateProductScope", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<long>("CouponTemplateId")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime");
-
-                    b.Property<long>("ProductId")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CouponTemplateId", "ProductId")
-                        .IsUnique();
-
-                    b.ToTable("CouponTemplateProductScope", (string)null);
                 });
 
             modelBuilder.Entity("FaJuan.Api.Domain.Entities.CouponWriteOffRecord", b =>

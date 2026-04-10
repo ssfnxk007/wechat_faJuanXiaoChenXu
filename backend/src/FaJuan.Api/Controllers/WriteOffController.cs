@@ -25,6 +25,12 @@ public class WriteOffController(AppDbContext dbContext) : ApiControllerBase
             return NotFound(Failure<CouponWriteOffResultDto>("券不存在", 404));
         }
 
+        var template = await dbContext.CouponTemplates.AsNoTracking().FirstOrDefaultAsync(x => x.Id == coupon.CouponTemplateId);
+        if (template is null)
+        {
+            return BadRequest(Failure<CouponWriteOffResultDto>("券模板不存在或已删除"));
+        }
+
         if (coupon.Status == UserCouponStatus.Used)
         {
             return BadRequest(Failure<CouponWriteOffResultDto>("券已核销"));
@@ -52,6 +58,22 @@ public class WriteOffController(AppDbContext dbContext) : ApiControllerBase
         if (!storeExists)
         {
             return BadRequest(Failure<CouponWriteOffResultDto>("门店不存在或已停用"));
+        }
+
+        if (template.TemplateType == CouponTemplateType.Product)
+        {
+            if (!request.ProductId.HasValue || request.ProductId.Value <= 0)
+            {
+                return BadRequest(Failure<CouponWriteOffResultDto>("指定商品券核销时必须提供商品ID"));
+            }
+
+            var inScope = await dbContext.CouponTemplateProductScopes.AsNoTracking()
+                .AnyAsync(x => x.CouponTemplateId == template.Id && x.ProductId == request.ProductId.Value);
+
+            if (!inScope)
+            {
+                return BadRequest(Failure<CouponWriteOffResultDto>("该商品不在券适用范围内"));
+            }
         }
 
         coupon.Status = UserCouponStatus.Used;
