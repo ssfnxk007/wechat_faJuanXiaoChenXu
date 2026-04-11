@@ -105,6 +105,7 @@ import SectionHeader from '@/components/SectionHeader.vue'
 import { useTheme } from '@/composables/use-theme'
 import { ensureMiniProgramLogin } from '@/api/auth'
 import { claimMiniAppCouponTemplate, getMiniAppCouponTemplateDetail, getMiniAppUserCouponDetail } from '@/api/miniapp'
+import { request } from '@/utils/request'
 import { useSessionStore } from '@/store/session'
 
 const session = useSessionStore()
@@ -134,18 +135,26 @@ const couponDetail = ref({
   writeOffRecords: []
 })
 
-const qrImageUrl = computed(() => {
-  if (!isUserCouponMode.value || !couponDetail.value.id || !session.userId) {
-    return ''
+const qrImageUrl = ref('')
+
+async function loadQrImageUrl() {
+  if (!isUserCouponMode.value || !couponDetail.value.id || !session.token) {
+    qrImageUrl.value = ''
+    return
   }
 
-  const baseUrl = String(session.apiBaseUrl || '').replace(/\/+$/, '')
-  if (!baseUrl) {
-    return ''
+  try {
+    const response = await request({
+      url: `/api/miniapp/users/coupons/${couponDetail.value.id}/qrcode`,
+      responseType: 'arraybuffer'
+    })
+    const base64 = uni.arrayBufferToBase64(response.data)
+    qrImageUrl.value = `data:image/png;base64,${base64}`
+  } catch (error) {
+    console.warn('[coupon-detail] loadQrImageUrl failed', error)
+    qrImageUrl.value = ''
   }
-
-  return `${baseUrl}/api/miniapp/users/${session.userId}/coupons/${couponDetail.value.id}/qrcode`
-})
+}
 
 const couponTypeText = computed(() => ({ 1: '新人券', 2: '无门槛券', 3: '指定商品券', 4: '满减券' }[couponDetail.value.templateType] || '优惠券'))
 const statusText = computed(() => {
@@ -225,16 +234,16 @@ async function loadUserCouponDetail(id) {
     return
   }
 
-  const result = await getMiniAppUserCouponDetail(session.userId, id)
+  const result = await getMiniAppUserCouponDetail(id)
   if (result) {
     couponDetail.value = result
     isUserCouponMode.value = true
+    await loadQrImageUrl()
   }
 }
 
 async function loadTemplateDetail(templateId) {
-  const params = session.userId ? { userId: session.userId } : undefined
-  const result = await getMiniAppCouponTemplateDetail(templateId, params)
+  const result = await getMiniAppCouponTemplateDetail(templateId)
   if (result) {
     couponDetail.value = {
       ...couponDetail.value,
@@ -260,9 +269,7 @@ async function handleClaim() {
       throw new Error('请先完成微信授权后再领取')
     }
 
-    const result = await claimMiniAppCouponTemplate(couponDetail.value.couponTemplateId || couponDetail.value.id, {
-      userId: session.userId
-    })
+    const result = await claimMiniAppCouponTemplate(couponDetail.value.couponTemplateId || couponDetail.value.id)
 
     uni.showToast({ title: '领取成功', icon: 'success' })
     uni.redirectTo({ url: `/pages/coupon/detail?id=${result.userCouponId}` })

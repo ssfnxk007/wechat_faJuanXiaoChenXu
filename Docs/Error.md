@@ -95,3 +95,10 @@
 - 根因：这台机器实际存在 `powershell.exe 5.1` 会话默认编码链路不统一的问题，曾出现 `[Console]::InputEncoding = gb2312`、`[Console]::OutputEncoding = utf-8`、`$OutputEncoding = us-ascii`` 的混合状态；即使安装了 PowerShell 7 或 Windows Terminal，也不会自动修复正在运行的旧 PowerShell 会话。
 - 修复：为 `WindowsPowerShell` 和 `PowerShell 7` 都写入 UTF-8 profile，引导新会话统一 `[Console]::InputEncoding`、`[Console]::OutputEncoding`、`$OutputEncoding`，并把 `Out-File`、`Set-Content`、`Add-Content` 默认编码固定为 `utf-8`；同时在项目协作中把中文敏感文件编辑优先级改为 `apply_patch` / `python` / `pwsh`。
 - 预防：以后不要假设“装了 PowerShell 7 就没事”；必须先验证当前 shell 实际版本和三项编码状态。对中文代码、文档、SQL、配置文件，避免使用 `powershell.exe 5.1` 直接改写；不要尝试通过卸载 `PowerShell 5.1` 来解决此问题。
+
+
+## 2026-04-11 - EF Core 分页生成 OFFSET/FETCH 导致 SQL Server 2008 R2 报错
+- 症状：小程序接口调用时报错 `OFFSET 附近有语法错误`、`FETCH NEXT 用法无效`，堆栈落在 `MiniAppController.GetUserCoupons` / `GetUserOrders`。
+- 根因：虽然项目已有 `ApplyLegacyPaging` 兼容扩展，但个别查询仍直接使用了 LINQ `Skip(...).Take(...)`，EF Core 对 SQL Server 生成了 `OFFSET/FETCH` 语句；SQL Server 2008 R2 不支持该语法。
+- 修复：将残留的数据库分页查询统一改为 `ApplyLegacyPaging(pageIndex, pageSize, x => x.Id)`，避免生成高版本分页 SQL。
+- 预防规则：本项目所有面向数据库的分页查询都禁止直接写 `Skip/Take`；涉及 SQL Server 2008 R2 的分页一律复用 `backend/src/FaJuan.Api/Application/Common/QueryablePagingExtensions.cs`。

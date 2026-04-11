@@ -36,4 +36,30 @@ public class JwtTokenService(IConfiguration configuration)
 
         return (new JwtSecurityTokenHandler().WriteToken(token), expiresAt);
     }
+
+    public (string AccessToken, DateTimeOffset ExpiresAt) CreateMiniAppToken(long userId)
+    {
+        var issuer = configuration["Jwt:Issuer"] ?? "FaJuan.Api";
+        var securityKey = configuration["Jwt:SecurityKey"] ?? throw new InvalidOperationException("Jwt:SecurityKey 未配置");
+        var expiresAt = DateTimeOffset.Now.AddDays(7);
+
+        var claims = new List<Claim>
+        {
+            new(JwtRegisteredClaimNames.Sub, userId.ToString()),
+            new("userId", userId.ToString()),
+        };
+
+        var credentials = new SigningCredentials(
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(securityKey)),
+            SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer: issuer,
+            audience: "FaJuan.MiniApp",
+            claims: claims,
+            expires: expiresAt.LocalDateTime,
+            signingCredentials: credentials);
+
+        return (new JwtSecurityTokenHandler().WriteToken(token), expiresAt);
+    }
 }

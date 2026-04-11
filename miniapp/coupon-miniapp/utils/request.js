@@ -61,16 +61,23 @@ export function request(options = {}) {
   const session = useSessionStore()
   const finalUrl = appendQuery(joinUrl(session.apiBaseUrl, options.url || ''), options.query)
 
+  const headers = {
+    'content-type': 'application/json',
+    ...(options.header || {})
+  }
+
+  if (session.token) {
+    headers.Authorization = `Bearer ${session.token}`
+  }
+
   return new Promise((resolve, reject) => {
     uni.request({
       url: finalUrl,
       method: options.method || 'GET',
       data: options.data,
       timeout: options.timeout || DEFAULT_TIMEOUT,
-      header: {
-        'content-type': 'application/json',
-        ...(options.header || {})
-      },
+      header: headers,
+      responseType: options.responseType || 'text',
       success: (response) => {
         try {
           if (response.statusCode >= 400) {
@@ -79,6 +86,16 @@ export function request(options = {}) {
               payload: response.data,
               url: finalUrl
             })
+          }
+
+          if (options.responseType === 'arraybuffer') {
+            resolve({
+              data: response.data,
+              raw: response.data,
+              statusCode: response.statusCode,
+              url: finalUrl
+            })
+            return
           }
 
           resolve({

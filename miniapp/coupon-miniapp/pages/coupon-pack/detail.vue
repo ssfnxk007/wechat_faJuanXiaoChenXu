@@ -253,11 +253,10 @@ async function handleBuy() {
     }
 
     const order = await createMiniAppOrder({
-      userId: session.userId,
       couponPackId: packDetail.value.id
     })
 
-    const paymentResult = await createMiniAppOrderPayment(order.orderId, { userId: session.userId })
+    const paymentResult = await createMiniAppOrderPayment(order.orderId, {})
     if (paymentResult.paid || paymentResult.payment?.isMock) {
       uni.showToast({ title: '购买成功', icon: 'success' })
       navigateToResult(order.orderId)
@@ -279,7 +278,6 @@ async function handleBuy() {
     })
 
     await completeMiniAppOrderPayment(order.orderId, {
-      userId: session.userId,
       paymentNo: paymentResult.payment?.paymentNo,
       channelTradeNo: paymentResult.payment?.prepayId,
       rawCallback: 'miniapp-request-payment-success'

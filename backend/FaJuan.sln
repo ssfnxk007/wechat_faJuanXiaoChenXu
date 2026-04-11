@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaJuan.Api", "src\FaJuan.Ap
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaJuan.Api.Tests", "tests\FaJuan.Api.Tests\FaJuan.Api.Tests.csproj", "{24DE341A-CDC7-4992-90CA-B97F2D4F66FF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FaJuan.ScheduledTasks", "src\FaJuan.ScheduledTasks\FaJuan.ScheduledTasks.csproj", "{B2E5A3C1-9D4F-4A2B-8C1E-3F6D2A5B7C8E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,18 @@ Global
 		{24DE341A-CDC7-4992-90CA-B97F2D4F66FF}.Release|x64.Build.0 = Release|Any CPU
 		{24DE341A-CDC7-4992-90CA-B97F2D4F66FF}.Release|x86.ActiveCfg = Release|Any CPU
 		{24DE341A-CDC7-4992-90CA-B97F2D4F66FF}.Release|x86.Build.0 = Release|Any CPU
+		{B2E5A3C1-9D4F-4A2B-8C1E-3F6D2A5B7C8E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2E5A3C1-9D4F-4A2B-8C1E-3F6D2A5B7C8E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2E5A3C1-9D4F-4A2B-8C1E-3F6D2A5B7C8E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B2E5A3C1-9D4F-4A2B-8C1E-3F6D2A5B7C8E}.Debug|x64.Build.0 = Debug|Any CPU
+		{B2E5A3C1-9D4F-4A2B-8C1E-3F6D2A5B7C8E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B2E5A3C1-9D4F-4A2B-8C1E-3F6D2A5B7C8E}.Debug|x86.Build.0 = Debug|Any CPU
+		{B2E5A3C1-9D4F-4A2B-8C1E-3F6D2A5B7C8E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2E5A3C1-9D4F-4A2B-8C1E-3F6D2A5B7C8E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2E5A3C1-9D4F-4A2B-8C1E-3F6D2A5B7C8E}.Release|x64.ActiveCfg = Release|Any CPU
+		{B2E5A3C1-9D4F-4A2B-8C1E-3F6D2A5B7C8E}.Release|x64.Build.0 = Release|Any CPU
+		{B2E5A3C1-9D4F-4A2B-8C1E-3F6D2A5B7C8E}.Release|x86.ActiveCfg = Release|Any CPU
+		{B2E5A3C1-9D4F-4A2B-8C1E-3F6D2A5B7C8E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -50,5 +64,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{D555084B-B40E-4962-9D74-0F7D128E5147} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{24DE341A-CDC7-4992-90CA-B97F2D4F66FF} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{B2E5A3C1-9D4F-4A2B-8C1E-3F6D2A5B7C8E} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

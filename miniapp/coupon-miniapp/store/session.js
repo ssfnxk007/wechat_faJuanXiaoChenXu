@@ -15,6 +15,7 @@ const state = reactive({
   mobile: '',
   nickname: '',
   isNewUser: false,
+  token: '',
   wechatConfigured: false,
   loginStatus: 'idle',
   loginMessage: ''
@@ -30,7 +31,8 @@ function persistSession() {
     miniOpenId: state.miniOpenId,
     mobile: state.mobile,
     nickname: state.nickname,
-    isNewUser: state.isNewUser
+    isNewUser: state.isNewUser,
+    token: state.token
   })
 }
 
@@ -50,6 +52,7 @@ export function hydrateSessionStore() {
   state.mobile = trimText(savedSession.mobile)
   state.nickname = trimText(savedSession.nickname)
   state.isNewUser = Boolean(savedSession.isNewUser)
+  state.token = trimText(savedSession.token)
   state.hydrated = true
 
   return state
@@ -81,6 +84,7 @@ export function updateSession(payload = {}) {
   state.mobile = trimText(payload.mobile || state.mobile)
   state.nickname = trimText(payload.nickname || state.nickname)
   state.isNewUser = typeof payload.isNewUser === 'boolean' ? payload.isNewUser : state.isNewUser
+  state.token = trimText(payload.token || state.token)
 
   persistSession()
   return state
@@ -108,6 +112,7 @@ export function clearSession() {
   state.mobile = ''
   state.nickname = ''
   state.isNewUser = false
+  state.token = ''
   state.loginStatus = 'idle'
   state.loginMessage = ''
   uni.removeStorageSync(SESSION_STORAGE_KEY)

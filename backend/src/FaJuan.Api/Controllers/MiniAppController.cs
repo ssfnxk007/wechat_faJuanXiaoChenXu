@@ -5,6 +5,7 @@ using FaJuan.Api.Application.UserCoupons;
 using FaJuan.Api.Contracts;
 using FaJuan.Api.Domain.Entities;
 using FaJuan.Api.Domain.Enums;
+using FaJuan.Api.Infrastructure.Auth;
 using FaJuan.Api.Infrastructure.MiniApp;
 using FaJuan.Api.Infrastructure.Persistence;
 using FaJuan.Api.Infrastructure.WeChatPay;
@@ -16,7 +17,6 @@ using QRCoder;
 
 namespace FaJuan.Api.Controllers;
 
-[AllowAnonymous]
 [Route("api/miniapp")]
 public class MiniAppController(
     AppDbContext dbContext,
@@ -27,6 +27,7 @@ public class MiniAppController(
     MiniAppThemeSettingsService miniAppThemeSettingsService) : ApiControllerBase
 {
     [HttpGet("settings")]
+    [AllowAnonymous]
     public async Task<ActionResult<ApiResponse<MiniAppThemeDto>>> GetSettings(CancellationToken cancellationToken)
     {
         var settings = await miniAppThemeSettingsService.GetAsync(cancellationToken);
@@ -37,7 +38,8 @@ public class MiniAppController(
     }
 
     [HttpGet("home")]
-    public async Task<ActionResult<ApiResponse<MiniAppHomeDto>>> GetHome([FromQuery] long? userId, CancellationToken cancellationToken)
+    [MiniAppAuthorize(Optional = true)]
+    public async Task<ActionResult<ApiResponse<MiniAppHomeDto>>> GetHome(CancellationToken cancellationToken)
     {
         var settings = await miniAppThemeSettingsService.GetAsync(cancellationToken);
         var banners = await dbContext.Banners.AsNoTracking()
@@ -116,10 +118,11 @@ public class MiniAppController(
 
         await FillCouponTemplateImageUrlsAsync(directCoupons, cancellationToken);
 
+        var currentUserId = GetCurrentUserId();
         MiniAppUserSummaryDto? userSummary = null;
-        if (userId.HasValue && userId.Value > 0)
+        if (currentUserId.HasValue && currentUserId.Value > 0)
         {
-            var user = await dbContext.AppUsers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == userId.Value, cancellationToken);
+            var user = await dbContext.AppUsers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == currentUserId.Value, cancellationToken);
             if (user is not null)
             {
                 var now = DateTime.Now;
@@ -151,6 +154,7 @@ public class MiniAppController(
     }
 
     [HttpGet("coupon-packs")]
+    [AllowAnonymous]
     public async Task<ActionResult<ApiResponse<PagedResult<MiniAppCouponPackCardDto>>>> GetCouponPacks([FromQuery] string? keyword, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
     {
         var query = dbContext.CouponPacks.AsNoTracking().Where(x => x.Status == CouponPackStatus.Enabled);
@@ -189,6 +193,7 @@ public class MiniAppController(
     }
 
     [HttpGet("products")]
+    [AllowAnonymous]
     public async Task<ActionResult<ApiResponse<PagedResult<MiniAppProductCardDto>>>> GetProducts([FromQuery] string? keyword, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
     {
         var query = dbContext.Products.AsNoTracking().Where(x => x.IsEnabled);
@@ -224,6 +229,7 @@ public class MiniAppController(
     }
 
     [HttpGet("coupon-packs/{id:long}")]
+    [AllowAnonymous]
     public async Task<ActionResult<ApiResponse<MiniAppCouponPackDetailDto>>> GetCouponPackDetail(long id, CancellationToken cancellationToken)
     {
         var pack = await dbContext.CouponPacks.AsNoTracking()
@@ -279,7 +285,8 @@ public class MiniAppController(
     }
 
     [HttpGet("coupon-templates/{id:long}")]
-    public async Task<ActionResult<ApiResponse<MiniAppCouponTemplateDetailDto>>> GetCouponTemplateDetail(long id, [FromQuery] long? userId, CancellationToken cancellationToken)
+    [MiniAppAuthorize(Optional = true)]
+    public async Task<ActionResult<ApiResponse<MiniAppCouponTemplateDetailDto>>> GetCouponTemplateDetail(long id, CancellationToken cancellationToken)
     {
         var detail = await dbContext.CouponTemplates.AsNoTracking()
             .Where(x => x.Id == id && x.IsEnabled)
@@ -309,11 +316,12 @@ public class MiniAppController(
 
         await FillCouponTemplateDetailImageUrlAsync(detail, cancellationToken);
 
+        var currentUserId = GetCurrentUserId();
         var claimedCount = 0;
-        if (userId.HasValue && userId.Value > 0)
+        if (currentUserId.HasValue && currentUserId.Value > 0)
         {
             claimedCount = await dbContext.UserCoupons.AsNoTracking()
-                .CountAsync(x => x.AppUserId == userId.Value && x.CouponTemplateId == id, cancellationToken);
+                .CountAsync(x => x.AppUserId == currentUserId.Value && x.CouponTemplateId == id, cancellationToken);
         }
 
         return Ok(Success(new MiniAppCouponTemplateDetailDto
@@ -338,18 +346,20 @@ public class MiniAppController(
     }
 
     [HttpPost("coupon-templates/{id:long}/claim")]
+    [MiniAppAuthorize]
     public async Task<ActionResult<ApiResponse<MiniAppClaimCouponResultDto>>> ClaimCouponTemplate(long id, [FromBody] MiniAppClaimCouponRequest request, CancellationToken cancellationToken)
     {
-        if (request.UserId <= 0)
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue || userId.Value <= 0)
         {
-            return BadRequest(Failure<MiniAppClaimCouponResultDto>("用户不能为空"));
+            return Unauthorized(Failure<MiniAppClaimCouponResultDto>("请先登录", 401));
         }
 
         var result = await userCouponGrantService.GrantAsync(id, new[]
         {
             new ManualGrantUserCouponInput
             {
-                AppUserId = request.UserId,
+                AppUserId = userId.Value,
                 QuantityPerUser = 1,
             }
         });
@@ -361,7 +371,7 @@ public class MiniAppController(
         }
 
         var coupon = await dbContext.UserCoupons.AsNoTracking()
-            .Where(x => x.AppUserId == request.UserId && x.CouponTemplateId == id)
+            .Where(x => x.AppUserId == userId.Value && x.CouponTemplateId == id)
             .OrderByDescending(x => x.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken);
         if (coupon is null)
@@ -379,22 +389,29 @@ public class MiniAppController(
         }, "领取成功"));
     }
 
-    [HttpGet("users/{userId:long}/coupons")]
-    public async Task<ActionResult<ApiResponse<PagedResult<MiniAppUserCouponCardDto>>>> GetUserCoupons(long userId, [FromQuery] int? status, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
+    [HttpGet("users/coupons")]
+    [MiniAppAuthorize]
+    public async Task<ActionResult<ApiResponse<PagedResult<MiniAppUserCouponCardDto>>>> GetUserCoupons([FromQuery] int? status, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
     {
-        if (!await dbContext.AppUsers.AsNoTracking().AnyAsync(x => x.Id == userId, cancellationToken))
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue || userId.Value <= 0)
+        {
+            return Unauthorized(Failure<PagedResult<MiniAppUserCouponCardDto>>("请先登录", 401));
+        }
+
+        if (!await dbContext.AppUsers.AsNoTracking().AnyAsync(x => x.Id == userId.Value, cancellationToken))
         {
             return NotFound(Failure<PagedResult<MiniAppUserCouponCardDto>>("用户不存在", 404));
         }
 
-        var query = dbContext.UserCoupons.AsNoTracking().Where(x => x.AppUserId == userId);
+        var query = dbContext.UserCoupons.AsNoTracking().Where(x => x.AppUserId == userId.Value);
         if (status.HasValue && status.Value > 0)
         {
             query = query.Where(x => (int)x.Status == status.Value);
         }
 
         var totalCount = await query.CountAsync(cancellationToken);
-        var items = await query.ApplyLegacyPaging(pageIndex, pageSize, x => x.Id)
+        var items = await query.OrderByDescending(x => x.CreatedAt).ApplyLegacyPaging(pageIndex, pageSize, x => x.Id)
             .Join(dbContext.CouponTemplates.AsNoTracking(), userCoupon => userCoupon.CouponTemplateId, template => template.Id,
                 (userCoupon, template) => new MiniAppUserCouponCardDto
                 {
@@ -427,11 +444,18 @@ public class MiniAppController(
         }));
     }
 
-    [HttpGet("users/{userId:long}/coupons/{id:long}")]
-    public async Task<ActionResult<ApiResponse<MiniAppCouponDetailDto>>> GetUserCouponDetail(long userId, long id, CancellationToken cancellationToken)
+    [HttpGet("users/coupons/{id:long}")]
+    [MiniAppAuthorize]
+    public async Task<ActionResult<ApiResponse<MiniAppCouponDetailDto>>> GetUserCouponDetail(long id, CancellationToken cancellationToken)
     {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue || userId.Value <= 0)
+        {
+            return Unauthorized(Failure<MiniAppCouponDetailDto>("请先登录", 401));
+        }
+
         var detail = await dbContext.UserCoupons.AsNoTracking()
-            .Where(x => x.Id == id && x.AppUserId == userId)
+            .Where(x => x.Id == id && x.AppUserId == userId.Value)
             .Join(dbContext.CouponTemplates.AsNoTracking(), userCoupon => userCoupon.CouponTemplateId, template => template.Id,
                 (userCoupon, template) => new MiniAppCouponDetailDto
                 {
@@ -511,17 +535,24 @@ public class MiniAppController(
         return Ok(Success(detail));
     }
 
-    [HttpGet("users/{userId:long}/orders")]
-    public async Task<ActionResult<ApiResponse<PagedResult<MiniAppOrderCardDto>>>> GetUserOrders(long userId, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
+    [HttpGet("users/orders")]
+    [MiniAppAuthorize]
+    public async Task<ActionResult<ApiResponse<PagedResult<MiniAppOrderCardDto>>>> GetUserOrders([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
     {
-        if (!await dbContext.AppUsers.AsNoTracking().AnyAsync(x => x.Id == userId, cancellationToken))
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue || userId.Value <= 0)
+        {
+            return Unauthorized(Failure<PagedResult<MiniAppOrderCardDto>>("请先登录", 401));
+        }
+
+        if (!await dbContext.AppUsers.AsNoTracking().AnyAsync(x => x.Id == userId.Value, cancellationToken))
         {
             return NotFound(Failure<PagedResult<MiniAppOrderCardDto>>("用户不存在", 404));
         }
 
-        var query = dbContext.CouponOrders.AsNoTracking().Where(x => x.AppUserId == userId);
+        var query = dbContext.CouponOrders.AsNoTracking().Where(x => x.AppUserId == userId.Value);
         var totalCount = await query.CountAsync(cancellationToken);
-        var items = await query.ApplyLegacyPaging(pageIndex, pageSize, x => x.Id)
+        var items = await query.OrderByDescending(x => x.CreatedAt).ApplyLegacyPaging(pageIndex, pageSize, x => x.Id)
             .Join(dbContext.CouponPacks.AsNoTracking(), order => order.CouponPackId, pack => pack.Id,
                 (order, pack) => new MiniAppOrderCardDto
                 {
@@ -548,16 +579,24 @@ public class MiniAppController(
     }
 
     [HttpGet("orders")]
-    public Task<ActionResult<ApiResponse<PagedResult<MiniAppOrderCardDto>>>> GetOrders([FromQuery] long userId, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
+    [MiniAppAuthorize]
+    public Task<ActionResult<ApiResponse<PagedResult<MiniAppOrderCardDto>>>> GetOrders([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
     {
-        return GetUserOrders(userId, pageIndex, pageSize, cancellationToken);
+        return GetUserOrders(pageIndex, pageSize, cancellationToken);
     }
 
-    [HttpGet("users/{userId:long}/orders/{id:long}")]
-    public async Task<ActionResult<ApiResponse<MiniAppOrderDetailDto>>> GetUserOrderDetail(long userId, long id, CancellationToken cancellationToken)
+    [HttpGet("users/orders/{id:long}")]
+    [MiniAppAuthorize]
+    public async Task<ActionResult<ApiResponse<MiniAppOrderDetailDto>>> GetUserOrderDetail(long id, CancellationToken cancellationToken)
     {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue || userId.Value <= 0)
+        {
+            return Unauthorized(Failure<MiniAppOrderDetailDto>("请先登录", 401));
+        }
+
         var order = await dbContext.CouponOrders.AsNoTracking()
-            .Where(x => x.Id == id && x.AppUserId == userId)
+            .Where(x => x.Id == id && x.AppUserId == userId.Value)
             .Join(dbContext.CouponPacks.AsNoTracking(), couponOrder => couponOrder.CouponPackId, couponPack => couponPack.Id,
                 (couponOrder, couponPack) => new MiniAppOrderDetailDto
                 {
@@ -620,20 +659,23 @@ public class MiniAppController(
     }
 
     [HttpGet("orders/{id:long}")]
-    public Task<ActionResult<ApiResponse<MiniAppOrderDetailDto>>> GetOrderDetail(long id, [FromQuery] long userId, CancellationToken cancellationToken)
+    [MiniAppAuthorize]
+    public Task<ActionResult<ApiResponse<MiniAppOrderDetailDto>>> GetOrderDetail(long id, CancellationToken cancellationToken)
     {
-        return GetUserOrderDetail(userId, id, cancellationToken);
+        return GetUserOrderDetail(id, cancellationToken);
     }
 
     [HttpPost("orders")]
+    [MiniAppAuthorize]
     public async Task<ActionResult<ApiResponse<MiniAppCreateOrderResultDto>>> CreateOrder([FromBody] MiniAppCreateOrderRequest request, CancellationToken cancellationToken)
     {
-        if (request.UserId <= 0 || request.CouponPackId <= 0)
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue || userId.Value <= 0 || request.CouponPackId <= 0)
         {
             return BadRequest(Failure<MiniAppCreateOrderResultDto>("用户与券包不能为空"));
         }
 
-        var user = await dbContext.AppUsers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken);
+        var user = await dbContext.AppUsers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == userId.Value, cancellationToken);
         if (user is null)
         {
             return NotFound(Failure<MiniAppCreateOrderResultDto>("用户不存在", 404));
@@ -660,7 +702,7 @@ public class MiniAppController(
         if (pack.PerUserLimit > 0)
         {
             var orderCount = await dbContext.CouponOrders.AsNoTracking()
-                .CountAsync(x => x.AppUserId == request.UserId
+                .CountAsync(x => x.AppUserId == userId.Value
                     && x.CouponPackId == request.CouponPackId
                     && x.Status != CouponOrderStatus.Closed,
                     cancellationToken);
@@ -673,7 +715,7 @@ public class MiniAppController(
         var entity = new CouponOrder
         {
             OrderNo = $"CP{now:yyyyMMddHHmmssfff}",
-            AppUserId = request.UserId,
+            AppUserId = userId.Value,
             CouponPackId = request.CouponPackId,
             OrderAmount = pack.SalePrice,
             Status = CouponOrderStatus.PendingPayment,
@@ -695,14 +737,16 @@ public class MiniAppController(
     }
 
     [HttpPost("orders/{id:long}/pay")]
+    [MiniAppAuthorize]
     public async Task<ActionResult<ApiResponse<MiniAppCreateOrderPaymentResultDto>>> PayOrder(long id, [FromBody] MiniAppCreateOrderPaymentRequest request, CancellationToken cancellationToken)
     {
-        if (request.UserId <= 0)
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue || userId.Value <= 0)
         {
-            return BadRequest(Failure<MiniAppCreateOrderPaymentResultDto>("用户不能为空"));
+            return Unauthorized(Failure<MiniAppCreateOrderPaymentResultDto>("请先登录", 401));
         }
 
-        var order = await dbContext.CouponOrders.FirstOrDefaultAsync(x => x.Id == id && x.AppUserId == request.UserId, cancellationToken);
+        var order = await dbContext.CouponOrders.FirstOrDefaultAsync(x => x.Id == id && x.AppUserId == userId.Value, cancellationToken);
         if (order is null)
         {
             return NotFound(Failure<MiniAppCreateOrderPaymentResultDto>("订单不存在", 404));
@@ -828,15 +872,17 @@ public class MiniAppController(
     }
 
     [HttpPost("orders/{id:long}/complete-payment")]
+    [MiniAppAuthorize]
     public async Task<ActionResult<ApiResponse<bool>>> CompleteOrderPayment(long id, [FromBody] MiniAppCompleteOrderPaymentRequest request, CancellationToken cancellationToken)
     {
-        if (request.UserId <= 0)
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue || userId.Value <= 0)
         {
-            return BadRequest(Failure<bool>("用户不能为空"));
+            return Unauthorized(Failure<bool>("请先登录", 401));
         }
 
         var order = await dbContext.CouponOrders.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == id && x.AppUserId == request.UserId, cancellationToken);
+            .FirstOrDefaultAsync(x => x.Id == id && x.AppUserId == userId.Value, cancellationToken);
         if (order is null)
         {
             return NotFound(Failure<bool>("订单不存在", 404));
@@ -870,11 +916,18 @@ public class MiniAppController(
         return Ok(Success(true, result.Message));
     }
 
-    [HttpGet("users/{userId:long}/coupons/{id:long}/qrcode")]
-    public async Task<IActionResult> GetUserCouponQrCode(long userId, long id, CancellationToken cancellationToken)
+    [HttpGet("users/coupons/{id:long}/qrcode")]
+    [MiniAppAuthorize]
+    public async Task<IActionResult> GetUserCouponQrCode(long id, CancellationToken cancellationToken)
     {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue || userId.Value <= 0)
+        {
+            return Unauthorized();
+        }
+
         var coupon = await dbContext.UserCoupons.AsNoTracking()
-            .Where(x => x.Id == id && x.AppUserId == userId)
+            .Where(x => x.Id == id && x.AppUserId == userId.Value)
             .Select(x => new { x.CouponCode })
             .FirstOrDefaultAsync(cancellationToken);
         if (coupon is null)

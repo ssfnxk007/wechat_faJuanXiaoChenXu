@@ -1,5 +1,8 @@
-﻿using FaJuan.Api.Contracts;
+﻿using FaJuan.Api.Application.UserCoupons;
+using FaJuan.Api.Contracts;
 using FaJuan.Api.Domain.Entities;
+using FaJuan.Api.Domain.Enums;
+using FaJuan.Api.Infrastructure.Auth;
 using FaJuan.Api.Infrastructure.Persistence;
 using FaJuan.Api.Infrastructure.WeChat;
 using Microsoft.AspNetCore.Authorization;
@@ -13,7 +16,9 @@ namespace FaJuan.Api.Controllers;
 public class AuthController(
     AppDbContext dbContext,
     WeChatMiniProgramService weChatMiniProgramService,
-    IOptions<WeChatMiniProgramOptions> weChatOptions) : ApiControllerBase
+    IOptions<WeChatMiniProgramOptions> weChatOptions,
+    JwtTokenService jwtTokenService,
+    UserCouponGrantService userCouponGrantService) : ApiControllerBase
 {
     [HttpGet("wechat-status")]
     public ActionResult<ApiResponse<WeChatConfigStatusDto>> GetWeChatStatus()
@@ -82,12 +87,15 @@ public class AuthController(
             }
         }
 
+        var tokenResult = jwtTokenService.CreateMiniAppToken(user.Id);
+
         return Ok(Success(new AuthLoginResultDto
         {
             UserId = user.Id,
             MiniOpenId = user.MiniOpenId,
             Mobile = user.Mobile,
             IsNewUser = isNewUser,
+            Token = tokenResult.AccessToken,
         }));
     }
 
@@ -107,6 +115,35 @@ public class AuthController(
 
         user.Mobile = request.Mobile.Trim();
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        var pendingDetails = await dbContext.CouponIssueImportDetails
+            .Where(x => x.Mobile == user.Mobile && x.Status == CouponIssueImportDetailStatus.PendingMatch)
+            .ToListAsync(cancellationToken);
+
+        foreach (var detail in pendingDetails)
+        {
+            var grantResult = await userCouponGrantService.GrantAsync(
+                detail.CouponTemplateId,
+                new[]
+                {
+                    new ManualGrantUserCouponInput
+                    {
+                        AppUserId = user.Id,
+                        QuantityPerUser = detail.Quantity > 0 ? detail.Quantity : 1,
+                    }
+                });
+
+            var item = grantResult.Items.FirstOrDefault();
+            if (item is not null && item.Success)
+            {
+                detail.Status = CouponIssueImportDetailStatus.MatchedAndGranted;
+            }
+        }
+
+        if (dbContext.ChangeTracker.HasChanges())
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
 
         return Ok(Success(true, "绑定成功"));
     }

@@ -117,6 +117,18 @@ public class PaymentsController(
     {
         using var reader = new StreamReader(Request.Body);
         var rawBody = await reader.ReadToEndAsync(cancellationToken);
+
+        var timestamp = Request.Headers["Wechatpay-Timestamp"].FirstOrDefault();
+        var nonce = Request.Headers["Wechatpay-Nonce"].FirstOrDefault();
+        var signature = Request.Headers["Wechatpay-Signature"].FirstOrDefault();
+        var serial = Request.Headers["Wechatpay-Serial"].FirstOrDefault();
+
+        var isValid = await weChatPayService.VerifyCallbackSignatureAsync(serial ?? string.Empty, timestamp ?? string.Empty, nonce ?? string.Empty, signature ?? string.Empty, rawBody, cancellationToken);
+        if (!isValid)
+        {
+            return BadRequest(new { code = "FAIL", message = "签名验证失败" });
+        }
+
         var transactionResource = weChatPayService.TryDecryptCallback(rawBody);
         if (transactionResource is null)
         {
@@ -168,5 +180,59 @@ public class PaymentsController(
         }
 
         return Ok(Success(true, result.Message));
+    }
+
+    [AdminPermissionAuthorize("coupon-order.refund")]
+    [HttpPost("refund")]
+    public async Task<ActionResult<ApiResponse<bool>>> Refund([FromBody] RefundOrderRequest request, CancellationToken cancellationToken)
+    {
+        var order = await dbContext.CouponOrders.FirstOrDefaultAsync(x => x.Id == request.OrderId, cancellationToken);
+        if (order is null)
+        {
+            return NotFound(Failure<bool>("订单不存在", 404));
+        }
+
+        if (order.Status != CouponOrderStatus.Paid)
+        {
+            return BadRequest(Failure<bool>("仅已支付订单可申请退款"));
+        }
+
+        var transaction = await dbContext.PaymentTransactions
+            .FirstOrDefaultAsync(x => x.CouponOrderId == order.Id && x.Status == PaymentStatus.Success, cancellationToken);
+        if (transaction is null)
+        {
+            return BadRequest(Failure<bool>("未找到有效支付流水"));
+        }
+
+        var userCoupons = await dbContext.UserCoupons
+            .Where(x => x.CouponOrderId == order.Id)
+            .ToListAsync(cancellationToken);
+
+        if (userCoupons.Count == 0)
+        {
+            return BadRequest(Failure<bool>("未找到该订单发放的用户券"));
+        }
+
+        if (userCoupons.Any(x => x.Status == UserCouponStatus.Used))
+        {
+            return BadRequest(Failure<bool>("存在已核销的券，无法退款"));
+        }
+
+        var refundResult = await weChatPayService.RefundAsync(transaction.PaymentNo, transaction.Amount, "运营退款", cancellationToken);
+        if (!refundResult.Success)
+        {
+            return BadRequest(Failure<bool>(refundResult.Message));
+        }
+
+        order.Status = CouponOrderStatus.Refunded;
+        transaction.Status = PaymentStatus.Refunded;
+
+        foreach (var coupon in userCoupons)
+        {
+            coupon.Status = UserCouponStatus.Recycled;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return Ok(Success(true, "退款成功"));
     }
 }

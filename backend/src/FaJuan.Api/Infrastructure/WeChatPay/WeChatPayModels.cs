@@ -94,3 +94,78 @@ public class WeChatTransactionResource
     [JsonPropertyName("trade_state")]
     public string? TradeState { get; set; }
 }
+
+public class WeChatPayCertificatesResponse
+{
+    [JsonPropertyName("data")]
+    public List<WeChatPayCertificateItem>? Data { get; set; }
+}
+
+public class WeChatPayCertificateItem
+{
+    [JsonPropertyName("serial_no")]
+    public string? SerialNo { get; set; }
+
+    [JsonPropertyName("effective_time")]
+    public string? EffectiveTime { get; set; }
+
+    [JsonPropertyName("expire_time")]
+    public string? ExpireTime { get; set; }
+
+    [JsonPropertyName("encrypt_certificate")]
+    public WeChatPayEncryptCertificate? EncryptCertificate { get; set; }
+}
+
+public class WeChatPayEncryptCertificate
+{
+    [JsonPropertyName("algorithm")]
+    public string? Algorithm { get; set; }
+
+    [JsonPropertyName("nonce")]
+    public string? Nonce { get; set; }
+
+    [JsonPropertyName("associated_data")]
+    public string? AssociatedData { get; set; }
+
+    [JsonPropertyName("ciphertext")]
+    public string? CipherText { get; set; }
+}
+
+public class WeChatRefundRequest
+{
+    [JsonPropertyName("out_refund_no")]
+    public string OutRefundNo { get; set; } = string.Empty;
+
+    [JsonPropertyName("out_trade_no")]
+    public string OutTradeNo { get; set; } = string.Empty;
+
+    [JsonPropertyName("reason")]
+    public string? Reason { get; set; }
+
+    [JsonPropertyName("amount")]
+    public WeChatRefundAmount Amount { get; set; } = new();
+}
+
+public class WeChatRefundAmount
+{
+    [JsonPropertyName("refund")]
+    public int Refund { get; set; }
+
+    [JsonPropertyName("total")]
+    public int Total { get; set; }
+
+    [JsonPropertyName("currency")]
+    public string Currency { get; set; } = "CNY";
+}
+
+public class WeChatRefundResponse
+{
+    [JsonPropertyName("refund_id")]
+    public string? RefundId { get; set; }
+
+    [JsonPropertyName("out_refund_no")]
+    public string? OutRefundNo { get; set; }
+
+    [JsonPropertyName("status")]
+    public string? Status { get; set; }
+}

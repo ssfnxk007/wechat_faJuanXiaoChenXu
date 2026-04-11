@@ -3,6 +3,7 @@ using FaJuan.Api.Application.Orders;
 using FaJuan.Api.Application.UserCoupons;
 using FaJuan.Api.Contracts;
 using FaJuan.Api.Infrastructure.Auth;
+using FaJuan.Api.Infrastructure.MiniApp;
 using FaJuan.Api.Infrastructure.Persistence;
 using FaJuan.Api.Infrastructure.WeChat;
 using FaJuan.Api.Infrastructure.WeChatPay;
@@ -24,6 +25,10 @@ builder.Services.AddCors(options =>
         policy.WithOrigins(
                 "http://localhost:5173",
                 "https://localhost:5173",
+                "http://127.0.0.1:5173",
+                "https://127.0.0.1:5173",
+                "http://10.168.1.106:5173",
+                "https://10.168.1.106:5173",
                 "http://localhost:5180",
                 "https://localhost:5180",
                 "http://127.0.0.1:5180",
@@ -35,6 +40,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.Configure<WeChatMiniProgramOptions>(builder.Configuration.GetSection("WeChatMiniProgram"));
 builder.Services.Configure<WeChatPayOptions>(builder.Configuration.GetSection("WeChatPay"));
+builder.Services.Configure<MiniAppThemeSettingsOptions>(builder.Configuration.GetSection("MiniAppTheme"));
 
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "FaJuan.Api";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "FaJuan.Admin";
@@ -70,6 +76,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddHealthChecks();
 builder.Services.AddScoped<OrderPaymentService>();
 builder.Services.AddScoped<UserCouponGrantService>();
+builder.Services.AddSingleton<MiniAppThemeSettingsService>();
 builder.Services.AddSingleton<JwtTokenService>();
 builder.Services.AddSingleton<PasswordHashService>();
 builder.Services.AddHttpClient<WeChatMiniProgramService>();

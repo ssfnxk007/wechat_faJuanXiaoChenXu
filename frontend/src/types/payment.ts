@@ -15,3 +15,7 @@ export interface PaymentCallbackRequest {
   success: boolean
   rawCallback?: string
 }
+
+export interface RefundOrderRequest {
+  orderId: number
+}

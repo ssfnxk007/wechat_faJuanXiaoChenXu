@@ -120,7 +120,7 @@ async function loadCoupons() {
   }
 
   try {
-    const result = await getMiniAppUserCoupons(session.userId, {
+    const result = await getMiniAppUserCoupons({
       status: currentStatus.value,
       pageIndex: 1,
       pageSize: 20

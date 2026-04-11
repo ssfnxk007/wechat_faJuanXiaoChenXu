@@ -18,6 +18,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<UserCoupon> UserCoupons => Set<UserCoupon>();
     public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
     public DbSet<CouponWriteOffRecord> CouponWriteOffRecords => Set<CouponWriteOffRecord>();
+    public DbSet<CouponIssueImportBatch> CouponIssueImportBatches => Set<CouponIssueImportBatch>();
+    public DbSet<CouponIssueImportDetail> CouponIssueImportDetails => Set<CouponIssueImportDetail>();
     public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
     public DbSet<AdminRole> AdminRoles => Set<AdminRole>();
     public DbSet<AdminMenu> AdminMenus => Set<AdminMenu>();
@@ -177,6 +179,27 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(x => x.DeviceCode).HasMaxLength(50);
             entity.Property(x => x.WriteOffAt).HasColumnType("datetime");
             entity.Property(x => x.CreatedAt).HasColumnType("datetime");
+        });
+
+        modelBuilder.Entity<CouponIssueImportBatch>(entity =>
+        {
+            entity.ToTable("CouponIssueImportBatch");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Name).HasMaxLength(100);
+            entity.Property(x => x.FileName).HasMaxLength(200);
+            entity.Property(x => x.CreatedAt).HasColumnType("datetime");
+        });
+
+        modelBuilder.Entity<CouponIssueImportDetail>(entity =>
+        {
+            entity.ToTable("CouponIssueImportDetail");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Mobile).HasMaxLength(20);
+            entity.Property(x => x.MiniOpenId).HasMaxLength(64);
+            entity.Property(x => x.OfficialOpenId).HasMaxLength(64);
+            entity.Property(x => x.CreatedAt).HasColumnType("datetime");
+            entity.HasIndex(x => new { x.Mobile, x.Status });
+            entity.HasIndex(x => x.BatchId);
         });
 
         modelBuilder.Entity<AdminUser>(entity =>

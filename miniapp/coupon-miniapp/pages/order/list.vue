@@ -124,7 +124,6 @@ const orders = ref([])
 const loadOrders = async () => {
   await ensureMiniProgramLogin()
   const result = await fetchOrderList({
-    userId: session.userId || undefined,
     pageIndex: 1,
     pageSize: 50
   })

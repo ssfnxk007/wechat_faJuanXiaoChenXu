@@ -35,3 +35,8 @@ public class WeChatPayCallbackHeaders
     public string? Signature { get; init; }
     public string? Serial { get; init; }
 }
+
+public class RefundOrderRequest
+{
+    public long OrderId { get; init; }
+}

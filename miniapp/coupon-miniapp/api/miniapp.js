@@ -16,20 +16,20 @@ export function getMiniAppCouponPackDetail(id) {
   return request({ url: `/api/miniapp/coupon-packs/${id}` }).then((response) => response.data)
 }
 
-export function getMiniAppUserCoupons(userId, params) {
-  return request({ url: `/api/miniapp/users/${userId}/coupons`, query: params }).then((response) => response.data)
+export function getMiniAppUserCoupons(params) {
+  return request({ url: '/api/miniapp/users/coupons', query: params }).then((response) => response.data)
 }
 
-export function getMiniAppUserCouponDetail(userId, id) {
-  return request({ url: `/api/miniapp/users/${userId}/coupons/${id}` }).then((response) => response.data)
+export function getMiniAppUserCouponDetail(id) {
+  return request({ url: `/api/miniapp/users/coupons/${id}` }).then((response) => response.data)
 }
 
-export function getMiniAppUserOrders(userId, params) {
-  return request({ url: `/api/miniapp/users/${userId}/orders`, query: params }).then((response) => response.data)
+export function getMiniAppUserOrders(params) {
+  return request({ url: '/api/miniapp/users/orders', query: params }).then((response) => response.data)
 }
 
-export function getMiniAppUserOrderDetail(userId, id) {
-  return request({ url: `/api/miniapp/users/${userId}/orders/${id}` }).then((response) => response.data)
+export function getMiniAppUserOrderDetail(id) {
+  return request({ url: `/api/miniapp/users/orders/${id}` }).then((response) => response.data)
 }
 
 export function createMiniAppOrder(data) {

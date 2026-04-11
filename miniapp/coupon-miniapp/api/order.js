@@ -130,10 +130,10 @@ function mapOrder(item, fallback = {}) {
 }
 
 export async function fetchOrderList(query = {}) {
-  const session = useSessionStore()
+  const enableFallback = process.env.NODE_ENV !== 'production'
   const result = await requestWithFallback(
-    { url: '/api/miniapp/orders', query: { ...query, userId: query.userId || session.userId || undefined } },
-    () => ({ items: mockOrders, totalCount: mockOrders.length, pageIndex: 1, pageSize: mockOrders.length, totalPages: 1 })
+    { url: '/api/miniapp/orders', query },
+    enableFallback ? () => ({ items: mockOrders, totalCount: mockOrders.length, pageIndex: 1, pageSize: mockOrders.length, totalPages: 1 }) : undefined
   )
 
   const items = toItems(result.data).map((item, index) => mapOrder(item, mockOrders[index] || {}))

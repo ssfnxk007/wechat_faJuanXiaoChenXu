@@ -137,9 +137,10 @@ function normalizeHomeData(payload = {}) {
 
 export async function fetchHomePageData() {
   const session = useSessionStore()
+  const enableFallback = process.env.NODE_ENV !== 'production'
   const result = await requestWithFallback(
     { url: '/api/miniapp/home', query: { userId: session.userId || undefined } },
-    () => mockHomeData
+    enableFallback ? () => mockHomeData : undefined
   )
 
   return {

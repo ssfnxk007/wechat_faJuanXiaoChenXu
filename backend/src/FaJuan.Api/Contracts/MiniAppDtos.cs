@@ -241,7 +241,6 @@ public class MiniAppCreateOrderPaymentRequest
 
 public class MiniAppClaimCouponRequest
 {
-    public long UserId { get; init; }
 }
 
 public class MiniAppCreateOrderPaymentResultDto

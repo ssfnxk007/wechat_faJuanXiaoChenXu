@@ -43,7 +43,7 @@
 
       <div class="filter-panel-grid order-filter-grid">
         <label class="field-card filter-field"><span class="field-label">订单号</span><input v-model.trim="query.keyword" type="text" placeholder="输入订单号后回车检索" @keyup.enter="handleSearch" /></label>
-        <label class="field-card filter-field compact-field"><span class="field-label">状态</span><select v-model="filters.status" @change="handleSearch"><option value="all">全部</option><option value="1">待支付</option><option value="2">已支付</option><option value="3">已关闭</option></select></label>
+        <label class="field-card filter-field compact-field"><span class="field-label">状态</span><select v-model="filters.status" @change="handleSearch"><option value="all">全部</option><option value="1">待支付</option><option value="2">已支付</option><option value="3">已退款</option><option value="4">已关闭</option></select></label>
         <label class="field-card filter-field compact-field"><span class="field-label">用户</span><select v-model.number="filters.userId" @change="handleSearch"><option :value="0">全部用户</option><option v-for="user in userOptions" :key="user.id" :value="user.id">{{ formatUserLabel(user) }}</option></select></label>
         <label class="field-card filter-field compact-field"><span class="field-label">分页条数</span><select v-model.number="pageSize" @change="handlePageSizeChange"><option :value="10">每页 10 条</option><option :value="20">每页 20 条</option><option :value="50">每页 50 条</option></select></label>
         <div class="field-card summary-field order-summary-card"><span class="field-label">当前筛选</span><strong>{{ querySummary }}</strong><p>当前列表基于服务端分页加载，并叠加前端状态 / 用户过滤。</p></div>
@@ -64,7 +64,7 @@
               <td><span :class="['status-badge', statusClassMap[item.status] ?? 'warning']">{{ statusMap[item.status] || '未知状态' }}</span></td>
               <td>{{ formatDate(item.paidAt) }}</td>
               <td>{{ formatDate(item.createdAt) }}</td>
-              <td><div class="table-actions"><button type="button" class="action-button" @click="openDetailDialog(item.id)">详情</button><button v-if="canPay && item.status === 1" type="button" class="action-button" :disabled="payingOrderId === item.id" @click="payOrder(item.id)">{{ payingOrderId === item.id ? '处理中...' : '处理支付' }}</button></div></td>
+              <td><div class="table-actions"><button type="button" class="action-button" @click="openDetailDialog(item.id)">详情</button><button v-if="canPay && item.status === 1" type="button" class="action-button" :disabled="payingOrderId === item.id || refundingOrderId === item.id" @click="payOrder(item.id)">{{ payingOrderId === item.id ? '处理中...' : '处理支付' }}</button><button v-if="canRefund && item.status === 2" type="button" class="action-button danger" :disabled="refundingOrderId === item.id || payingOrderId === item.id" @click="refundOrderAction(item.id)">{{ refundingOrderId === item.id ? '退款中...' : '退款' }}</button></div></td>
             </tr>
             <tr v-if="filteredItems.length === 0"><td colspan="8" class="empty-text">当前没有符合条件的订单记录</td></tr>
           </tbody>
@@ -108,7 +108,7 @@
 
         <div class="card toolbar-card detail-history-card"><div class="toolbar-title"><span class="section-kicker">发券结果</span><h3>订单发放券</h3><p class="section-tip">查看本订单完成支付后实际发放到用户卡包的券。</p></div><div v-if="!detail || detail.grantedCoupons.length === 0" class="empty-text">当前订单暂无发券记录</div><div v-else class="table-wrap"><table class="table"><thead><tr><th>模板</th><th>优惠</th><th>券码</th><th>状态</th><th>有效期</th></tr></thead><tbody><tr v-for="coupon in detail.grantedCoupons" :key="coupon.id"><td><div class="table-primary-cell"><strong>{{ coupon.couponTemplateName }}</strong><span>{{ templateTypeMap[coupon.templateType] || '-' }}</span></div></td><td>{{ formatCouponBenefit(coupon) }}</td><td class="cell-mono">{{ coupon.couponCode }}</td><td><span :class="['status-badge', coupon.status === 1 ? 'success' : 'warning']">{{ couponStatusMap[coupon.status] || '未知' }}</span></td><td><div class="table-primary-cell"><strong>{{ formatDate(coupon.effectiveAt) }}</strong><span>至 {{ formatDate(coupon.expireAt) }}</span></div></td></tr></tbody></table></div></div>
 
-        <div class="dialog-actions"><button v-if="canPay && detail?.status === 1" type="button" class="ghost-button" :disabled="payingOrderId === detail.id" @click="payOrder(detail.id)">{{ payingOrderId === detail.id ? '处理中...' : '处理支付' }}</button><button type="button" class="primary-button" :disabled="submitting || payingOrderId === detail?.id" @click="closeDetailDialog">关闭</button></div>
+        <div class="dialog-actions"><button v-if="canPay && detail?.status === 1" type="button" class="ghost-button" :disabled="payingOrderId === detail.id || refundingOrderId === detail.id" @click="payOrder(detail.id)">{{ payingOrderId === detail.id ? '处理中...' : '处理支付' }}</button><button v-if="canRefund && detail?.status === 2" type="button" class="ghost-button danger" :disabled="refundingOrderId === detail.id || payingOrderId === detail.id" @click="refundOrderAction(detail.id)">{{ refundingOrderId === detail.id ? '退款中...' : '退款' }}</button><button type="button" class="primary-button" :disabled="submitting || payingOrderId === detail?.id || refundingOrderId === detail?.id" @click="closeDetailDialog">关闭</button></div>
       </div>
     </div>
   </div>
@@ -119,7 +119,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import RemoteSelectField from '@/components/RemoteSelectField.vue'
 import { createCouponOrder, getCouponOrderDetail, getCouponOrderList } from '@/api/coupon-pack'
 import { getCouponPackList } from '@/api/coupon-pack'
-import { createPayment, paymentCallback } from '@/api/payment'
+import { createPayment, paymentCallback, refundOrder } from '@/api/payment'
 import type { CouponOrderDetailDto, CouponOrderListItemDto } from '@/types/coupon-pack'
 import type { CouponPackListItemDto } from '@/types/coupon-pack'
 import { getUserList } from '@/api/user'
@@ -128,9 +128,9 @@ import { getErrorMessage } from '@/utils/http-error'
 import { authStorage } from '@/utils.auth'
 import { notify } from '@/utils/notify'
 
-const statusMap: Record<number, string> = { 1: '待支付', 2: '已支付', 3: '已关闭' }
-const statusClassMap: Record<number, 'success' | 'warning' | 'danger'> = { 1: 'warning', 2: 'success', 3: 'danger' }
-const couponStatusMap: Record<number, string> = { 1: '待使用', 2: '已核销', 3: '已过期', 4: '已失效' }
+const statusMap: Record<number, string> = { 1: '待支付', 2: '已支付', 3: '已退款', 4: '已关闭' }
+const statusClassMap: Record<number, 'success' | 'warning' | 'danger'> = { 1: 'warning', 2: 'success', 3: 'danger', 4: 'danger' }
+const couponStatusMap: Record<number, string> = { 1: '待使用', 2: '已核销', 3: '已过期', 4: '已失效', 5: '已回收' }
 const templateTypeMap: Record<number, string> = { 1: '新人券', 2: '无门槛券', 3: '指定商品券', 4: '满减券' }
 
 const items = ref<CouponOrderListItemDto[]>([])
@@ -146,8 +146,10 @@ const couponPackOptions = ref<CouponPackListItemDto[]>([])
 const selectorQuery = reactive({ userKeyword: '', couponPackKeyword: '' })
 const submitting = ref(false)
 const payingOrderId = ref<number | null>(null)
+const refundingOrderId = ref<number | null>(null)
 const canCreate = authStorage.hasPermission('coupon-order.create')
 const canPay = authStorage.hasPermission('coupon-order.pay')
+const canRefund = authStorage.hasPermission('coupon-order.refund')
 
 const query = reactive({ keyword: '' })
 const filters = reactive({ status: 'all', userId: 0 })
@@ -229,6 +231,18 @@ const payOrder = async (orderId: number) => {
     if (detail.value?.id === orderId) await openDetailDialog(orderId)
     notify.success('支付处理成功，已刷新订单状态')
   } catch (error) { notify.error(getErrorMessage(error, '支付处理失败')) } finally { payingOrderId.value = null }
+}
+
+const refundOrderAction = async (orderId: number) => {
+  if (!confirm('确定要对该订单执行退款吗？退款后关联的用户券将被回收。')) return
+  if (refundingOrderId.value) return
+  refundingOrderId.value = orderId
+  try {
+    await refundOrder({ orderId })
+    await loadData()
+    if (detail.value?.id === orderId) await openDetailDialog(orderId)
+    notify.success('退款成功，已刷新订单状态')
+  } catch (error) { notify.error(getErrorMessage(error, '退款失败')) } finally { refundingOrderId.value = null }
 }
 
 onMounted(async () => {

@@ -9,6 +9,7 @@ import CouponPackView from '@/views/coupon-pack/CouponPackView.vue'
 import CouponTemplateView from '@/views/coupon-template/CouponTemplateView.vue'
 import DashboardView from '@/views/dashboard/DashboardView.vue'
 import LoginView from '@/views/login/LoginView.vue'
+import MiniAppSettingView from '@/views/miniapp-setting/MiniAppSettingView.vue'
 import CouponOrderView from '@/views/order/CouponOrderView.vue'
 import ProductView from '@/views/product/ProductView.vue'
 import StoreView from '@/views/store/StoreView.vue'
@@ -35,6 +36,7 @@ const router = createRouter({
         { path: 'coupon-orders', name: 'couponOrders', component: CouponOrderView, meta: { title: '订单管理', subtitle: '查看券包订单与支付发券流程' } },
         { path: 'user-coupons', name: 'userCoupons', component: UserCouponView, meta: { title: '用户券', subtitle: '查看发券结果、券码与有效期状态' } },
         { path: 'writeoff', name: 'writeOff', component: WriteOffView, meta: { title: '核销中心', subtitle: '处理门店核销、券码校验与使用结果确认' } },
+        { path: 'miniapp-settings', name: 'miniappSettings', component: MiniAppSettingView, meta: { title: '小程序主题', subtitle: '切换新中式绿意与极简纯白风等小程序外观配置' } },
         { path: 'admin-users', name: 'adminUsers', component: AdminUserView, meta: { title: '权限管理', subtitle: '管理后台账号、角色分配与账号状态' } },
         { path: 'admin-roles', name: 'adminRoles', component: AdminRoleView, meta: { title: '角色管理', subtitle: '维护角色和菜单授权关系' } },
         { path: 'admin-menus', name: 'adminMenus', component: AdminMenuView, meta: { title: '菜单管理', subtitle: '维护后台菜单树、路由和组件映射' } },

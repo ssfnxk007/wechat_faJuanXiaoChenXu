@@ -6,4 +6,5 @@ public enum UserCouponStatus
     Used = 2,
     Expired = 3,
     Voided = 4,
+    Recycled = 5,
 }

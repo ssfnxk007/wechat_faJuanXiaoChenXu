@@ -153,12 +153,12 @@ function goOrderList() {
 }
 
 async function loadOrderDetail(id) {
-  if (!id || !session.userId) {
+  if (!id) {
     return
   }
 
   try {
-    const result = await getMiniAppUserOrderDetail(session.userId, id)
+    const result = await getMiniAppUserOrderDetail(id)
     if (!result) {
       return
     }

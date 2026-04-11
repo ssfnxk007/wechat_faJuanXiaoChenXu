@@ -18,4 +18,5 @@ public class AuthLoginResultDto
     public string MiniOpenId { get; init; } = string.Empty;
     public string? Mobile { get; init; }
     public bool IsNewUser { get; init; }
+    public string? Token { get; init; }
 }

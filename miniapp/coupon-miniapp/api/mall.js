@@ -56,14 +56,15 @@ function mapProduct(item, fallback = {}) {
 }
 
 export async function fetchMallPageData(query = {}) {
+  const enableFallback = process.env.NODE_ENV !== 'production'
   const [packResult, productResult] = await Promise.all([
     requestWithFallback(
       { url: '/api/miniapp/coupon-packs', query },
-      () => ({ items: mockMallData.packs })
+      enableFallback ? () => ({ items: mockMallData.packs }) : undefined
     ),
     requestWithFallback(
       { url: '/api/miniapp/products', query },
-      () => ({ items: mockMallData.goods })
+      enableFallback ? () => ({ items: mockMallData.goods }) : undefined
     )
   ])
 

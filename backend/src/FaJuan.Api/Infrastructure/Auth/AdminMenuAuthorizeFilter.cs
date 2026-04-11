@@ -19,7 +19,7 @@ public class AdminMenuAuthorizeFilter(AppDbContext dbContext, IConfiguration con
         var username = context.HttpContext.User.Identity?.Name;
         if (string.IsNullOrWhiteSpace(username))
         {
-            context.Result = new UnauthorizedObjectResult(ApiResponse<object>.Fail("???????", 401));
+            context.Result = new UnauthorizedObjectResult(ApiResponse<object>.Fail("登录状态已失效", 401));
             return;
         }
 
@@ -34,7 +34,7 @@ public class AdminMenuAuthorizeFilter(AppDbContext dbContext, IConfiguration con
             .FirstOrDefaultAsync(x => x.Username == username && x.IsEnabled);
         if (adminUser is null)
         {
-            context.Result = new ObjectResult(ApiResponse<object>.Fail("????????", 403)) { StatusCode = 403 };
+            context.Result = new ObjectResult(ApiResponse<object>.Fail("无权限访问该菜单", 403)) { StatusCode = 403 };
             return;
         }
 
@@ -49,7 +49,7 @@ public class AdminMenuAuthorizeFilter(AppDbContext dbContext, IConfiguration con
 
         if (!hasRole)
         {
-            context.Result = new ObjectResult(ApiResponse<object>.Fail("?????????", 403)) { StatusCode = 403 };
+            context.Result = new ObjectResult(ApiResponse<object>.Fail("当前账号未分配角色", 403)) { StatusCode = 403 };
             return;
         }
 
@@ -74,7 +74,7 @@ public class AdminMenuAuthorizeFilter(AppDbContext dbContext, IConfiguration con
 
         if (!hasMenuPermission)
         {
-            context.Result = new ObjectResult(ApiResponse<object>.Fail("??????????", 403)) { StatusCode = 403 };
+            context.Result = new ObjectResult(ApiResponse<object>.Fail("当前账号无此菜单权限", 403)) { StatusCode = 403 };
         }
     }
 }
