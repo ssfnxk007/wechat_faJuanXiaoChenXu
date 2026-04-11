@@ -25,3 +25,7 @@ obj/
 *.user
 *.suo
 
+# Sensitive configuration files
+backend/src/FaJuan.Api/appsettings.json
+backend/src/FaJuan.Api/appsettings.Development.json
+
