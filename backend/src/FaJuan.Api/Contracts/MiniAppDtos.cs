@@ -55,6 +55,20 @@ public class MiniAppProductCardDto
     public decimal? SalePrice { get; init; }
 }
 
+public class MiniAppProductDetailDto
+{
+    public long Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string ErpProductCode { get; init; } = string.Empty;
+    public string? MainImageUrl { get; set; }
+    public IReadOnlyCollection<string> DetailImageUrls { get; init; } = [];
+    public decimal? SalePrice { get; init; }
+    public bool IsEnabled { get; init; }
+    public string? Remark { get; init; }
+    public IReadOnlyCollection<MiniAppCouponTemplateCardDto> RelatedCoupons { get; init; } = [];
+    public IReadOnlyCollection<MiniAppCouponTemplateCardDto> RecommendedCoupons { get; init; } = [];
+}
+
 public class MiniAppCouponTemplateCardDto
 {
     public long Id { get; init; }

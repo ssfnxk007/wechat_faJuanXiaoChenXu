@@ -86,7 +86,7 @@ public class AdminUsersController(AppDbContext dbContext, PasswordHashService pa
         var exists = await dbContext.AdminUsers.AnyAsync(x => x.Username == username);
         if (exists)
         {
-            return BadRequest(Failure<long>("????????"));
+            return BadRequest(Failure<long>("账号名称已存在"));
         }
 
         var roleIds = request.RoleIds.Distinct().ToArray();
@@ -98,7 +98,7 @@ public class AdminUsersController(AppDbContext dbContext, PasswordHashService pa
             var roleCount = existingRoleIds.Count(x => roleIds.Contains(x));
             if (roleCount != roleIds.Length)
             {
-                return BadRequest(Failure<long>("???????????"));
+                return BadRequest(Failure<long>("存在无效的角色标识"));
             }
         }
 
@@ -126,7 +126,7 @@ public class AdminUsersController(AppDbContext dbContext, PasswordHashService pa
         }
 
         await transaction.CommitAsync();
-        return Ok(Success(entity.Id, "????"));
+        return Ok(Success(entity.Id, "创建成功"));
     }
 
     [AdminPermissionAuthorize("admin.user.edit")]
@@ -142,14 +142,14 @@ public class AdminUsersController(AppDbContext dbContext, PasswordHashService pa
         var entity = await dbContext.AdminUsers.FirstOrDefaultAsync(x => x.Id == id);
         if (entity is null)
         {
-            return NotFound(Failure<long>("??????"));
+            return NotFound(Failure<long>("管理员账号不存在"));
         }
 
         var username = request.Username.Trim();
         var duplicated = await dbContext.AdminUsers.AnyAsync(x => x.Id != id && x.Username == username);
         if (duplicated)
         {
-            return BadRequest(Failure<long>("????????"));
+            return BadRequest(Failure<long>("账号名称已存在"));
         }
 
         var roleIds = request.RoleIds.Distinct().ToArray();
@@ -161,7 +161,7 @@ public class AdminUsersController(AppDbContext dbContext, PasswordHashService pa
             var roleCount = existingRoleIds.Count(x => roleIds.Contains(x));
             if (roleCount != roleIds.Length)
             {
-                return BadRequest(Failure<long>("???????????"));
+                return BadRequest(Failure<long>("存在无效的角色标识"));
             }
         }
 
@@ -188,7 +188,7 @@ public class AdminUsersController(AppDbContext dbContext, PasswordHashService pa
 
         await dbContext.SaveChangesAsync();
         await transaction.CommitAsync();
-        return Ok(Success(id, "????"));
+        return Ok(Success(id, "更新成功"));
     }
 
     [AdminPermissionAuthorize("admin.user.reset-password")]
@@ -197,18 +197,18 @@ public class AdminUsersController(AppDbContext dbContext, PasswordHashService pa
     {
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Trim().Length < 6)
         {
-            return BadRequest(Failure<long>("????? 6 ?"));
+            return BadRequest(Failure<long>("密码长度不能少于 6 位"));
         }
 
         var entity = await dbContext.AdminUsers.FirstOrDefaultAsync(x => x.Id == id);
         if (entity is null)
         {
-            return NotFound(Failure<long>("??????"));
+            return NotFound(Failure<long>("管理员账号不存在"));
         }
 
         entity.PasswordHash = passwordHashService.Hash(request.Password.Trim());
         await dbContext.SaveChangesAsync();
-        return Ok(Success(id, "??????"));
+        return Ok(Success(id, "密码重置成功"));
     }
 
     [AdminPermissionAuthorize("admin.user.delete")]
@@ -218,13 +218,13 @@ public class AdminUsersController(AppDbContext dbContext, PasswordHashService pa
         var entity = await dbContext.AdminUsers.FirstOrDefaultAsync(x => x.Id == id);
         if (entity is null)
         {
-            return NotFound(Failure<bool>("??????"));
+            return NotFound(Failure<bool>("管理员账号不存在"));
         }
 
         var currentUsername = User.Identity?.Name;
         if (!string.IsNullOrWhiteSpace(currentUsername) && string.Equals(entity.Username, currentUsername, StringComparison.OrdinalIgnoreCase))
         {
-            return BadRequest(Failure<bool>("???????????"));
+            return BadRequest(Failure<bool>("当前账号已绑定角色，不能直接删除"));
         }
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync();
@@ -233,19 +233,19 @@ public class AdminUsersController(AppDbContext dbContext, PasswordHashService pa
         dbContext.AdminUsers.Remove(entity);
         await dbContext.SaveChangesAsync();
         await transaction.CommitAsync();
-        return Ok(Success(true, "????"));
+        return Ok(Success(true, "删除成功"));
     }
 
     private static string? ValidateSaveRequest(SaveAdminUserRequest request, bool isCreate)
     {
         if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.DisplayName))
         {
-            return "?????????";
+            return "账号、显示名称不能为空";
         }
 
         if (isCreate && (string.IsNullOrWhiteSpace(request.Password) || request.Password.Trim().Length < 6))
         {
-            return "?????? 6 ?";
+            return "密码长度不能少于 6 位";
         }
 
         return null;

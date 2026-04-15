@@ -96,6 +96,12 @@
 - 修复：为 `WindowsPowerShell` 和 `PowerShell 7` 都写入 UTF-8 profile，引导新会话统一 `[Console]::InputEncoding`、`[Console]::OutputEncoding`、`$OutputEncoding`，并把 `Out-File`、`Set-Content`、`Add-Content` 默认编码固定为 `utf-8`；同时在项目协作中把中文敏感文件编辑优先级改为 `apply_patch` / `python` / `pwsh`。
 - 预防：以后不要假设“装了 PowerShell 7 就没事”；必须先验证当前 shell 实际版本和三项编码状态。对中文代码、文档、SQL、配置文件，避免使用 `powershell.exe 5.1` 直接改写；不要尝试通过卸载 `PowerShell 5.1` 来解决此问题。
 
+## 2026-04-12 - 独立菜单权限 SQL 与控制器鉴权未同步会导致“看得到菜单但点不开接口”
+- 症状：数据库已经补了新的后台菜单路径和按钮权限，例如 `/banners` 与 `banner.*`，但实际接口仍然返回 `403`，或者页面进入后按钮显示与接口鉴权不一致。
+- 根因：控制器上的 `[AdminMenuAuthorize]` 与 `[AdminPermissionAuthorize]` 仍沿用旧的菜单路径或旧权限码，导致初始化 SQL 与运行时鉴权规则脱节。
+- 修复：在补菜单/权限初始化 SQL 时，同时核对控制器上的菜单路径、按钮权限码与前端路由；若本轮只允许改 SQL/文档，必须在工作日志和脚本注释中明确“当前运行时仍依赖旧权限”。
+- 预防：新增后台模块时，菜单路径、按钮权限码、前端路由、初始化 SQL 必须四项一起核对；不要只补数据库基础数据而不检查控制器特性标记。
+
 
 ## 2026-04-11 - EF Core 分页生成 OFFSET/FETCH 导致 SQL Server 2008 R2 报错
 - 症状：小程序接口调用时报错 `OFFSET 附近有语法错误`、`FETCH NEXT 用法无效`，堆栈落在 `MiniAppController.GetUserCoupons` / `GetUserOrders`。

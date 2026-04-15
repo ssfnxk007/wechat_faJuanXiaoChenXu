@@ -38,6 +38,18 @@
       }
     },
     {
+      "path": "pages/product/detail",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/activity/detail",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/order/result",
       "style": {
         "navigationStyle": "custom"

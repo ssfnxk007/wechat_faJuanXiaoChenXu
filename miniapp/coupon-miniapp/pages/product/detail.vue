@@ -1,0 +1,421 @@
+<template>
+  <view :class="['cm-page', themeClass]">
+    <view class="product-hero" :style="coverStyle">
+      <view class="product-hero-mask"></view>
+      <view class="cm-nav-spacer"></view>
+      <view class="cm-container product-hero-content">
+        <view class="product-topbar">
+          <view class="product-back" @click="goBack">返回</view>
+          <view class="product-badge">商品详情</view>
+        </view>
+
+        <view class="product-head-copy">
+          <text class="product-eyebrow">PRODUCT DETAIL</text>
+          <text class="product-title">{{ detail.title }}</text>
+          <text class="product-subtitle">{{ detail.tag || '支持搭配优惠券使用' }}</text>
+        </view>
+
+        <view class="hero-summary cm-card">
+          <view>
+            <text class="price-label">参考售价</text>
+            <view class="price-row">
+              <text class="price-unit">¥</text>
+              <text class="price-value">{{ detail.price || '--' }}</text>
+            </view>
+          </view>
+          <view class="hero-tag">{{ detail.tag || '商品' }}</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="cm-container product-body">
+      <view class="cm-section">
+        <SectionHeader eyebrow="DESCRIPTION" title="商品说明" subtitle="用于商品展示与活动承接" />
+        <view class="desc-card cm-card">
+          <text class="desc-text">{{ detail.desc || '请以后台商品说明为准。' }}</text>
+        </view>
+      </view>
+
+      <view class="cm-section" v-if="detail.highlights.length">
+        <SectionHeader eyebrow="HIGHLIGHTS" title="商品亮点" subtitle="帮助用户快速了解商品卖点" />
+        <view class="highlight-stack">
+          <view class="highlight-card cm-card" v-for="item in detail.highlights" :key="item">
+            <text class="highlight-text">{{ item }}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="cm-section" v-if="detail.detailImages.length">
+        <SectionHeader eyebrow="DETAIL IMAGES" title="商品展示" subtitle="展示商品主图与详情图" />
+        <view class="gallery-stack">
+          <image v-for="(image, index) in detail.detailImages" :key="`${image}-${index}`" class="gallery-image cm-card" :src="image" mode="widthFix" />
+        </view>
+      </view>
+
+      <view class="cm-section" v-if="detail.availableCoupons.length">
+        <SectionHeader eyebrow="AVAILABLE COUPONS" title="商品专享券" subtitle="这些券与当前商品直接关联" action-text="去领券中心" @action-click="goCouponCenter" />
+        <view class="coupon-stack">
+          <view class="coupon-card cm-card" v-for="coupon in detail.availableCoupons" :key="coupon.id">
+            <view class="coupon-top">
+              <view>
+                <text class="coupon-type">{{ coupon.type }}</text>
+                <text class="coupon-title">{{ coupon.title }}</text>
+              </view>
+              <view class="coupon-amount-box">
+                <text class="coupon-amount">{{ coupon.amount || '--' }}</text>
+                <text class="coupon-unit">元</text>
+              </view>
+            </view>
+            <text class="coupon-desc">{{ coupon.desc }}</text>
+            <view class="coupon-footer">
+              <text class="coupon-threshold">{{ formatThreshold(coupon.threshold, '仅当前商品可用') }}</text>
+              <view class="coupon-action" @click="openCoupon(coupon)">查看券详情</view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="cm-section" v-if="detail.recommendedCoupons.length">
+        <SectionHeader eyebrow="RECOMMENDED COUPONS" title="推荐优惠券" subtitle="当前商品也适合搭配这些通用券" action-text="去领券中心" @action-click="goCouponCenter" />
+        <view class="coupon-stack coupon-stack-secondary">
+          <view class="coupon-card cm-card coupon-card-secondary" v-for="coupon in detail.recommendedCoupons" :key="`recommend-${coupon.id}`">
+            <view class="coupon-top">
+              <view>
+                <text class="coupon-type">{{ coupon.type }}</text>
+                <text class="coupon-title">{{ coupon.title }}</text>
+              </view>
+              <view class="coupon-amount-box secondary-box">
+                <text class="coupon-amount">{{ coupon.amount || '--' }}</text>
+                <text class="coupon-unit">元</text>
+              </view>
+            </view>
+            <text class="coupon-desc">{{ coupon.desc }}</text>
+            <view class="coupon-footer">
+              <text class="coupon-threshold">{{ formatThreshold(coupon.threshold, '通用可领') }}</text>
+              <view class="coupon-action" @click="openCoupon(coupon)">查看券详情</view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="action-bar cm-card">
+        <view class="action-copy">
+          <text class="action-title">{{ detail.title }}</text>
+          <text class="action-desc">可以先领券，再返回商品页下单或到店核销。</text>
+        </view>
+        <view class="action-buttons">
+          <view class="ghost-action" @click="goMall">返回商城</view>
+          <view class="primary-action" @click="goCouponCenter">去领券</view>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script setup>
+import { computed, ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import SectionHeader from '@/components/SectionHeader.vue'
+import { useTheme } from '@/composables/use-theme'
+import { fetchMiniAppProductDetail } from '@/api/mall'
+
+const { themeClass } = useTheme()
+
+const detail = ref({
+  id: 0,
+  title: '商品详情',
+  desc: '',
+  price: '',
+  tag: '',
+  imageUrl: '',
+  highlights: [],
+  detailImages: [],
+  availableCoupons: [],
+  recommendedCoupons: [],
+})
+
+const coverStyle = computed(() => detail.value.imageUrl ? { backgroundImage: `url(${detail.value.imageUrl})` } : {})
+
+onLoad(async (options = {}) => {
+  const id = Number(options.id || options.productId || 0)
+  if (!id) {
+    uni.showToast({ title: '商品不存在', icon: 'none' })
+    return
+  }
+
+  const result = await fetchMiniAppProductDetail(id)
+  if (!result) {
+    uni.showToast({ title: '商品不存在', icon: 'none' })
+    return
+  }
+
+  detail.value = {
+    id: result.id,
+    title: result.title,
+    desc: result.desc,
+    price: result.price,
+    tag: result.tag,
+    imageUrl: result.imageUrl,
+    highlights: Array.isArray(result.highlights) ? result.highlights : [],
+    detailImages: Array.isArray(result.detailImages) ? result.detailImages : [],
+    availableCoupons: Array.isArray(result.availableCoupons) ? result.availableCoupons : [],
+    recommendedCoupons: Array.isArray(result.recommendedCoupons) ? result.recommendedCoupons : [],
+  }
+})
+
+function goBack() {
+  uni.navigateBack({ delta: 1 })
+}
+
+function goMall() {
+  uni.switchTab({ url: '/pages/mall/index' })
+}
+
+function goCouponCenter() {
+  uni.switchTab({ url: '/pages/coupon/index' })
+}
+
+function openCoupon(coupon) {
+  const templateId = Number(coupon?.templateId || coupon?.id || 0)
+  if (!templateId) {
+    goCouponCenter()
+    return
+  }
+  uni.navigateTo({ url: `/pages/coupon/detail?templateId=${templateId}` })
+}
+
+function formatThreshold(value, fallback) {
+  if (value && value !== '0') {
+    return `满${value}元可用`
+  }
+  return fallback
+}
+</script>
+
+<style lang="scss" scoped>
+.product-hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 420rpx;
+  background: linear-gradient(135deg, #264337 0%, #4b6650 52%, #aa9664 100%);
+  background-size: cover;
+  background-position: center;
+  color: #fffaf4;
+  border-bottom-left-radius: 48rpx;
+  border-bottom-right-radius: 48rpx;
+}
+
+.product-hero-mask {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(18, 24, 38, 0.24) 0%, rgba(18, 24, 38, 0.64) 100%);
+}
+
+.product-hero-content {
+  position: relative;
+  display: grid;
+  gap: 24rpx;
+  padding-top: 18rpx;
+  padding-bottom: 42rpx;
+}
+
+.product-topbar,
+.coupon-top,
+.coupon-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.product-back,
+.product-badge,
+.hero-tag,
+.coupon-action,
+.primary-action,
+.ghost-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48rpx;
+  padding: 0 18rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+}
+
+.product-back,
+.product-badge,
+.hero-tag {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.product-head-copy {
+  display: grid;
+  gap: 12rpx;
+}
+
+.product-eyebrow {
+  font-size: 22rpx;
+  letter-spacing: 4rpx;
+  opacity: 0.8;
+}
+
+.product-title {
+  font-size: 42rpx;
+  font-weight: 700;
+}
+
+.product-subtitle {
+  font-size: 24rpx;
+  opacity: 0.9;
+}
+
+.hero-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rpx;
+  padding: 24rpx 28rpx;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+}
+
+.price-label,
+.desc-text,
+.highlight-text,
+.coupon-desc,
+.coupon-threshold,
+.action-desc {
+  color: $cm-text-secondary;
+  font-size: 24rpx;
+  line-height: 1.7;
+}
+
+.price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8rpx;
+  margin-top: 10rpx;
+}
+
+.price-unit,
+.price-value,
+.coupon-amount {
+  font-weight: 700;
+}
+
+.price-unit {
+  font-size: 28rpx;
+}
+
+.price-value {
+  font-size: 44rpx;
+}
+
+.hero-tag,
+.coupon-type {
+  color: #fffaf4;
+}
+
+.product-body {
+  padding-top: 28rpx;
+  padding-bottom: 40rpx;
+}
+
+.desc-card,
+.highlight-card,
+.coupon-card,
+.action-bar {
+  padding: 24rpx;
+}
+
+.highlight-stack,
+.gallery-stack,
+.coupon-stack {
+  display: grid;
+  gap: 18rpx;
+  margin-top: 18rpx;
+}
+
+.gallery-image {
+  width: 100%;
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+
+.coupon-card {
+  display: grid;
+  gap: 16rpx;
+}
+
+.coupon-card-secondary {
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.coupon-title {
+  display: block;
+  margin-top: 10rpx;
+  color: $cm-text-primary;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.coupon-amount-box {
+  display: flex;
+  align-items: baseline;
+  gap: 4rpx;
+  color: $cm-primary-strong;
+}
+
+.secondary-box {
+  color: $cm-text-primary;
+}
+
+.coupon-amount {
+  font-size: 42rpx;
+}
+
+.coupon-action,
+.primary-action {
+  background: $cm-primary;
+  color: #fff;
+}
+
+.action-bar {
+  display: grid;
+  gap: 18rpx;
+}
+
+.action-title {
+  color: $cm-text-primary;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 16rpx;
+}
+
+.ghost-action {
+  background: rgba(15, 23, 42, 0.06);
+  color: $cm-text-primary;
+}
+
+.theme-light .product-hero {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  color: #111827;
+}
+
+.theme-light .product-back,
+.theme-light .product-badge,
+.theme-light .hero-tag,
+.theme-light .coupon-type {
+  background: rgba(15, 23, 42, 0.06);
+  color: #475569;
+}
+
+.theme-light .hero-summary {
+  background: rgba(255, 255, 255, 0.82);
+}
+</style>

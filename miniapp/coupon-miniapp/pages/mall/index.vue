@@ -20,7 +20,7 @@
     <view class="cm-section">
       <SectionHeader title="精选商品" subtitle="搭配用券更划算" />
       <view class="cm-grid-2 goods-grid">
-        <view class="goods-card cm-card" v-for="item in goods" :key="item.id">
+        <view class="goods-card cm-card" v-for="item in goods" :key="item.id" @click="goProductDetail(item.id)">
           <view class="goods-cover" :style="item.imageUrl ? { backgroundImage: `url(${item.imageUrl})` } : {}"></view>
           <text class="goods-title">{{ item.title }}</text>
           <text class="goods-text">{{ item.desc }}</text>
@@ -58,6 +58,10 @@ onShow(() => {
 
 const goPackDetail = (id) => {
   uni.navigateTo({ url: id ? `/pages/coupon-pack/detail?id=${id}` : '/pages/coupon-pack/detail' })
+}
+
+const goProductDetail = (id) => {
+  uni.navigateTo({ url: id ? `/pages/product/detail?id=${id}` : '/pages/product/detail' })
 }
 </script>
 

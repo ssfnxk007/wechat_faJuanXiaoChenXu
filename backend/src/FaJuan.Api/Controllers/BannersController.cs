@@ -11,11 +11,14 @@ using Microsoft.EntityFrameworkCore;
 namespace FaJuan.Api.Controllers;
 
 [Authorize]
-[AdminMenuAuthorize("/products")]
+[AdminMenuAuthorize("/banners")]
 public class BannersController(AppDbContext dbContext) : ApiControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<ApiResponse<PagedResult<BannerListItemDto>>>> GetList([FromQuery] string? keyword, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
+    public async Task<ActionResult<ApiResponse<PagedResult<BannerListItemDto>>>> GetList(
+        [FromQuery] string? keyword,
+        [FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 20)
     {
         var query = from banner in dbContext.Banners.AsNoTracking()
                     join asset in dbContext.MediaAssets.AsNoTracking() on banner.ImageAssetId equals asset.Id
@@ -38,9 +41,8 @@ public class BannersController(AppDbContext dbContext) : ApiControllerBase
         }
 
         var totalCount = await query.CountAsync();
-        var items = await query.ApplyLegacyPaging(pageIndex, pageSize, x => x.Id)
-            .OrderBy(x => x.Sort)
-            .ThenByDescending(x => x.Id)
+        var items = await query
+            .ApplyLegacyPaging(pageIndex, pageSize, x => x.Sort, false, x => x.Id, true)
             .ToListAsync();
 
         return Ok(Success(new PagedResult<BannerListItemDto>
@@ -53,7 +55,7 @@ public class BannersController(AppDbContext dbContext) : ApiControllerBase
         }));
     }
 
-    [AdminPermissionAuthorize("product.create")]
+    [AdminPermissionAuthorize("banner.create")]
     [HttpPost]
     public async Task<ActionResult<ApiResponse<long>>> Create([FromBody] SaveBannerRequest request)
     {
@@ -77,7 +79,7 @@ public class BannersController(AppDbContext dbContext) : ApiControllerBase
         return Ok(Success(entity.Id, "创建成功"));
     }
 
-    [AdminPermissionAuthorize("product.edit")]
+    [AdminPermissionAuthorize("banner.edit")]
     [HttpPut("{id:long}")]
     public async Task<ActionResult<ApiResponse<long>>> Update(long id, [FromBody] SaveBannerRequest request)
     {
@@ -103,7 +105,7 @@ public class BannersController(AppDbContext dbContext) : ApiControllerBase
         return Ok(Success(entity.Id, "更新成功"));
     }
 
-    [AdminPermissionAuthorize("product.delete")]
+    [AdminPermissionAuthorize("banner.delete")]
     [HttpDelete("{id:long}")]
     public async Task<ActionResult<ApiResponse<bool>>> Delete(long id)
     {

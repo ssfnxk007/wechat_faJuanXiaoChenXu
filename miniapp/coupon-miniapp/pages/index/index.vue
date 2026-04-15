@@ -15,7 +15,7 @@
         <view class="hero-banner">
           <swiper class="banner-swiper" circular autoplay interval="3500" duration="450" indicator-dots indicator-color="rgba(255,255,255,0.3)" indicator-active-color="#fffdf8">
             <swiper-item v-for="item in banners" :key="item.id">
-              <view class="banner-card" :style="item.imageUrl ? { backgroundImage: `url(${item.imageUrl})` } : {}">
+              <view class="banner-card" :style="item.imageUrl ? { backgroundImage: `url(${item.imageUrl})` } : {}" @click="openBannerLink(item)">
                 <view class="banner-overlay"></view>
                 <view class="banner-copy">
                   <text class="banner-title">{{ item.title }}</text>
@@ -91,7 +91,7 @@
       <view class="cm-section">
         <SectionHeader eyebrow="SELECTED GOODS" title="推荐商品" subtitle="适合搭配用券" action-text="查看更多" @action-click="goMall" />
         <view class="cm-grid-2 product-grid">
-          <view class="product-card cm-card" v-for="item in products" :key="item.id" @click="goMall">
+          <view class="product-card cm-card" v-for="item in products" :key="item.id" @click="goProductDetail(item.id)">
             <view class="product-image" :style="item.imageUrl ? { backgroundImage: `url(${item.imageUrl})` } : {}"></view>
             <text class="product-title">{{ item.title }}</text>
             <text class="product-desc">{{ item.desc }}</text>
@@ -129,9 +129,9 @@ const newcomerCoupon = ref({
   meta: '待领取后进入券包'
 })
 const banners = ref([
-  { id: 1, title: '新人专享', subtitle: '点击可查看活动' },
-  { id: 2, title: '免费领取', subtitle: '点击可查看活动' },
-  { id: 3, title: '到店核销', subtitle: '点击可查看活动' }
+  { id: 1, title: '新人专享', subtitle: '点击可查看活动', linkUrl: '/pages/activity/detail?key=newcomer' },
+  { id: 2, title: '免费领取', subtitle: '点击可查看活动', linkUrl: '/pages/activity/detail?key=free' },
+  { id: 3, title: '到店核销', subtitle: '点击可查看活动', linkUrl: '/pages/activity/detail?key=writeoff' }
 ])
 const directCoupons = ref([])
 const featuredPacks = ref([])
@@ -156,12 +156,51 @@ function openCouponPreview(item = {}) {
   uni.navigateTo({ url: `/pages/coupon/detail?templateId=${templateId}` })
 }
 
+const tabBarPages = new Set([
+  '/pages/index/index',
+  '/pages/mall/index',
+  '/pages/coupon/index',
+  '/pages/profile/index'
+])
+
+function normalizePageUrl(url = '') {
+  if (!url) return ''
+  if (/^\//.test(url)) return url
+  if (/^pages\//.test(url)) return `/${url}`
+  return url
+}
+
+function openBannerLink(item = {}) {
+  const rawLink = String(item.linkUrl || item.url || item.path || '').trim()
+  if (!rawLink) {
+    uni.showToast({ title: '暂未配置跳转', icon: 'none' })
+    return
+  }
+
+  const pageUrl = normalizePageUrl(rawLink)
+  if (tabBarPages.has(pageUrl)) {
+    uni.switchTab({ url: pageUrl })
+    return
+  }
+
+  if (/^\/pages\//.test(pageUrl)) {
+    uni.navigateTo({ url: pageUrl })
+    return
+  }
+
+  uni.showToast({ title: '仅支持小程序内部页面跳转', icon: 'none' })
+}
+
 function goPackDetail(id) {
   uni.navigateTo({ url: id ? `/pages/coupon-pack/detail?id=${id}` : '/pages/coupon-pack/detail' })
 }
 
 function goMall() {
   uni.switchTab({ url: '/pages/mall/index' })
+}
+
+function goProductDetail(id) {
+  uni.navigateTo({ url: id ? `/pages/product/detail?id=${id}` : '/pages/product/detail' })
 }
 
 function scrollToFreeCoupons() {

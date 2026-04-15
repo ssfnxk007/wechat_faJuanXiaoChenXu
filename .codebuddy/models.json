@@ -1,0 +1,70 @@
+{
+  "models": [
+    {
+      "id": "tc-code-latest",
+      "name": "Auto",
+      "vendor": "Tencent Cloud",
+      "apiKey": "ck_fj4hfsxongn4.hBTxa0HLnwmGvO-W88P9dpf3bYSSidlQkIa3i9nBIQg",
+      "url": "https://api.lkeap.cloud.tencent.com/coding/v3"
+    },
+    {
+      "id": "hunyuan-2.0-instruct",
+      "name": "Tencent HY 2.0 Instruct",
+      "vendor": "Tencent Cloud",
+      "apiKey": "ck_fj4hfsxongn4.hBTxa0HLnwmGvO-W88P9dpf3bYSSidlQkIa3i9nBIQg",
+      "url": "https://api.lkeap.cloud.tencent.com/coding/v3"
+    },
+    {
+      "id": "hunyuan-2.0-thinking",
+      "name": "Tencent HY 2.0 Think",
+      "vendor": "Tencent Cloud",
+      "apiKey": "ck_fj4hfsxongn4.hBTxa0HLnwmGvO-W88P9dpf3bYSSidlQkIa3i9nBIQg",
+      "url": "https://api.lkeap.cloud.tencent.com/coding/v3"
+    },
+    {
+      "id": "hunyuan-t1",
+      "name": "Hunyuan-T1",
+      "vendor": "Tencent Cloud",
+      "apiKey": "ck_fj4hfsxongn4.hBTxa0HLnwmGvO-W88P9dpf3bYSSidlQkIa3i9nBIQg",
+      "url": "https://api.lkeap.cloud.tencent.com/coding/v3"
+    },
+    {
+      "id": "hunyuan-turbos",
+      "name": "Hunyuan-TurboS",
+      "vendor": "Tencent Cloud",
+      "apiKey": "ck_fj4hfsxongn4.hBTxa0HLnwmGvO-W88P9dpf3bYSSidlQkIa3i9nBIQg",
+      "url": "https://api.lkeap.cloud.tencent.com/coding/v3"
+    },
+    {
+      "id": "minimax-m2.5",
+      "name": "MiniMax-M2.5",
+      "vendor": "Tencent Cloud",
+      "apiKey": "ck_fj4hfsxongn4.hBTxa0HLnwmGvO-W88P9dpf3bYSSidlQkIa3i9nBIQg",
+      "url": "https://api.lkeap.cloud.tencent.com/coding/v3"
+    },
+    {
+      "id": "kimi-k2.5",
+      "name": "Kimi-K2.5",
+      "vendor": "Tencent Cloud",
+      "apiKey": "ck_fj4hfsxongn4.hBTxa0HLnwmGvO-W88P9dpf3bYSSidlQkIa3i9nBIQg",
+      "url": "https://api.lkeap.cloud.tencent.com/coding/v3"
+    },
+    {
+      "id": "glm-5",
+      "name": "GLM-5",
+      "vendor": "Tencent Cloud",
+      "apiKey": "ck_fj4hfsxongn4.hBTxa0HLnwmGvO-W88P9dpf3bYSSidlQkIa3i9nBIQg",
+      "url": "https://api.lkeap.cloud.tencent.com/coding/v3"
+    }
+  ],
+  "availableModels": [
+    "tc-code-latest",
+    "hunyuan-2.0-instruct",
+    "hunyuan-2.0-thinking",
+    "hunyuan-t1",
+    "hunyuan-turbos",
+    "minimax-m2.5",
+    "kimi-k2.5",
+    "glm-5"
+  ]
+}

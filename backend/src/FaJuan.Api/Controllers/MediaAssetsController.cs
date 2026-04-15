@@ -43,7 +43,7 @@ public class MediaAssetsController(AppDbContext dbContext, IWebHostEnvironment e
         }
 
         var totalCount = await query.CountAsync();
-        var items = await query.ApplyLegacyPaging(pageIndex, pageSize, x => x.Id)
+        var items = await query.ApplyLegacyPaging(pageIndex, pageSize, x => x.Sort, false, x => x.Id, true)
             .Select(x => new MediaAssetListItemDto
             {
                 Id = x.Id,
@@ -56,8 +56,6 @@ public class MediaAssetsController(AppDbContext dbContext, IWebHostEnvironment e
                 IsEnabled = x.IsEnabled,
                 CreatedAt = x.CreatedAt,
             })
-            .OrderBy(x => x.Sort)
-            .ThenByDescending(x => x.Id)
             .ToListAsync();
 
         return Ok(Success(new PagedResult<MediaAssetListItemDto>

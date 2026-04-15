@@ -42,21 +42,32 @@ public class MiniAppController(
     public async Task<ActionResult<ApiResponse<MiniAppHomeDto>>> GetHome(CancellationToken cancellationToken)
     {
         var settings = await miniAppThemeSettingsService.GetAsync(cancellationToken);
-        var banners = await dbContext.Banners.AsNoTracking()
+        var bannerRows = await dbContext.Banners.AsNoTracking()
             .Where(x => x.IsEnabled)
             .Join(dbContext.MediaAssets.AsNoTracking(), x => x.ImageAssetId, x => x.Id,
-                (banner, asset) => new MiniAppBannerDto
+                (banner, asset) => new
                 {
-                    Id = banner.Id,
-                    Title = banner.Title,
-                    ImageUrl = asset.FileUrl,
-                    LinkUrl = banner.LinkUrl,
-                    Sort = banner.Sort,
+                    banner.Id,
+                    banner.Title,
+                    asset.FileUrl,
+                    banner.LinkUrl,
+                    banner.Sort,
                 })
-            .OrderBy(x => x.Sort)
+            .OrderByDescending(x => x.Sort)
             .ThenBy(x => x.Id)
             .Take(6)
             .ToListAsync(cancellationToken);
+
+        var banners = bannerRows
+            .Select(x => new MiniAppBannerDto
+            {
+                Id = x.Id,
+                Title = x.Title,
+                ImageUrl = ToAbsoluteAssetUrl(x.FileUrl),
+                LinkUrl = NormalizeMiniAppLinkUrl(x.LinkUrl),
+                Sort = x.Sort,
+            })
+            .ToList();
 
         var featuredCouponPacks = await dbContext.CouponPacks.AsNoTracking()
             .Where(x => x.Status == CouponPackStatus.Enabled)
@@ -228,7 +239,117 @@ public class MiniAppController(
         }));
     }
 
-    [HttpGet("coupon-packs/{id:long}")]
+    [HttpGet("products/{id:long}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ApiResponse<MiniAppProductDetailDto>>> GetProductDetail(long id, CancellationToken cancellationToken)
+    {
+        var product = await dbContext.Products.AsNoTracking()
+            .Where(x => x.Id == id && x.IsEnabled)
+            .Select(x => new
+            {
+                x.Id,
+                x.Name,
+                x.ErpProductCode,
+                x.MainImageAssetId,
+                x.DetailImageAssetIds,
+                x.SalePrice,
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (product is null)
+        {
+            return NotFound(Failure<MiniAppProductDetailDto>("商品不存在或已下架", 404));
+        }
+
+        var detailAssetIds = ParseDetailImageAssetIds(product.DetailImageAssetIds);
+        var assetIds = detailAssetIds
+            .Concat(product.MainImageAssetId.HasValue ? [product.MainImageAssetId.Value] : [])
+            .Distinct()
+            .ToArray();
+
+        var assetMap = assetIds.Length == 0
+            ? new Dictionary<long, string>()
+            : await dbContext.MediaAssets.AsNoTracking()
+                .Where(x => assetIds.Contains(x.Id))
+                .ToDictionaryAsync(x => x.Id, x => x.FileUrl, cancellationToken);
+
+        var relatedCoupons = await dbContext.CouponTemplateProductScopes.AsNoTracking()
+            .Where(x => x.ProductId == id)
+            .Join(
+                dbContext.CouponTemplates.AsNoTracking().Where(x => x.IsEnabled),
+                scope => scope.CouponTemplateId,
+                template => template.Id,
+                (_, template) => new MiniAppCouponTemplateCardDto
+                {
+                    Id = template.Id,
+                    Name = template.Name,
+                    ImageUrl = string.Empty,
+                    TemplateType = (int)template.TemplateType,
+                    DiscountAmount = template.DiscountAmount,
+                    ThresholdAmount = template.ThresholdAmount,
+                    IsNewUserOnly = template.IsNewUserOnly,
+                    IsAllStores = template.IsAllStores,
+                    ValidPeriodType = (int)template.ValidPeriodType,
+                    ValidDays = template.ValidDays,
+                    ValidFrom = template.ValidFrom,
+                    ValidTo = template.ValidTo,
+                    Remark = template.Remark,
+                })
+            .ToListAsync(cancellationToken);
+
+        await FillCouponTemplateImageUrlsAsync(relatedCoupons, cancellationToken);
+
+        var relatedCouponIds = relatedCoupons.Select(x => x.Id).ToArray();
+        var recommendedCoupons = await dbContext.CouponTemplates.AsNoTracking()
+            .Where(x => x.IsEnabled
+                && !x.IsNewUserOnly
+                && (int)x.TemplateType != 3
+                && !relatedCouponIds.Contains(x.Id))
+            .OrderByDescending(x => x.CreatedAt)
+            .Take(4)
+            .Select(template => new MiniAppCouponTemplateCardDto
+            {
+                Id = template.Id,
+                Name = template.Name,
+                ImageUrl = string.Empty,
+                TemplateType = (int)template.TemplateType,
+                DiscountAmount = template.DiscountAmount,
+                ThresholdAmount = template.ThresholdAmount,
+                IsNewUserOnly = template.IsNewUserOnly,
+                IsAllStores = template.IsAllStores,
+                ValidPeriodType = (int)template.ValidPeriodType,
+                ValidDays = template.ValidDays,
+                ValidFrom = template.ValidFrom,
+                ValidTo = template.ValidTo,
+                Remark = template.Remark,
+            })
+            .ToListAsync(cancellationToken);
+
+        await FillCouponTemplateImageUrlsAsync(recommendedCoupons, cancellationToken);
+
+        var detail = new MiniAppProductDetailDto
+        {
+            Id = product.Id,
+            Name = product.Name,
+            ErpProductCode = product.ErpProductCode,
+            MainImageUrl = product.MainImageAssetId.HasValue && assetMap.TryGetValue(product.MainImageAssetId.Value, out var mainImageUrl)
+                ? ToAbsoluteAssetUrl(mainImageUrl)
+                : null,
+            DetailImageUrls = detailAssetIds
+                .Where(assetMap.ContainsKey)
+                .Select(assetId => ToAbsoluteAssetUrl(assetMap[assetId]))
+                .ToArray(),
+            SalePrice = product.SalePrice,
+            IsEnabled = true,
+            Remark = null,
+            RelatedCoupons = relatedCoupons,
+            RecommendedCoupons = recommendedCoupons,
+        };
+
+        return Ok(Success(detail));
+    }
+
+        [HttpGet("coupon-packs/{id:long}")]
     [AllowAnonymous]
     public async Task<ActionResult<ApiResponse<MiniAppCouponPackDetailDto>>> GetCouponPackDetail(long id, CancellationToken cancellationToken)
     {
@@ -959,7 +1080,7 @@ public class MiniAppController(
         {
             if (imageMap.TryGetValue(item.Id, out var imageUrl))
             {
-                item.ImageUrl = imageUrl;
+                item.ImageUrl = ToAbsoluteAssetUrl(imageUrl);
             }
         }
     }
@@ -981,8 +1102,25 @@ public class MiniAppController(
         {
             if (imageMap.TryGetValue(item.Id, out var imageUrl))
             {
-                item.MainImageUrl = imageUrl;
+                item.MainImageUrl = ToAbsoluteAssetUrl(imageUrl);
             }
+        }
+    }
+
+    private static IReadOnlyCollection<long> ParseDetailImageAssetIds(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return [];
+        }
+
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<long[]>(value) ?? [];
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return [];
         }
     }
 
@@ -1016,7 +1154,7 @@ public class MiniAppController(
         {
             if (imageMap.TryGetValue(item.Id, out var imageUrl))
             {
-                item.ImageUrl = imageUrl;
+                item.ImageUrl = ToAbsoluteAssetUrl(imageUrl);
             }
         }
     }
@@ -1068,4 +1206,29 @@ public class MiniAppController(
             detail.ImageUrl = imageUrl;
         }
     }
+
+    private string ToAbsoluteAssetUrl(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        if (Uri.TryCreate(value, UriKind.Absolute, out _))
+        {
+            return value;
+        }
+
+        var request = HttpContext?.Request;
+        if (request is null || !request.Host.HasValue)
+        {
+            return value;
+        }
+
+        var normalizedPath = value.StartsWith('/') ? value : $"/{value}";
+        return $"{request.Scheme}://{request.Host}{normalizedPath}";
+    }
+
+    private static string? NormalizeMiniAppLinkUrl(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

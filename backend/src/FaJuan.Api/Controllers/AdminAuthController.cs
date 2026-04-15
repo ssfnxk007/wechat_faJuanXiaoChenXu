@@ -25,7 +25,7 @@ public class AdminAuthController(
         {
             if (!passwordHashService.Verify(request.Password, adminUser.PasswordHash))
             {
-                return Unauthorized(Failure<AdminLoginResultDto>("???????", 401));
+                return Unauthorized(Failure<AdminLoginResultDto>("账号或密码错误", 401));
             }
 
             var dbToken = jwtTokenService.CreateAdminToken(adminUser.Username);
@@ -34,12 +34,12 @@ public class AdminAuthController(
                 AccessToken = dbToken.AccessToken,
                 Username = adminUser.Username,
                 ExpiresAt = dbToken.ExpiresAt,
-            }, "????"));
+            }, "登录成功"));
         }
 
         if (hasDbAdmins)
         {
-            return Unauthorized(Failure<AdminLoginResultDto>("???????", 401));
+            return Unauthorized(Failure<AdminLoginResultDto>("账号或密码错误", 401));
         }
 
         var username = configuration["AdminAuth:Username"] ?? "admin";
@@ -48,7 +48,7 @@ public class AdminAuthController(
         if (!string.Equals(request.Username?.Trim(), username, StringComparison.OrdinalIgnoreCase) ||
             !string.Equals(request.Password, password, StringComparison.Ordinal))
         {
-            return Unauthorized(Failure<AdminLoginResultDto>("???????", 401));
+            return Unauthorized(Failure<AdminLoginResultDto>("账号或密码错误", 401));
         }
 
         var tokenResult = jwtTokenService.CreateAdminToken(username);
@@ -57,7 +57,7 @@ public class AdminAuthController(
             AccessToken = tokenResult.AccessToken,
             Username = username,
             ExpiresAt = tokenResult.ExpiresAt,
-        }, "????"));
+        }, "登录成功"));
     }
 
     [Authorize]
@@ -67,7 +67,7 @@ public class AdminAuthController(
         var username = User.Identity?.Name;
         if (string.IsNullOrWhiteSpace(username))
         {
-            return Unauthorized(Failure<AdminAuthProfileDto>("???????", 401));
+            return Unauthorized(Failure<AdminAuthProfileDto>("登录状态已失效", 401));
         }
 
         var adminUser = await dbContext.AdminUsers.AsNoTracking()
@@ -89,7 +89,7 @@ public class AdminAuthController(
                 DisplayName = username,
                 IsFallbackAdmin = true,
                 RoleCodes = new[] { "super-admin" },
-                RoleNames = new[] { "?????" },
+                RoleNames = new[] { "超级管理员" },
                 MenuPaths = fallbackMenus,
                 PermissionCodes = await dbContext.AdminPermissions.AsNoTracking().Where(x => x.IsEnabled).OrderBy(x => x.Sort).ThenBy(x => x.Id).Select(x => x.Code).ToListAsync(cancellationToken),
             }));

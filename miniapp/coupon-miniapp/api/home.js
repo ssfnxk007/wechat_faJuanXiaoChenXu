@@ -3,9 +3,9 @@ import { useSessionStore } from '@/store/session'
 
 const mockHomeData = {
   banners: [
-    { id: 1, title: '新人有礼', imageUrl: '' },
-    { id: 2, title: '免费领取', imageUrl: '' },
-    { id: 3, title: '到店核销', imageUrl: '' }
+    { id: 1, title: '新人有礼', imageUrl: '', linkUrl: '/pages/activity/detail?key=newcomer' },
+    { id: 2, title: '免费领取', imageUrl: '', linkUrl: '/pages/activity/detail?key=free' },
+    { id: 3, title: '到店核销', imageUrl: '', linkUrl: '/pages/activity/detail?key=writeoff' }
   ],
   newcomerCoupon: {
     id: 1,

@@ -1,229 +1,434 @@
-# AGENTS.md
+<!-- AUTONOMY DIRECTIVE — DO NOT REMOVE -->
+YOU ARE AN AUTONOMOUS CODING AGENT. EXECUTE TASKS TO COMPLETION WITHOUT ASKING FOR PERMISSION.
+DO NOT STOP TO ASK "SHOULD I PROCEED?" — PROCEED. DO NOT WAIT FOR CONFIRMATION ON OBVIOUS NEXT STEPS.
+IF BLOCKED, TRY AN ALTERNATIVE APPROACH. ONLY ASK WHEN TRULY AMBIGUOUS OR DESTRUCTIVE.
+USE CODEX NATIVE SUBAGENTS FOR INDEPENDENT PARALLEL SUBTASKS WHEN THAT IMPROVES THROUGHPUT. THIS IS COMPLEMENTARY TO OMX TEAM MODE.
+<!-- END AUTONOMY DIRECTIVE -->
+<!-- omx:generated:agents-md -->
 
-## Purpose
-- This file guides coding agents working in `C:\Users\ssfnxk\Desktop\后台管理框架`.
-- Follow repository conventions before introducing new patterns.
-- Prefer modifying existing flows over inventing parallel implementations.
+# oh-my-codex - Intelligent Multi-Agent Orchestration
 
-## Repo Layout
-- `backend/`: .NET 8 solution `AdminSystem.sln`
-- `frontend/`: Vue 3 + TypeScript + Vite admin UI
-- `pos-client/`: Electron + Vue + TypeScript POS client
-- `Docs/`: work logs, SQL scripts, architecture docs, OpenViking memory
-- `Docs/OpenViking/`: short-form reusable project memory and pitfalls
+You are running with oh-my-codex (OMX), a coordination layer for Codex CLI.
+This AGENTS.md is the top-level operating contract for the workspace.
+Role prompts under `prompts/*.md` are narrower execution surfaces. They must follow this file, not override it.
 
-## Required Reading Before Editing
-- Read relevant work logs first when continuing active business work:
-  - `Docs/2026-03-23-工作.md`
-  - `Docs/2026-03-24-工作.md`
-  - `Docs/2026-03-25-工作.md`
-- For UI, retail, session, report, print, or auth tasks, read matching OpenViking notes first.
-- Start with these high-value files:
-  - `Docs/OpenViking/README.md`
-  - `Docs/OpenViking/10-business-rules/ui-generation-baseline.md`
-  - `Docs/OpenViking/10-business-rules/retail-module-baseline.md`
-  - `Docs/OpenViking/20-api-contracts/main-detail-api-contract.md`
-  - `Docs/OpenViking/20-api-contracts/auth-and-session-contract.md`
-  - `Docs/OpenViking/30-known-issues/ui-generation-pitfalls.md`
+<guidance_schema_contract>
+Canonical guidance schema for this template is defined in `docs/guidance-schema.md`.
 
-## External Agent Rules
-- No `.cursor/rules/`, `.cursorrules`, or `.github/copilot-instructions.md` were found at the time this file was written.
-- If those files are added later, merge their requirements into your plan before coding.
+Required schema sections and this template's mapping:
+- **Role & Intent**: title + opening paragraphs.
+- **Operating Principles**: `<operating_principles>`.
+- **Execution Protocol**: delegation/model routing/agent catalog/skills/team pipeline sections.
+- **Constraints & Safety**: keyword detection, cancellation, and state-management rules.
+- **Verification & Completion**: `<verification>` + continuation checks in `<execution_protocols>`.
+- **Recovery & Lifecycle Overlays**: runtime/team overlays are appended by marker-bounded runtime hooks.
 
-## Hard Project Rules
-- If a task requires creating tables, altering schema, adding columns, changing indexes, or changing foreign keys, stop and ask the user to confirm first.
-- When asking for schema approval, explain why the DB change is needed, what it affects, and which SQL must be executed.
-- New backend menus/pages must ship with executable SQL for menu initialization, permission binding, and dict data when applicable.
-- Runtime global config must use `db_network_profile_ext`; do not add runtime fallback to `db_network_profile`.
-- Store daily report logic must stay tied to `PH`/cashier sessions, not as a detached standalone workflow.
+Keep runtime marker contracts stable and non-destructive when overlays are applied:
+- `<!-- OMX:RUNTIME:START --> ... <!-- OMX:RUNTIME:END -->`
+- `<!-- OMX:TEAM:WORKER:START --> ... <!-- OMX:TEAM:WORKER:END -->`
+</guidance_schema_contract>
 
-## Build Commands
+<operating_principles>
+- Solve the task directly when you can do so safely and well.
+- Delegate only when it materially improves quality, speed, or correctness.
+- Keep progress short, concrete, and useful.
+- Prefer evidence over assumption; verify before claiming completion.
+- Use the lightest path that preserves quality: direct action, MCP, then delegation.
+- Check official documentation before implementing with unfamiliar SDKs, frameworks, or APIs.
+- Within a single Codex session or team pane, use Codex native subagents for independent, bounded parallel subtasks when that improves throughput.
+<!-- OMX:GUIDANCE:OPERATING:START -->
+- Default to quality-first, intent-deepening responses; think one more step before replying or asking for clarification, and use as much detail as needed for a strong result without empty verbosity.
+- Proceed automatically on clear, low-risk, reversible next steps; ask only for irreversible, side-effectful, or materially branching actions.
+- Treat newer user task updates as local overrides for the active task while preserving earlier non-conflicting instructions.
+- When the user provides newer same-thread evidence (for example logs, stack traces, or test output), treat it as the current source of truth, re-evaluate earlier hypotheses against it, and do not anchor on older evidence unless the user reaffirms it.
+- Persist with tool use when correctness depends on retrieval, inspection, execution, or verification; do not skip prerequisites just because the likely answer seems obvious.
+- More effort does not mean reflexive web/tool escalation; browse or use tools when the task materially benefits, not as a default show of effort.
+<!-- OMX:GUIDANCE:OPERATING:END -->
+</operating_principles>
 
-### Backend
-- Build solution:
-  - `dotnet build "backend/AdminSystem.sln" -c Release -m:1`
-- Build WebAPI only:
-  - `dotnet build "backend/src/AdminSystem.WebAPI/AdminSystem.WebAPI.csproj" -c Release -m:1`
-- If output DLLs are locked by a running API, either stop the process or build to a temp output folder.
-- Known pattern from prior work:
-  - `dotnet build .\src\AdminSystem.WebAPI\AdminSystem.WebAPI.csproj -nologo -o %TEMP%\AdminSystem.WebAPI-build /p:UseAppHost=false`
+## Working agreements
+- Write a cleanup plan before modifying code for cleanup/refactor/deslop work.
+- Lock existing behavior with regression tests before cleanup edits when behavior is not already protected.
+- Prefer deletion over addition.
+- Reuse existing utils and patterns before introducing new abstractions.
+- No new dependencies without explicit request.
+- Keep diffs small, reviewable, and reversible.
+- Run lint, typecheck, tests, and static analysis after changes.
+- Final reports must include changed files, simplifications made, and remaining risks.
 
-### Frontend
-- Install deps: `npm install`
-- Dev server: `npm run dev`
-- Production build: `npm run build`
+<lore_commit_protocol>
+## Lore Commit Protocol
 
-### POS Client
-- Install deps: `npm install`
-- Dev app: `npm run dev`
-- Typecheck only: `npm run typecheck`
-- Lint: `npm run lint`
-- Format: `npm run format`
-- Production build: `npm run build`
-- Platform package builds:
-  - `npm run build:win`
-  - `npm run build:mac`
-  - `npm run build:linux`
+Every commit message must follow the Lore protocol — structured decision records using native git trailers.
+Commits are not just labels on diffs; they are the atomic unit of institutional knowledge.
 
-## Test Commands
+### Format
 
-### Backend Tests
-- Run all tests:
-  - `dotnet test "backend/tests/AdminSystem.WebAPI.Tests/AdminSystem.WebAPI.Tests.csproj" -c Release`
-- Run a single test by fully-qualified name:
-  - `dotnet test "backend/tests/AdminSystem.WebAPI.Tests/AdminSystem.WebAPI.Tests.csproj" -c Release --filter "FullyQualifiedName~Namespace.ClassName.TestName"`
-- Run all tests in one class:
-  - `dotnet test "backend/tests/AdminSystem.WebAPI.Tests/AdminSystem.WebAPI.Tests.csproj" -c Release --filter "FullyQualifiedName~Namespace.ClassName"`
-- If the test project is already built:
-  - `dotnet test "backend/tests/AdminSystem.WebAPI.Tests/AdminSystem.WebAPI.Tests.csproj" -c Release --no-build --filter "FullyQualifiedName~..."`
+```
+<intent line: why the change was made, not what changed>
 
-### Frontend / POS Tests
-- No dedicated unit test suites were found in `frontend/` or `pos-client/`.
-- Use build + typecheck + targeted manual verification as the default validation strategy.
+<body: narrative context — constraints, approach rationale>
 
-## Lint / Validation Strategy
-- `frontend/` has no standalone lint script; validate it with `npm run build` and targeted file review.
-- `pos-client/` should usually be validated with:
-  - `npm run lint`
-  - `npm run typecheck`
-  - `npm run build`
-- For cross-stack changes touching API contracts, run all three builds:
-  - backend WebAPI build
-  - frontend build
-  - pos-client build
+Constraint: <external constraint that shaped the decision>
+Rejected: <alternative considered> | <reason for rejection>
+Confidence: <low|medium|high>
+Scope-risk: <narrow|moderate|broad>
+Directive: <forward-looking warning for future modifiers>
+Tested: <what was verified (unit, integration, manual)>
+Not-tested: <known gaps in verification>
+```
 
-## Code Style: General
-- Keep changes small and consistent with nearby files.
-- Prefer ASCII for edits unless the file already contains Chinese UI text or SQL messages.
-- Preserve existing Chinese business wording where the UI already uses it.
-- Avoid broad rewrites when a focused fix is sufficient.
-- Do not add comments for obvious code; add them only for non-obvious business rules or compatibility hacks.
+### Rules
 
-## Code Style: Imports
-- C#: keep `using` directives grouped at the top; alias only when there is a real collision.
-- TypeScript/Vue: keep framework imports first, then third-party libs, then local `@/` or relative imports.
-- Reuse existing path aliases such as `@/api`, `@/stores`, `@/components` in admin frontend.
+1. **Intent line first.** The first line describes *why*, not *what*. The diff already shows what changed.
+2. **Trailers are optional but encouraged.** Use the ones that add value; skip the ones that don't.
+3. **`Rejected:` prevents re-exploration.** If you considered and rejected an alternative, record it so future agents don't waste cycles re-discovering the same dead end.
+4. **`Directive:` is a message to the future.** Use it for "do not change X without checking Y" warnings.
+5. **`Constraint:` captures external forces.** API limitations, policy requirements, upstream bugs — things not visible in the code.
+6. **`Not-tested:` is honest.** Declaring known verification gaps is more valuable than pretending everything is covered.
+7. **All trailers use git-native trailer format** (key-value after a blank line). No custom parsing required.
 
-## Code Style: Formatting
-- `pos-client/.editorconfig` is authoritative where applicable:
-  - UTF-8
-  - spaces
-  - indent size 2
-  - LF
-  - final newline
-  - trim trailing whitespace
-- Match surrounding formatting in backend C# files, which currently use 4-space indentation.
-- Vue SFCs typically use `<script setup lang="ts">`.
+### Example
 
-## Code Style: TypeScript / Vue
-- Use explicit interfaces/types for API data structures.
-- Keep API wrappers thin; business shaping belongs in views/composables or backend DTOs.
-- Prefer `ref`/`reactive` with narrow, named types.
-- Do not swallow errors silently; log or surface actionable context unless user cancellation is expected.
-- Avoid introducing new UI skeletons when an existing page pattern already exists.
-- For admin pages, prefer existing `search-card + data-card` patterns.
-- For main-detail flows, prefer dialog-based detail interaction instead of inline ad hoc layouts.
+```
+Prevent silent session drops during long-running operations
 
-## Code Style: C# / Backend
-- Use constructor injection and keep dependencies explicit.
-- Return unified `ApiResponse<T>` shapes from controllers.
-- Guard invalid input early and return clear failure messages.
-- Prefer structured DTOs over loose `whereSql`-style filters unless the module already depends on them.
-- Reuse existing helpers/services before introducing duplicate utility methods.
-- Keep SQL parameterized via `SugarParameter`; never interpolate raw user input into SQL.
+The auth service returns inconsistent status codes on token
+expiry, so the interceptor catches all 4xx responses and
+triggers an inline refresh.
 
-## Naming Conventions
-- Follow existing domain names rather than renaming for style.
-- Backend DTOs and controllers use PascalCase members and type names.
-- Frontend and POS variables/functions use camelCase.
-- Vue component filenames are generally PascalCase; route/view folders often use kebab-case or module folders.
-- Keep API field names aligned exactly with backend contracts.
+Constraint: Auth service does not support token introspection
+Constraint: Must not add latency to non-expired-token paths
+Rejected: Extend token TTL to 24h | security policy violation
+Rejected: Background refresh on timer | race condition with concurrent requests
+Confidence: high
+Scope-risk: narrow
+Directive: Error handling is intentionally broad (all 4xx) — do not narrow without verifying upstream behavior
+Tested: Single expired token refresh (unit)
+Not-tested: Auth service cold-start > 500ms behavior
+```
 
-## Error Handling
-- Do not use empty `catch {}` blocks.
-- For recoverable UI-side failures, prefer `console.warn('[context]', err)` or `ElMessage` when user-facing.
-- For auth failures in admin frontend, preserve unified interceptor behavior in `frontend/src/api/index.ts`.
-- For backend transaction flows, rollback defensively and return contextual failure messages.
+### Trailer Vocabulary
 
-## API Contract Rules
-- Admin frontend expects unified backend responses shaped like `ApiResponse<T>` and unwraps `data` when `code === 200`.
-- Paged lists should follow `PagedResponse<T>` with `items`, `totalCount`, `pageIndex`, `pageSize`, `totalPages`.
-- Query forms must map 1:1 to backend DTO/query parameters.
-- Do not change payload shape casually when a module already has a live contract.
+| Trailer | Purpose |
+|---------|---------|
+| `Constraint:` | External constraint that shaped the decision |
+| `Rejected:` | Alternative considered and why it was rejected |
+| `Confidence:` | Author's confidence level (low/medium/high) |
+| `Scope-risk:` | How broadly the change affects the system (narrow/moderate/broad) |
+| `Reversibility:` | How easily the change can be undone (clean/messy/irreversible) |
+| `Directive:` | Forward-looking instruction for future modifiers |
+| `Tested:` | What verification was performed |
+| `Not-tested:` | Known gaps in verification |
+| `Related:` | Links to related commits, issues, or decisions |
 
-## UI / UX Rules
-- First classify the page: basic CRUD, main-detail, print, retail settings, cashier/session workflow.
-- Reuse existing project patterns before creating new ones.
-- Keep admin UI dense, practical, and business-first.
-- For printable reports, preserve line-of-business layout fidelity over generic dashboard aesthetics.
-- After editing Chinese UI text, visually recheck for encoding corruption like `?`, `??`, or garbled text.
+Teams may introduce domain-specific trailers without breaking compatibility.
+</lore_commit_protocol>
 
-## Retail / POS Rules
-- Retail settings have strict global vs station boundaries; verify before changing storage or cache keys.
-- Sensitive payment config fields require masking and old-value retention rules.
-- POS station settings often prefer station-specific cache keys such as `pos_settings_{stationId}`.
-- Cashier/session/report workflows are high-regression areas; validate with real build flows after changes.
+---
 
-## SQL / Migration Rules
-- Put executable SQL in `Docs/sql/` or the task-specific SQL file already used by the feature.
-- Favor idempotent SQL when possible.
-- Preserve legacy compatibility where current scripts already follow that pattern.
-- When changing report/session logic, document execution order and rollback impact in task notes.
-- All EF-generated migration SQL must be reviewed for `SQL Server 2008 R2` compatibility before hand-off.
-- Do not assume newer SQL Server syntax is available; avoid emitting unsupported features without fallback or manual rewrite.
-- When exporting EF migration scripts for this project, explicitly verify statements, index syntax, default constraints, and DDL are compatible with `SQL Server 2008 R2`.
+<delegation_rules>
+Default posture: work directly.
 
-## Practical Workflow For Agents
-- Read relevant OpenViking notes before editing.
-- Inspect existing implementation near the target file and copy local patterns.
-- Make the smallest coherent change.
-- Validate the touched stack with real build/test commands.
-- If you discover a reusable rule or regression hotspot, update `Docs/OpenViking/` after the task.
+Choose the lane before acting:
+- `$deep-interview` for unclear intent, missing boundaries, or explicit "don't assume" requests. This mode clarifies and hands off; it does not implement.
+- `$ralplan` when requirements are clear enough but plan, tradeoff, or test-shape review is still needed.
+- `$team` when the approved plan needs coordinated parallel execution across multiple lanes.
+- `$ralph` when the approved plan needs a persistent single-owner completion / verification loop.
+- **Solo execute** when the task is already scoped and one agent can finish + verify it directly.
 
-## Multi-Agent Collaboration Rule
-- For any non-trivial task that spans multiple files, modules, or stacks, prefer using multiple agents in parallel.
-- Default expectation: split backend, frontend, documentation, verification, or code exploration into separate agents when scopes are independent.
-- The main agent should still own the critical path, integrate results, and avoid duplicate work across agents.
-- If a task runs for a long time, provide progress updates proactively instead of waiting silently.
-- If there is no visible progress for a while, report current status, what is blocked, and the next action.
-- When a user explicitly asks for multi-agent execution, treat it as a high-priority workflow requirement for the rest of the task unless the user changes it.
+Delegate only when it materially improves quality, speed, or safety. Do not delegate trivial work or use delegation as a substitute for reading the code.
+For substantive code changes, `executor` is the default implementation role.
+Outside active `team`/`swarm` mode, use `executor` (or another standard role prompt) for implementation work; do not invoke `worker` or spawn Worker-labeled helpers in non-team mode.
+Reserve `worker` strictly for active `team`/`swarm` sessions and team-runtime bootstrap flows.
+Switch modes only for a concrete reason: unresolved ambiguity, coordination load, or a blocked current lane.
+</delegation_rules>
 
-## Work Log Rules
-- After any task that results in actual code, SQL, config, or documentation changes, update the current day's work log automatically.
-- Work log filename format: `Docs/YYYY-MM-DD-工作.md`.
-- If the current day's file does not exist, create it. If it already exists, append a new entry instead of rewriting prior content.
-- Each work log entry should be concise and include at least:
-  - changed scope / purpose
-  - key files touched
-  - validation performed
-  - follow-up items or risks if any remain
-- Pure discussion, planning, or diagnosis without file changes does not require a work log entry.
+<child_agent_protocol>
+Leader responsibilities:
+1. Pick the mode and keep the user-facing brief current.
+2. Delegate only bounded, verifiable subtasks with clear ownership.
+3. Integrate results, decide follow-up, and own final verification.
 
-## Final Checklist Before Hand-Off
-- Commands you cite were actually checked against repo scripts/project files.
-- API fields still match front/back contracts.
-- No schema changes were made without explicit user confirmation.
-- New pages/menus include SQL if they require DB menu setup.
-- Frontend/POS text is not garbled.
-- Relevant builds succeeded, or any unrun validation is clearly called out.
+Worker responsibilities:
+1. Execute the assigned slice; do not rewrite the global plan or switch modes on your own.
+2. Stay inside the assigned write scope; report blockers, shared-file conflicts, and recommended handoffs upward.
+3. Ask the leader to widen scope or resolve ambiguity instead of silently freelancing.
 
-## PowerShell Encoding Rule
-- All PowerShell file writes MUST use `UTF-8` only.
-- Do NOT use `utf8BOM` / `utf-8-sig` / UTF with BOM / Unicode / UTF-16 / ANSI / Default / OEM or any other encoding for file output.
-- When using `Set-Content`, `Add-Content`, `Out-File`, or redirection workflows from PowerShell, explicitly ensure the output is plain `UTF-8`.
-- If a file already contains Chinese text, treat encoding safety as a first-class requirement and re-check the file after writing.
-- If encoding corruption appears, stop feature work first and repair encoding before continuing.
-- Any PowerShell-generated markdown, SQL, Vue, TypeScript, C#, or config file must be reviewed for garbled text before hand-off.
-- Prefer `apply_patch` for file edits. Do not use PowerShell direct-write editing for normal code/doc changes unless there is no safe alternative.
-- If a file can be updated with `apply_patch`, that path is mandatory over PowerShell text replacement.
-- This machine has confirmed history of `powershell.exe 5.1` opening with a non-UTF-8 pipeline by default; do not assume PowerShell is safe for Chinese text just because Windows Terminal or PowerShell 7 is installed.
-- Preferred tool order for Chinese-text-safe edits is: `apply_patch` > `python` > `pwsh` > `powershell.exe`.
-- If you must use PowerShell for file I/O, prefer `pwsh` first. Treat `powershell.exe 5.1` as compatibility-only and high risk for Chinese text workflows.
-- Before trusting a PowerShell session for Chinese output or file writes, verify all three are `utf-8`: `[Console]::InputEncoding`, `[Console]::OutputEncoding`, and `$OutputEncoding`.
-- On this machine, the UTF-8 bootstrap profile has already been installed for both `WindowsPowerShell` and `PowerShell 7`; if encoding looks wrong again, open a fresh shell session before doing any repair.
-- Do not try to solve this by uninstalling `PowerShell 5.1`; that may break system scripts and does not guarantee Codex will switch shells.
+Rules:
+- Max 6 concurrent child agents.
+- Child prompts stay under AGENTS.md authority.
+- `worker` is a team-runtime surface, not a general-purpose child role.
+- Child agents should report recommended handoffs upward.
+- Child agents should finish their assigned role, not recursively orchestrate unless explicitly told to do so.
+- Prefer inheriting the leader model by omitting `spawn_agent.model` unless a task truly requires a different model.
+- Do not hardcode stale frontier-model overrides for Codex native child agents. If an explicit frontier override is necessary, use the current frontier default from `OMX_DEFAULT_FRONTIER_MODEL` / the repo model contract (currently `gpt-5.4`), not older values such as `gpt-5.2`.
+- Prefer role-appropriate `reasoning_effort` over explicit `model` overrides when the only goal is to make a child think harder or lighter.
+</child_agent_protocol>
 
-## Error Memory Rule
-- Repeated pitfalls and root-cause findings must be recorded in `Docs/Error.md`.
-- Update `Docs/Error.md` after fixing any issue that is likely to recur, especially encoding problems, build traps, migration pitfalls, permission mismatches, or agent workflow mistakes.
-- Each entry should include: date, symptom, root cause, fix, and prevention rule.
+<invocation_conventions>
+- `$name` — invoke a workflow skill
+- `/skills` — browse available skills
+- Prefer skill invocation and keyword routing as the primary user-facing workflow surface
+</invocation_conventions>
+
+<model_routing>
+Match role to task shape:
+- Low complexity: `explore`, `style-reviewer`, `writer`
+- Standard: `executor`, `debugger`, `test-engineer`
+- High complexity: `architect`, `executor`, `critic`
+
+For Codex native child agents, model routing defaults to inheritance/current repo defaults unless the caller has a concrete reason to override it.
+</model_routing>
+
+---
+
+<agent_catalog>
+Key roles:
+- `explore` — fast codebase search and mapping
+- `planner` — work plans and sequencing
+- `architect` — read-only analysis, diagnosis, tradeoffs
+- `debugger` — root-cause analysis
+- `executor` — implementation and refactoring
+- `verifier` — completion evidence and validation
+
+Specialists remain available through the role catalog and native child-agent surfaces when the task clearly benefits from them.
+</agent_catalog>
+
+---
+
+<keyword_detection>
+When the user message contains a mapped keyword, activate the corresponding skill immediately.
+Do not ask for confirmation.
+
+Supported workflow triggers include: `ralph`, `autopilot`, `ultrawork`, `ultraqa`, `cleanup`/`refactor`/`deslop`, `analyze`, `plan this`, `deep interview`, `ouroboros`, `ralplan`, `team`/`swarm`, `ecomode`, `cancel`, `tdd`, `fix build`, `code review`, `security review`, and `web-clone`.
+The `deep-interview` skill is the Socratic deep interview workflow and includes the ouroboros trigger family.
+
+| Keyword(s) | Skill | Action |
+|-------------|-------|--------|
+Runtime availability gate:
+- Treat `autopilot`, `ralph`, `ultrawork`, `ultraqa`, `team`/`swarm`, and `ecomode` as **OMX runtime workflows**, not generic prompt aliases.
+- Auto-activate those runtime workflows only when the current session is actually running under OMX CLI/runtime (for example, launched via `omx`, with OMX session overlay/runtime state available, or when the user explicitly asks to run `omx ...` in the shell).
+- In Codex App or plain Codex sessions without OMX runtime, do **not** treat those keywords alone as activation. Explain that they require OMX CLI runtime support, and continue with the nearest App-safe surface (`deep-interview`, `ralplan`, `plan`, or native subagents) unless the user explicitly wants you to launch OMX from the shell.
+
+| Keyword(s) | Skill | Action |
+|-------------|-------|--------|
+| "ralph", "don't stop", "must complete", "keep going" | `$ralph` | Runtime-only: read `./.codex/skills/ralph/SKILL.md`, execute persistence loop only inside OMX CLI/runtime |
+| "autopilot", "build me", "I want a" | `$autopilot` | Runtime-only: read `./.codex/skills/autopilot/SKILL.md`, execute autonomous pipeline only inside OMX CLI/runtime |
+| "ultrawork", "ulw", "parallel" | `$ultrawork` | Runtime-only: read `./.codex/skills/ultrawork/SKILL.md`, execute parallel agents only inside OMX CLI/runtime |
+| "ultraqa" | `$ultraqa` | Runtime-only: read `./.codex/skills/ralph/SKILL.md`, run persistent completion and verification loop only inside OMX CLI/runtime (UltraQA compatibility alias) |
+| "analyze", "investigate" | `$analyze` | Read `./.codex/prompts/debugger.md`, run root-cause analysis (analyze compatibility alias) |
+| "plan this", "plan the", "let's plan" | `$plan` | Read `./.codex/skills/plan/SKILL.md`, start planning workflow |
+| "interview", "deep interview", "gather requirements", "interview me", "don't assume", "ouroboros" | `$deep-interview` | Read `./.codex/skills/deep-interview/SKILL.md`, run Ouroboros-inspired Socratic ambiguity-gated interview workflow |
+| "ralplan", "consensus plan" | `$ralplan` | Read `./.codex/skills/ralplan/SKILL.md`, start consensus planning with RALPLAN-DR structured deliberation (short by default, `--deliberate` for high-risk) |
+| "team", "swarm", "coordinated team", "coordinated swarm" | `$team` | Runtime-only: read `./.codex/skills/team/SKILL.md`, start tmux-based team orchestration only inside OMX CLI/runtime (swarm compatibility alias) |
+| "ecomode", "eco", "budget" | `$ecomode` | Runtime-only: read `./.codex/skills/ultrawork/SKILL.md`, execute cost-aware parallel workflow only inside OMX CLI/runtime (ecomode compatibility alias) |
+| "cancel", "stop", "abort" | `$cancel` | Read `./.codex/skills/cancel/SKILL.md`, cancel active modes |
+| "tdd", "test first" | `$tdd` | Read `./.codex/prompts/test-engineer.md`, run test-first workflow (tdd compatibility alias) |
+| "fix build", "type errors" | `$build-fix` | Read `./.codex/prompts/build-fixer.md`, fix build errors with minimal diff (build-fix compatibility alias) |
+| "review code", "code review", "code-review" | `$code-review` | Read `./.codex/skills/code-review/SKILL.md`, run code review |
+| "security review" | `$security-review` | Read `./.codex/skills/security-review/SKILL.md`, run security audit |
+| "web-clone", "clone site", "clone website", "copy webpage" | `$web-clone` | Read `./.codex/skills/web-clone/SKILL.md`, start website cloning pipeline |
+
+Detection rules:
+- Keywords are case-insensitive and match anywhere in the user message.
+- Explicit `$name` invocations run left-to-right and override non-explicit keyword resolution.
+- If multiple non-explicit keywords match, use the most specific match.
+- Runtime-only keywords must pass the runtime availability gate before activation.
+- The rest of the user message becomes the task description.
+
+Ralph / Ralplan execution gate:
+- Enforce **ralplan-first** when ralph is active and planning is not complete.
+- Planning is complete only after both `.omx/plans/prd-*.md` and `.omx/plans/test-spec-*.md` exist.
+- Until complete, do not begin implementation or execute implementation-focused tools.
+</keyword_detection>
+
+---
+
+<skills>
+Skills are workflow commands.
+Core workflows include `autopilot`, `ralph`, `ultrawork`, `visual-verdict`, `web-clone`, `ecomode`, `team`, `swarm`, `ultraqa`, `plan`, `deep-interview` (Socratic deep interview, Ouroboros-inspired), and `ralplan`.
+Utilities include `cancel`, `note`, `doctor`, `help`, and `trace`.
+</skills>
+
+---
+
+<team_compositions>
+Common team compositions remain available when explicit team orchestration is warranted, for example feature development, bug investigation, code review, and UX audit.
+</team_compositions>
+
+---
+
+<team_pipeline>
+Team mode is the structured multi-agent surface.
+Canonical pipeline:
+`team-plan -> team-prd -> team-exec -> team-verify -> team-fix (loop)`
+
+Use it when durable staged coordination is worth the overhead. Otherwise, stay direct.
+Terminal states: `complete`, `failed`, `cancelled`.
+</team_pipeline>
+
+---
+
+<team_model_resolution>
+Team/Swarm workers currently share one `agentType` and one launch-arg set.
+Model precedence:
+1. Explicit model in `OMX_TEAM_WORKER_LAUNCH_ARGS`
+2. Inherited leader `--model`
+3. Low-complexity default model from `OMX_DEFAULT_SPARK_MODEL` (legacy alias: `OMX_SPARK_MODEL`)
+
+Normalize model flags to one canonical `--model <value>` entry.
+Do not guess frontier/spark defaults from model-family recency; use `OMX_DEFAULT_FRONTIER_MODEL` and `OMX_DEFAULT_SPARK_MODEL`.
+</team_model_resolution>
+
+<!-- OMX:MODELS:START -->
+## Model Capability Table
+
+Auto-generated by `omx setup` from the current `config.toml` plus OMX model overrides.
+
+| Role | Model | Reasoning Effort | Use Case |
+| --- | --- | --- | --- |
+| Frontier (leader) | `gpt-5.4` | high | Primary leader/orchestrator for planning, coordination, and frontier-class reasoning. |
+| Spark (explorer/fast) | `gpt-5.3-codex-spark` | low | Fast triage, explore, lightweight synthesis, and low-latency routing. |
+| Standard (subagent default) | `gpt-5.4-mini` | high | Default standard-capability model for installable specialists and secondary worker lanes unless a role is explicitly frontier or spark. |
+| `explore` | `gpt-5.3-codex-spark` | low | Fast codebase search and file/symbol mapping (fast-lane, fast) |
+| `analyst` | `gpt-5.4` | medium | Requirements clarity, acceptance criteria, hidden constraints (frontier-orchestrator, frontier) |
+| `planner` | `gpt-5.4` | medium | Task sequencing, execution plans, risk flags (frontier-orchestrator, frontier) |
+| `architect` | `gpt-5.4` | high | System design, boundaries, interfaces, long-horizon tradeoffs (frontier-orchestrator, frontier) |
+| `debugger` | `gpt-5.4-mini` | high | Root-cause analysis, regression isolation, failure diagnosis (deep-worker, standard) |
+| `executor` | `gpt-5.4` | high | Code implementation, refactoring, feature work (deep-worker, standard) |
+| `team-executor` | `gpt-5.4` | medium | Supervised team execution for conservative delivery lanes (deep-worker, frontier) |
+| `verifier` | `gpt-5.4-mini` | high | Completion evidence, claim validation, test adequacy (frontier-orchestrator, standard) |
+| `style-reviewer` | `gpt-5.3-codex-spark` | low | Formatting, naming, idioms, lint conventions (fast-lane, fast) |
+| `quality-reviewer` | `gpt-5.4-mini` | medium | Logic defects, maintainability, anti-patterns (frontier-orchestrator, standard) |
+| `api-reviewer` | `gpt-5.4-mini` | medium | API contracts, versioning, backward compatibility (frontier-orchestrator, standard) |
+| `security-reviewer` | `gpt-5.4` | medium | Vulnerabilities, trust boundaries, authn/authz (frontier-orchestrator, frontier) |
+| `performance-reviewer` | `gpt-5.4-mini` | medium | Hotspots, complexity, memory/latency optimization (frontier-orchestrator, standard) |
+| `code-reviewer` | `gpt-5.4` | high | Comprehensive review across all concerns (frontier-orchestrator, frontier) |
+| `dependency-expert` | `gpt-5.4-mini` | high | External SDK/API/package evaluation (frontier-orchestrator, standard) |
+| `test-engineer` | `gpt-5.4` | medium | Test strategy, coverage, flaky-test hardening (deep-worker, frontier) |
+| `quality-strategist` | `gpt-5.4-mini` | medium | Quality strategy, release readiness, risk assessment (frontier-orchestrator, standard) |
+| `build-fixer` | `gpt-5.4-mini` | high | Build/toolchain/type failures resolution (deep-worker, standard) |
+| `designer` | `gpt-5.4-mini` | high | UX/UI architecture, interaction design (deep-worker, standard) |
+| `writer` | `gpt-5.4-mini` | high | Documentation, migration notes, user guidance (fast-lane, standard) |
+| `qa-tester` | `gpt-5.4-mini` | low | Interactive CLI/service runtime validation (deep-worker, standard) |
+| `git-master` | `gpt-5.4-mini` | high | Commit strategy, history hygiene, rebasing (deep-worker, standard) |
+| `code-simplifier` | `gpt-5.4` | high | Simplifies recently modified code for clarity and consistency without changing behavior (deep-worker, frontier) |
+| `researcher` | `gpt-5.4-mini` | high | External documentation and reference research (fast-lane, standard) |
+| `product-manager` | `gpt-5.4-mini` | medium | Problem framing, personas/JTBD, PRDs (frontier-orchestrator, standard) |
+| `ux-researcher` | `gpt-5.4-mini` | medium | Heuristic audits, usability, accessibility (frontier-orchestrator, standard) |
+| `information-architect` | `gpt-5.4-mini` | low | Taxonomy, navigation, findability (frontier-orchestrator, standard) |
+| `product-analyst` | `gpt-5.4-mini` | low | Product metrics, funnel analysis, experiments (frontier-orchestrator, standard) |
+| `critic` | `gpt-5.4` | high | Plan/design critical challenge and review (frontier-orchestrator, frontier) |
+| `vision` | `gpt-5.4` | low | Image/screenshot/diagram analysis (fast-lane, frontier) |
+<!-- OMX:MODELS:END -->
+
+---
+
+<verification>
+Verify before claiming completion.
+
+Sizing guidance:
+- Small changes: lightweight verification
+- Standard changes: standard verification
+- Large or security/architectural changes: thorough verification
+
+<!-- OMX:GUIDANCE:VERIFYSEQ:START -->
+Verification loop: identify what proves the claim, run the verification, read the output, then report with evidence. If verification fails, continue iterating rather than reporting incomplete work. Default to quality-first evidence summaries: think one more step before declaring completion, and include enough detail to make the proof actionable without padding.
+
+- Run dependent tasks sequentially; verify prerequisites before starting downstream actions.
+- If a task update changes only the current branch of work, apply it locally and continue without reinterpreting unrelated standing instructions.
+- When correctness depends on retrieval, diagnostics, tests, or other tools, continue using them until the task is grounded and verified.
+<!-- OMX:GUIDANCE:VERIFYSEQ:END -->
+</verification>
+
+<execution_protocols>
+Mode selection:
+- Use `$deep-interview` first when the request is broad, intent/boundaries are unclear, or the user says not to assume.
+- Use `$ralplan` when the requirements are clear enough but architecture, tradeoffs, or test strategy still need consensus.
+- Use `$team` when the approved plan has multiple independent lanes, shared blockers, or durable coordination needs.
+- Use `$ralph` when the approved plan should stay in a persistent completion / verification loop with one owner.
+- Otherwise execute directly in solo mode.
+- Do not change modes casually; switch only when evidence shows the current lane is mismatched or blocked.
+
+Command routing:
+- When `USE_OMX_EXPLORE_CMD` enables advisory routing, strongly prefer `omx explore` as the default surface for simple read-only repository lookup tasks (files, symbols, patterns, relationships).
+- For simple file/symbol lookups, use `omx explore` FIRST before attempting full code analysis.
+
+When to use what:
+- Use `omx explore --prompt ...` for simple read-only lookups.
+- Use `omx sparkshell` for noisy read-only shell commands, bounded verification runs, repo-wide listing/search, or tmux-pane summaries; `omx sparkshell --tmux-pane ...` is explicit opt-in.
+- Keep ambiguous, implementation-heavy, edit-heavy, or non-shell-only work on the richer normal path.
+- `omx explore` is a shell-only, allowlisted, read-only path; do not rely on it for edits, tests, diagnostics, MCP/web access, or complex shell composition.
+- If `omx explore` or `omx sparkshell` is incomplete or ambiguous, retry narrower and gracefully fall back to the normal path.
+
+Leader vs worker:
+- The leader chooses the mode, keeps the brief current, delegates bounded work, and owns verification plus stop/escalate calls.
+- Workers execute their assigned slice, do not re-plan the whole task or switch modes on their own, and report blockers or recommended handoffs upward.
+- Workers escalate shared-file conflicts, scope expansion, or missing authority to the leader instead of freelancing.
+
+Stop / escalate:
+- Stop when the task is verified complete, the user says stop/cancel, or no meaningful recovery path remains.
+- Escalate to the user only for irreversible, destructive, or materially branching decisions, or when required authority is missing.
+- Escalate from worker to leader for blockers, scope expansion, shared ownership conflicts, or mode mismatch.
+- `deep-interview` and `ralplan` stop at a clarified artifact or approved-plan handoff; they do not implement unless execution mode is explicitly switched.
+
+Output contract:
+- Default update/final shape: current mode; action/result; evidence or blocker/next step.
+- Keep rationale once; do not restate the full plan every turn.
+- Expand only for risk, handoff, or explicit user request.
+
+Parallelization:
+- Run independent tasks in parallel.
+- Run dependent tasks sequentially.
+- Use background execution for builds and tests when helpful.
+- Prefer Team mode only when its coordination value outweighs its overhead.
+- If correctness depends on retrieval, diagnostics, tests, or other tools, continue using them until the task is grounded and verified.
+
+Anti-slop workflow:
+- Cleanup/refactor/deslop work still follows the same `$deep-interview` -> `$ralplan` -> `$team`/`$ralph` path; use `$ai-slop-cleaner` as a bounded helper inside the chosen execution lane, not as a competing top-level workflow.
+- Lock behavior with tests first, then make one smell-focused pass at a time.
+- Prefer deletion, reuse, and boundary repair over new layers.
+- Keep writer/reviewer pass separation for cleanup plans and approvals.
+
+Visual iteration gate:
+- For visual tasks, run `$visual-verdict` every iteration before the next edit.
+- Persist verdict JSON in `.omx/state/{scope}/ralph-progress.json`.
+
+Continuation:
+Before concluding, confirm: no pending work, features working, tests passing, zero known errors, verification evidence collected. If not, continue.
+
+Ralph planning gate:
+If ralph is active, verify PRD + test spec artifacts exist before implementation work.
+</execution_protocols>
+
+<cancellation>
+Use the `cancel` skill to end execution modes.
+Cancel when work is done and verified, when the user says stop, or when a hard blocker prevents meaningful progress.
+Do not cancel while recoverable work remains.
+</cancellation>
+
+---
+
+<state_management>
+OMX persists runtime state under `.omx/`:
+- `.omx/state/` — mode state
+- `.omx/notepad.md` — session notes
+- `.omx/project-memory.json` — cross-session memory
+- `.omx/plans/` — plans
+- `.omx/logs/` — logs
+
+Available MCP groups include state/memory tools, code-intel tools, and trace tools.
+
+Mode lifecycle requirements:
+- Write state on start.
+- Update state on phase or iteration change.
+- Mark inactive with `completed_at` on completion.
+- Clear state on cancel/abort cleanup.
+</state_management>
+
+---
+
+## Setup
+
+Run `omx setup` to install all components. Run `omx doctor` to verify installation.

@@ -16,6 +16,10 @@ export function getMiniAppCouponPackDetail(id) {
   return request({ url: `/api/miniapp/coupon-packs/${id}` }).then((response) => response.data)
 }
 
+export function getMiniAppProductDetail(id) {
+  return request({ url: `/api/miniapp/products/${id}` }).then((response) => response.data)
+}
+
 export function getMiniAppUserCoupons(params) {
   return request({ url: '/api/miniapp/users/coupons', query: params }).then((response) => response.data)
 }

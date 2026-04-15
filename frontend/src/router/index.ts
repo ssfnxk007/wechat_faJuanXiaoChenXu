@@ -4,6 +4,7 @@ import AdminLayout from '@/layouts/AdminLayout.vue'
 import AdminMenuView from '@/views/admin-menu/AdminMenuView.vue'
 import AdminRoleView from '@/views/admin-role/AdminRoleView.vue'
 import AdminUserView from '@/views/admin-user/AdminUserView.vue'
+import BannerView from '@/views/banner/BannerView.vue'
 import CouponPackItemView from '@/views/coupon-pack/CouponPackItemView.vue'
 import CouponPackView from '@/views/coupon-pack/CouponPackView.vue'
 import CouponTemplateView from '@/views/coupon-template/CouponTemplateView.vue'
@@ -30,6 +31,7 @@ const router = createRouter({
         { path: 'users', name: 'users', component: UserView, meta: { title: '用户管理', subtitle: '管理微信用户建档、手机号绑定与领券用户' } },
         { path: 'stores', name: 'stores', component: StoreView, meta: { title: '门店管理', subtitle: '配置可用门店与核销门店范围' } },
         { path: 'products', name: 'products', component: ProductView, meta: { title: '商品管理', subtitle: '维护 ERP 商品映射与指定商品券基础数据' } },
+        { path: 'banners', name: 'banners', component: BannerView, meta: { title: '轮播图管理', subtitle: '配置首页轮播图图片、跳转链接与展示顺序' } },
         { path: 'coupon-templates', name: 'couponTemplates', component: CouponTemplateView, meta: { title: '券模板管理', subtitle: '配置新人券、无门槛券、商品券、满减券规则' } },
         { path: 'coupon-packs', name: 'couponPacks', component: CouponPackView, meta: { title: '券包管理', subtitle: '配置可售卖券包与价格、限购规则' } },
         { path: 'coupon-pack-items', name: 'couponPackItems', component: CouponPackItemView, meta: { title: '券包明细', subtitle: '维护券包内包含的券模板与数量' } },

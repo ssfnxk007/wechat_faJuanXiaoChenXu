@@ -77,3 +77,89 @@ export async function fetchMallPageData(query = {}) {
     goods: goods.length ? goods : mockMallData.goods
   }
 }
+
+export async function fetchMiniAppProductDetail(productId) {
+  const targetId = Number(productId || 0)
+  if (!targetId) {
+    return null
+  }
+
+  const enableFallback = process.env.NODE_ENV !== 'production'
+  const fallbackProduct = mockMallData.goods.find((item) => Number(item.id) === targetId)
+  const result = await requestWithFallback(
+    { url: `/api/miniapp/products/${targetId}` },
+    enableFallback && fallbackProduct ? () => ({
+      id: fallbackProduct.id,
+      name: fallbackProduct.title,
+      erpProductCode: fallbackProduct.tag,
+      mainImageUrl: fallbackProduct.imageUrl || '',
+      detailImageUrls: fallbackProduct.imageUrl ? [fallbackProduct.imageUrl] : [],
+      salePrice: fallbackProduct.price,
+      isEnabled: true,
+      remark: fallbackProduct.desc,
+      availableCoupons: buildFallbackCoupons(fallbackProduct),
+    }) : undefined
+  )
+
+  const payload = result.data || {}
+  return {
+    id: Number(firstValue(payload, ['id'], targetId)),
+    title: String(firstValue(payload, ['title', 'name'], fallbackProduct?.title || '商品详情')),
+    desc: String(firstValue(payload, ['desc', 'remark'], fallbackProduct?.desc || '请以后端商品说明为准。')),
+    price: String(firstValue(payload, ['price', 'salePrice'], fallbackProduct?.price || '')),
+    tag: String(firstValue(payload, ['tag', 'erpProductCode'], fallbackProduct?.tag || '商品')),
+    imageUrl: String(firstValue(payload, ['imageUrl', 'mainImageUrl'], fallbackProduct?.imageUrl || '')),
+    highlights: [
+      String(firstValue(payload, ['erpProductCode'], fallbackProduct?.tag || '精选商品')),
+      firstValue(payload, ['salePrice'], fallbackProduct?.price) ? `参考价 ¥${firstValue(payload, ['salePrice'], fallbackProduct?.price)}` : '到店咨询',
+      String(firstValue(payload, ['remark'], fallbackProduct?.desc || '支持搭配优惠券使用')),
+    ],
+    detailImages: Array.isArray(payload.detailImageUrls) && payload.detailImageUrls.length
+      ? payload.detailImageUrls
+      : (firstValue(payload, ['mainImageUrl'], fallbackProduct?.imageUrl) ? [String(firstValue(payload, ['mainImageUrl'], fallbackProduct?.imageUrl))] : []),
+    availableCoupons: normalizeCoupons(payload.availableCoupons || payload.relatedCoupons, fallbackProduct),
+    recommendedCoupons: normalizeCoupons(payload.recommendedCoupons, fallbackProduct, true),
+  }
+}
+
+function normalizeCoupons(value, fallbackProduct, disableFallback = false) {
+  if (Array.isArray(value) && value.length) {
+    return value.map((item, index) => ({
+      id: Number(firstValue(item, ['id', 'couponTemplateId'], Date.now() + index)),
+      title: String(firstValue(item, ['title', 'name', 'couponTemplateName'], '可用优惠券')),
+      desc: String(firstValue(item, ['desc', 'remark'], '适合当前商品使用')),
+      amount: String(firstValue(item, ['amount', 'discountAmount'], '')),
+      threshold: String(firstValue(item, ['threshold', 'thresholdAmount'], '')),
+      type: String(firstValue(item, ['type', 'templateTypeText', 'templateType'], '优惠券')),
+      badge: String(firstValue(item, ['badge', 'scopeText'], '去领取')),
+      templateId: Number(firstValue(item, ['templateId', 'couponTemplateId', 'id'], 0)),
+    }))
+  }
+  return disableFallback ? [] : buildFallbackCoupons(fallbackProduct)
+}
+
+function buildFallbackCoupons(product) {
+  if (!product) return []
+  return [
+    {
+      id: product.id * 10 + 1,
+      title: `${product.title} 专享券`,
+      desc: '适合当前商品使用，领取后可进入券包查看',
+      amount: '10',
+      threshold: '99',
+      type: '满减券',
+      badge: '去领取',
+      templateId: 1,
+    },
+    {
+      id: product.id * 10 + 2,
+      title: '门店通用券',
+      desc: '到店核销时可配合当前商品使用',
+      amount: '5',
+      threshold: '0',
+      type: '无门槛券',
+      badge: '看详情',
+      templateId: 1,
+    },
+  ]
+}
