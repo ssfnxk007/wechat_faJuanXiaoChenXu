@@ -100,18 +100,22 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import SectionHeader from '@/components/SectionHeader.vue'
 import { useTheme } from '@/composables/use-theme'
 import { ensureMiniProgramLogin } from '@/api/auth'
 import { claimMiniAppCouponTemplate, getMiniAppCouponTemplateDetail, getMiniAppUserCouponDetail } from '@/api/miniapp'
 import { request } from '@/utils/request'
 import { useSessionStore } from '@/store/session'
+import { createEventKey, createShareId, getOrCreateVisitorKey, normalizeSceneValue, reportShareTrackingEvent } from '@/utils/share-tracking'
 
 const session = useSessionStore()
 const { themeClass } = useTheme()
 const claiming = ref(false)
 const isUserCouponMode = ref(true)
+const hasReportedOpen = ref(false)
+const currentTemplateId = ref(0)
+const pagePath = '/pages/coupon/detail'
 const couponDetail = ref({
   id: 0,
   couponTemplateId: 0,
@@ -245,6 +249,7 @@ async function loadUserCouponDetail(id) {
 async function loadTemplateDetail(templateId) {
   const result = await getMiniAppCouponTemplateDetail(templateId)
   if (result) {
+    currentTemplateId.value = Number(templateId) > 0 ? Number(templateId) : Number(result.id || 0)
     couponDetail.value = {
       ...couponDetail.value,
       ...result,
@@ -286,11 +291,61 @@ onLoad(async (options) => {
     await ensureMiniProgramLogin()
     if (options?.templateId) {
       await loadTemplateDetail(options.templateId)
+      if (options?.shareId && !hasReportedOpen.value && currentTemplateId.value > 0) {
+        hasReportedOpen.value = true
+        reportShareTrackingEvent({
+          eventType: 'open',
+          eventKey: createEventKey('open', String(options.shareId), session.userId ? `u:${session.userId}` : getOrCreateVisitorKey(), pagePath),
+          shareId: String(options.shareId),
+          targetType: 'coupon',
+          targetKey: `template:${currentTemplateId.value}`,
+          targetId: currentTemplateId.value,
+          pagePath,
+          visitorKey: session.userId ? null : getOrCreateVisitorKey(),
+          scene: normalizeSceneValue(),
+          query: options,
+        })
+      }
       return
     }
     await loadUserCouponDetail(options?.id)
   } catch (error) {
     console.warn('[coupon-detail] onLoad failed', error)
+  }
+})
+
+onShareAppMessage(() => {
+  if (isUserCouponMode.value) {
+    return {
+      title: '我的优惠券',
+      path: '/pages/coupon/index',
+    }
+  }
+
+  const templateId = Number(currentTemplateId.value || couponDetail.value.couponTemplateId || couponDetail.value.id || 0)
+  if (templateId <= 0) {
+    return {
+      title: '优惠券详情',
+      path: '/pages/coupon/index',
+    }
+  }
+
+  const shareId = createShareId()
+  reportShareTrackingEvent({
+    eventType: 'shareIntent',
+    eventKey: createEventKey('shareIntent', shareId, '', pagePath),
+    shareId,
+    targetType: 'coupon',
+    targetKey: `template:${templateId}`,
+    targetId: templateId,
+    pagePath,
+    scene: normalizeSceneValue(),
+    query: { templateId: String(templateId), shareId },
+  })
+
+  return {
+    title: `邀你领取：${couponDetail.value.couponTemplateName || '优惠券'}`,
+    path: `${pagePath}?templateId=${templateId}&shareId=${shareId}`,
   }
 })
 </script>

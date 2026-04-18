@@ -66,7 +66,7 @@ const route = useRoute()
 const navGroups = [
   { label: '总览', items: [{ to: '/', label: '仪表盘', icon: 'dashboard', iconText: 'BI' }] },
   { label: '基础资料', items: [{ to: '/users', label: '用户管理', icon: 'users', iconText: 'US' }, { to: '/stores', label: '门店管理', icon: 'stores', iconText: 'ST' }, { to: '/products', label: '商品管理', icon: 'products', iconText: 'PD' }, { to: '/banners', label: '轮播图管理', icon: 'banners', iconText: 'BN' }] },
-  { label: '发券运营', items: [{ to: '/coupon-templates', label: '券模板管理', icon: 'templates', iconText: 'CT' }, { to: '/coupon-packs', label: '券包管理', icon: 'packs', iconText: 'CP' }, { to: '/coupon-pack-items', label: '券包明细', icon: 'pack-items', iconText: 'CI' }, { to: '/user-coupons', label: '用户券', icon: 'user-coupons', iconText: 'UC' }] },
+  { label: '发券运营', items: [{ to: '/coupon-templates', label: '券模板管理', icon: 'templates', iconText: 'CT' }, { to: '/coupon-packs', label: '券包管理', icon: 'packs', iconText: 'CP' }, { to: '/coupon-pack-items', label: '券包明细', icon: 'pack-items', iconText: 'CI' }, { to: '/share-tracking', label: '分享追踪', icon: 'share', iconText: 'ST' }, { to: '/user-coupons', label: '用户券', icon: 'user-coupons', iconText: 'UC' }] },
   { label: '交易与核销', items: [{ to: '/coupon-orders', label: '订单管理', icon: 'orders', iconText: 'OR' }, { to: '/writeoff', label: '核销中心', icon: 'writeoff', iconText: 'WO' }] },
   { label: '系统权限', items: [{ to: '/miniapp-settings', label: '小程序主题', icon: 'miniapp', iconText: 'MP' }, { to: '/admin-users', label: '权限管理', icon: 'admins', iconText: 'AU' }, { to: '/admin-roles', label: '角色管理', icon: 'roles', iconText: 'AR' }, { to: '/admin-menus', label: '菜单管理', icon: 'menus', iconText: 'AM' }] },
 ]

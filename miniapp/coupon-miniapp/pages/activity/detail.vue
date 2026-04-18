@@ -68,11 +68,14 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import SectionHeader from '@/components/SectionHeader.vue'
 import { useTheme } from '@/composables/use-theme'
+import { useSessionStore } from '@/store/session'
+import { createEventKey, createShareId, getOrCreateVisitorKey, normalizeSceneValue, reportShareTrackingEvent } from '@/utils/share-tracking'
 
 const { themeClass } = useTheme()
+const session = useSessionStore()
 
 const activityMap = {
   newcomer: {
@@ -139,11 +142,48 @@ const activityMap = {
 
 const activity = ref(activityMap.newcomer)
 const activityKey = ref('newcomer')
+const hasReportedOpen = ref(false)
+const pagePath = '/pages/activity/detail'
 
 onLoad((options = {}) => {
   const key = String(options.key || 'newcomer')
   activityKey.value = Object.prototype.hasOwnProperty.call(activityMap, key) ? key : 'newcomer'
   activity.value = activityMap[activityKey.value]
+
+  if (options.shareId && !hasReportedOpen.value) {
+    hasReportedOpen.value = true
+    reportShareTrackingEvent({
+      eventType: 'open',
+      eventKey: createEventKey('open', String(options.shareId), session.userId ? `u:${session.userId}` : getOrCreateVisitorKey(), pagePath),
+      shareId: String(options.shareId),
+      targetType: 'activity',
+      targetKey: activityKey.value,
+      pagePath,
+      visitorKey: session.userId ? null : getOrCreateVisitorKey(),
+      scene: normalizeSceneValue(),
+      query: options,
+    })
+  }
+})
+
+onShareAppMessage(() => {
+  const shareId = createShareId()
+  reportShareTrackingEvent({
+    eventType: 'shareIntent',
+    eventKey: createEventKey('shareIntent', shareId, '', pagePath),
+    shareId,
+    targetType: 'activity',
+    targetKey: activityKey.value,
+    pagePath,
+    scene: normalizeSceneValue(),
+    query: { key: activityKey.value, shareId },
+  })
+
+  const activityTitle = activity.value?.title || '活动详情'
+  return {
+    title: `邀你查看：${activityTitle}`,
+    path: `${pagePath}?key=${encodeURIComponent(activityKey.value)}&shareId=${shareId}`,
+  }
 })
 
 function goBack() {

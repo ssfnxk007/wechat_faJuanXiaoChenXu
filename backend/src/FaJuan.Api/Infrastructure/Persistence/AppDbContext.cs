@@ -17,6 +17,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<CouponOrder> CouponOrders => Set<CouponOrder>();
     public DbSet<UserCoupon> UserCoupons => Set<UserCoupon>();
     public DbSet<PaymentTransaction> PaymentTransactions => Set<PaymentTransaction>();
+    public DbSet<MiniAppShareEvent> MiniAppShareEvents => Set<MiniAppShareEvent>();
     public DbSet<CouponWriteOffRecord> CouponWriteOffRecords => Set<CouponWriteOffRecord>();
     public DbSet<CouponIssueImportBatch> CouponIssueImportBatches => Set<CouponIssueImportBatch>();
     public DbSet<CouponIssueImportDetail> CouponIssueImportDetails => Set<CouponIssueImportDetail>();
@@ -168,6 +169,32 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(x => x.PaidAt).HasColumnType("datetime");
             entity.Property(x => x.CreatedAt).HasColumnType("datetime");
             entity.HasIndex(x => x.PaymentNo).IsUnique();
+        });
+
+        modelBuilder.Entity<MiniAppShareEvent>(entity =>
+        {
+            entity.ToTable("MiniAppShareEvent");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.EventKey).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.EventType).HasMaxLength(16).IsRequired();
+            entity.Property(x => x.ShareId).HasMaxLength(40).IsRequired();
+            entity.Property(x => x.VisitorKey).HasMaxLength(64);
+            entity.Property(x => x.TargetType).HasMaxLength(16).IsRequired();
+            entity.Property(x => x.TargetKey).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.PagePath).HasMaxLength(128).IsRequired();
+            entity.Property(x => x.Scene).HasMaxLength(32);
+            entity.Property(x => x.QueryJson).HasMaxLength(1000);
+            entity.Property(x => x.ClientTime).HasColumnType("datetime");
+            entity.Property(x => x.CreatedAt).HasColumnType("datetime");
+            entity.Property(x => x.Ip).HasMaxLength(64);
+            entity.Property(x => x.UserAgent).HasMaxLength(256);
+
+            entity.HasIndex(x => x.EventKey).IsUnique();
+            entity.HasIndex(x => x.ShareId);
+            entity.HasIndex(x => new { x.EventType, x.CreatedAt });
+            entity.HasIndex(x => new { x.TargetType, x.TargetKey, x.CreatedAt });
+            entity.HasIndex(x => new { x.FromUserId, x.CreatedAt });
+            entity.HasIndex(x => new { x.OpenUserId, x.CreatedAt });
         });
 
         modelBuilder.Entity<CouponWriteOffRecord>(entity =>

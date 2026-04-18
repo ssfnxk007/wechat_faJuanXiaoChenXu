@@ -56,3 +56,7 @@ export function getMiniAppCouponTemplateDetail(id, params) {
 export function claimMiniAppCouponTemplate(id, data) {
   return request({ url: `/api/miniapp/coupon-templates/${id}/claim`, method: 'POST', data }).then((response) => response.data)
 }
+
+export function reportMiniAppShareTrackingEvent(data) {
+  return request({ url: '/api/miniapp/share-tracking/events', method: 'POST', data }).then((response) => response.data)
+}

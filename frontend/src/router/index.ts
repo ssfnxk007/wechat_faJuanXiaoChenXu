@@ -13,6 +13,7 @@ import LoginView from '@/views/login/LoginView.vue'
 import MiniAppSettingView from '@/views/miniapp-setting/MiniAppSettingView.vue'
 import CouponOrderView from '@/views/order/CouponOrderView.vue'
 import ProductView from '@/views/product/ProductView.vue'
+import ShareTrackingView from '@/views/share-tracking/ShareTrackingView.vue'
 import StoreView from '@/views/store/StoreView.vue'
 import UserCouponView from '@/views/user-coupon/UserCouponView.vue'
 import UserView from '@/views/user/UserView.vue'
@@ -36,6 +37,7 @@ const router = createRouter({
         { path: 'coupon-packs', name: 'couponPacks', component: CouponPackView, meta: { title: '券包管理', subtitle: '配置可售卖券包与价格、限购规则' } },
         { path: 'coupon-pack-items', name: 'couponPackItems', component: CouponPackItemView, meta: { title: '券包明细', subtitle: '维护券包内包含的券模板与数量' } },
         { path: 'coupon-orders', name: 'couponOrders', component: CouponOrderView, meta: { title: '订单管理', subtitle: '查看券包订单与支付发券流程' } },
+        { path: 'share-tracking', name: 'shareTracking', component: ShareTrackingView, meta: { title: '分享追踪', subtitle: '查看小程序分享意图与打开数据' } },
         { path: 'user-coupons', name: 'userCoupons', component: UserCouponView, meta: { title: '用户券', subtitle: '查看发券结果、券码与有效期状态' } },
         { path: 'writeoff', name: 'writeOff', component: WriteOffView, meta: { title: '核销中心', subtitle: '处理门店核销、券码校验与使用结果确认' } },
         { path: 'miniapp-settings', name: 'miniappSettings', component: MiniAppSettingView, meta: { title: '小程序主题', subtitle: '切换新中式绿意与极简纯白风等小程序外观配置' } },
