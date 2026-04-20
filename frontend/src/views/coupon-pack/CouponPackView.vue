@@ -123,27 +123,78 @@
     </div>
 
     <div v-if="dialogVisible" class="dialog-mask" @click.self="closeDialog">
-      <div class="dialog-card">
+      <div class="dialog-card pack-dialog-card">
         <div class="dialog-head">
           <div class="dialog-head-main">
             <h3>{{ editingId ? '编辑券包' : '新增券包' }}</h3>
-            <p>{{ editingId ? '修改券包资料并同步列表。' : '录入新券包资料并保存。' }}</p>
+            <p>{{ editingId ? '在同一窗口内完成券包资料与明细配置。' : '先填写券包资料，再直接配置包含的券模板。' }}</p>
           </div>
           <button type="button" class="ghost-button" @click="closeDialog">关闭</button>
         </div>
 
-        <div class="grid-form dialog-form">
-          <input v-model.trim="form.name" type="text" placeholder="券包名称" />
-          <input v-model.number="form.salePrice" type="number" min="0.01" step="0.01" placeholder="售价" />
-          <input v-model.number="form.perUserLimit" type="number" min="1" placeholder="每人限购" />
-          <select v-model.number="form.status">
-            <option :value="1">启用</option>
-            <option :value="0">停用</option>
-          </select>
-          <input v-model="form.saleStartTime" type="datetime-local" placeholder="销售开始时间" />
-          <input v-model="form.saleEndTime" type="datetime-local" placeholder="销售结束时间" />
-          <input v-model.trim="form.remark" type="text" placeholder="备注" />
-        </div>
+        <section class="dialog-section">
+          <div class="section-head compact">
+            <div class="section-head-main">
+              <h4>基础资料</h4>
+              <p class="section-tip">券包名称、售价、状态与售卖规则。</p>
+            </div>
+          </div>
+
+          <div class="grid-form dialog-form">
+            <input v-model.trim="form.name" type="text" placeholder="券包名称" />
+            <input v-model.number="form.salePrice" type="number" min="0.01" step="0.01" placeholder="售价" />
+            <input v-model.number="form.perUserLimit" type="number" min="1" placeholder="每人限购" />
+            <select v-model.number="form.status">
+              <option :value="1">启用</option>
+              <option :value="0">停用</option>
+            </select>
+            <input v-model="form.saleStartTime" type="datetime-local" placeholder="销售开始时间" />
+            <input v-model="form.saleEndTime" type="datetime-local" placeholder="销售结束时间" />
+            <input v-model.trim="form.remark" type="text" placeholder="备注" />
+          </div>
+        </section>
+
+        <section class="dialog-section">
+          <div class="section-head compact">
+            <div class="section-head-main">
+              <h4>券包明细</h4>
+              <p class="section-tip">直接选择券模板并填写数量，保存时会同步新增、更新和删除。</p>
+            </div>
+            <div class="inline-metrics">
+              <span class="badge info">条目 {{ packItems.length }}</span>
+              <span class="badge success">总数量 {{ totalPackItemQuantity }}</span>
+            </div>
+          </div>
+
+          <div class="pack-item-toolbar">
+            <div class="pack-item-summary">
+              <strong>券模板池</strong>
+              <span>先搜索券模板，再为当前券包添加组合内容。</span>
+            </div>
+            <button type="button" class="ghost-button" @click="appendPackItem">新增一条明细</button>
+          </div>
+
+          <div class="pack-item-list">
+            <div v-for="(item, index) in packItems" :key="item.key" class="pack-item-row">
+              <div class="pack-item-index">{{ index + 1 }}</div>
+              <div class="pack-item-template">
+                <RemoteSelectField
+                  v-model="item.couponTemplateId"
+                  v-model:keyword="templateKeyword"
+                  placeholder="输入模板名称后搜索"
+                  empty-label="请选择券模板"
+                  :options="couponTemplateSelectOptions"
+                  @search="searchCouponTemplates"
+                />
+              </div>
+              <input v-model.number="item.quantity" class="pack-item-quantity" type="number" min="1" step="1" placeholder="数量" />
+              <button type="button" class="action-button danger" @click="removePackItem(index)">删除</button>
+            </div>
+            <div v-if="packItems.length === 0" class="empty-pack-items">
+              当前还没有配置券包明细。至少添加 1 条券模板，支付成功后才能正常发券。
+            </div>
+          </div>
+        </section>
 
         <div class="dialog-actions">
           <button type="button" class="ghost-button" :disabled="submitting || deleting" @click="closeDialog">取消</button>
@@ -156,8 +207,13 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import RemoteSelectField from '@/components/RemoteSelectField.vue'
 import { createCouponPack, deleteCouponPack, getCouponPackList, updateCouponPack } from '@/api/coupon-pack'
+import { getCouponTemplateList } from '@/api/coupon-template'
+import { deleteCouponPackItem, getCouponPackItemList, saveCouponPackItem, updateCouponPackItem } from '@/api/coupon-pack-item'
+import type { CouponTemplateListItemDto } from '@/types/coupon'
 import type { CouponPackListItemDto, SaveCouponPackRequest } from '@/types/coupon-pack'
+import type { CouponPackItemDto } from '@/types/coupon-pack-item'
 import { getErrorMessage } from '@/utils/http-error'
 import { authStorage } from '@/utils.auth'
 import { notify } from '@/utils/notify'
@@ -171,9 +227,26 @@ const dialogVisible = ref(false)
 const editingId = ref<number | null>(null)
 const submitting = ref(false)
 const deleting = ref(false)
+const couponTemplateOptions = ref<CouponTemplateListItemDto[]>([])
+const templateKeyword = ref('')
 
 const query = reactive({
   keyword: '',
+})
+
+interface EditablePackItem {
+  key: string
+  id?: number
+  couponTemplateId: number
+  quantity: number
+}
+
+let packItemKeySeed = 0
+const createEditablePackItem = (item?: Partial<CouponPackItemDto>): EditablePackItem => ({
+  key: `pack-item-${packItemKeySeed += 1}`,
+  id: item?.id,
+  couponTemplateId: Number(item?.couponTemplateId || 0),
+  quantity: Number(item?.quantity || 1),
 })
 
 const createEmptyForm = (): SaveCouponPackRequest => ({
@@ -187,23 +260,100 @@ const createEmptyForm = (): SaveCouponPackRequest => ({
 })
 
 const form = reactive<SaveCouponPackRequest>(createEmptyForm())
+const packItems = ref<EditablePackItem[]>([])
+const originalPackItems = ref<CouponPackItemDto[]>([])
 
 const canCreate = authStorage.hasPermission('coupon-pack.create')
 const canEdit = authStorage.hasPermission('coupon-pack.edit')
 const canDelete = authStorage.hasPermission('coupon-pack.delete')
 const enabledCount = computed(() => items.value.filter((item) => item.status === 1).length)
+const templateTypeMap: Record<number, string> = { 1: '新人券', 2: '无门槛券', 3: '指定商品券', 4: '满减券' }
 const averagePrice = computed(() => {
   if (!items.value.length) return '0.00'
   const total = items.value.reduce((sum, item) => sum + Number(item.salePrice || 0), 0)
   return (total / items.value.length).toFixed(2)
 })
 const querySummary = computed(() => `关键词：${query.keyword || '全部'} / 每页：${pageSize.value}`)
+const totalPackItemQuantity = computed(() => packItems.value.reduce((sum, item) => sum + Number(item.quantity || 0), 0))
+const couponTemplateSelectOptions = computed(() => couponTemplateOptions.value.map((template) => ({
+  value: template.id,
+  label: `${template.name} / ${templateTypeMap[template.templateType] || '券模板'}`,
+})))
 
 const normalizeDateTime = (value?: string) => (value ? value.replace('T', ' ') : undefined)
 const toDateTimeLocal = (value?: string) => (value ? value.slice(0, 16).replace(' ', 'T') : undefined)
 
 const resetForm = () => {
   Object.assign(form, createEmptyForm())
+  packItems.value = []
+  originalPackItems.value = []
+}
+
+const loadCouponTemplateOptions = async () => {
+  const response = await getCouponTemplateList({ keyword: templateKeyword.value || undefined, pageIndex: 1, pageSize: 50 })
+  couponTemplateOptions.value = response.data.items
+}
+
+const searchCouponTemplates = async () => {
+  await loadCouponTemplateOptions()
+}
+
+const appendPackItem = () => {
+  packItems.value.push(createEditablePackItem())
+}
+
+const removePackItem = (index: number) => {
+  packItems.value.splice(index, 1)
+}
+
+const loadPackItems = async (couponPackId: number) => {
+  const response = await getCouponPackItemList(couponPackId)
+  originalPackItems.value = response.data
+  packItems.value = response.data.map((item) => createEditablePackItem(item))
+}
+
+const validatePackItems = (): EditablePackItem[] => {
+  const cleanedItems = packItems.value
+    .map((item) => ({ ...item, couponTemplateId: Number(item.couponTemplateId || 0), quantity: Number(item.quantity || 0) }))
+    .filter((item) => item.couponTemplateId > 0 && item.quantity > 0)
+
+  if (cleanedItems.length === 0) {
+    throw new Error('请至少配置 1 条券包明细')
+  }
+
+  const templateIds = new Set<number>()
+  for (const item of cleanedItems) {
+    if (templateIds.has(item.couponTemplateId)) {
+      throw new Error('同一券模板请只配置一条明细')
+    }
+    templateIds.add(item.couponTemplateId)
+  }
+
+  return cleanedItems
+}
+
+const syncPackItems = async (couponPackId: number, cleanedItems: EditablePackItem[]) => {
+  const originalMap = new Map(originalPackItems.value.map((item) => [item.id, item]))
+  const nextIds = new Set<number>()
+
+  for (const item of cleanedItems) {
+    if (item.id) {
+      nextIds.add(item.id)
+      const original = originalMap.get(item.id)
+      if (!original || original.couponTemplateId !== item.couponTemplateId || original.quantity !== item.quantity) {
+        await updateCouponPackItem(item.id, { couponPackId, couponTemplateId: item.couponTemplateId, quantity: item.quantity })
+      }
+      continue
+    }
+
+    await saveCouponPackItem({ couponPackId, couponTemplateId: item.couponTemplateId, quantity: item.quantity })
+  }
+
+  for (const item of originalPackItems.value) {
+    if (!nextIds.has(item.id)) {
+      await deleteCouponPackItem(item.id)
+    }
+  }
 }
 
 const loadData = async () => {
@@ -256,10 +406,11 @@ const goNextPage = async () => {
 const openCreateDialog = () => {
   editingId.value = null
   resetForm()
+  appendPackItem()
   dialogVisible.value = true
 }
 
-const openEditDialog = (item: CouponPackListItemDto) => {
+const openEditDialog = async (item: CouponPackListItemDto) => {
   editingId.value = item.id
   Object.assign(form, {
     name: item.name,
@@ -270,6 +421,13 @@ const openEditDialog = (item: CouponPackListItemDto) => {
     saleEndTime: toDateTimeLocal(item.saleEndTime),
     remark: item.remark || '',
   })
+  try {
+    await loadPackItems(item.id)
+  } catch (error) {
+    notify.error(getErrorMessage(error, '加载券包明细失败'))
+    packItems.value = []
+    originalPackItems.value = []
+  }
   dialogVisible.value = true
 }
 
@@ -287,19 +445,48 @@ const buildPayload = (): SaveCouponPackRequest => ({
 
 const submit = async () => {
   if (submitting.value) return
+  if (!form.name?.trim()) return notify.info('请输入券包名称')
+  if (!form.salePrice || Number(form.salePrice) <= 0) return notify.info('售价必须大于 0')
+  if (!form.perUserLimit || Number(form.perUserLimit) <= 0) return notify.info('每人限购必须大于 0')
+
+  let cleanedItems: EditablePackItem[]
+  try {
+    cleanedItems = validatePackItems()
+  } catch (error) {
+    return notify.info(getErrorMessage(error, '券包明细校验失败'))
+  }
+
   submitting.value = true
+  let couponPackId = editingId.value ?? 0
+  let packCreated = false
   try {
     const payload = buildPayload()
 
     if (editingId.value) {
       await updateCouponPack(editingId.value, payload)
-      notify.success('券包修改成功')
     } else {
-      await createCouponPack(payload)
-      pageIndex.value = 1
-      notify.success('券包创建成功')
+      const response = await createCouponPack(payload)
+      couponPackId = response.data
+      packCreated = true
     }
 
+    try {
+      await syncPackItems(couponPackId, cleanedItems)
+    } catch (syncError) {
+      if (packCreated) {
+        editingId.value = couponPackId
+        originalPackItems.value = []
+        notify.error(getErrorMessage(syncError, '券包已创建，但明细同步失败，请在当前窗口补全后再次保存'))
+      } else {
+        notify.error(getErrorMessage(syncError, '券包明细保存失败，请重试'))
+      }
+      return
+    }
+
+    if (packCreated) {
+      pageIndex.value = 1
+    }
+    notify.success(editingId.value && !packCreated ? '券包修改成功' : '券包创建成功')
     closeDialog()
     await loadData()
   } catch (error) {
@@ -336,10 +523,89 @@ const formatAmount = (value?: number) => (value ? value.toFixed(2) : '-')
 const formatDate = (value?: string) => (value ? value.replace('T', ' ').slice(0, 19) : '-')
 
 onMounted(loadData)
+onMounted(loadCouponTemplateOptions)
 </script>
 
 <style scoped>
+.pack-dialog-card {
+  width: min(1080px, calc(100vw - 48px));
+}
+
+.dialog-section {
+  display: grid;
+  gap: 16px;
+}
+
 .dialog-form {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.section-head.compact {
+  margin-bottom: 0;
+}
+
+.pack-item-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.pack-item-summary {
+  display: grid;
+  gap: 4px;
+  color: var(--text-secondary);
+}
+
+.pack-item-summary strong {
+  color: var(--text-primary);
+}
+
+.pack-item-list {
+  display: grid;
+  gap: 12px;
+}
+
+.pack-item-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 120px auto;
+  gap: 12px;
+  align-items: start;
+  padding: 14px;
+  border: 1px solid var(--line-soft, #e7eaf1);
+  border-radius: 16px;
+  background: var(--card-bg, #fff);
+}
+
+.pack-item-index {
+  display: grid;
+  place-items: center;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--bg-muted, #f4f7fb);
+  font-weight: 700;
+}
+
+.pack-item-quantity {
+  width: 100%;
+  height: 44px;
+}
+
+.empty-pack-items {
+  padding: 16px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 16px;
+  color: var(--text-secondary);
+  background: var(--bg-muted, #f8fafc);
+}
+
+@media (max-width: 960px) {
+  .pack-item-row {
+    grid-template-columns: 1fr;
+  }
+
+  .pack-item-index {
+    width: 44px;
+  }
 }
 </style>
