@@ -10,6 +10,7 @@ namespace FaJuan.Api.Controllers;
 [AllowAnonymous]
 public class AdminAuthController(
     IConfiguration configuration,
+    IHostEnvironment environment,
     JwtTokenService jwtTokenService,
     PasswordHashService passwordHashService,
     AppDbContext dbContext) : ApiControllerBase
@@ -28,6 +29,17 @@ public class AdminAuthController(
                 return Unauthorized(Failure<AdminLoginResultDto>("账号或密码错误", 401));
             }
 
+            // 登录成功时发现旧格式（SHA256 裸哈希）→ 在线升级为 PBKDF2
+            if (passwordHashService.NeedsRehash(adminUser.PasswordHash))
+            {
+                var tracked = await dbContext.AdminUsers.FirstOrDefaultAsync(x => x.Id == adminUser.Id, cancellationToken);
+                if (tracked is not null)
+                {
+                    tracked.PasswordHash = passwordHashService.Hash(request.Password);
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                }
+            }
+
             var dbToken = jwtTokenService.CreateAdminToken(adminUser.Username);
             return Ok(Success(new AdminLoginResultDto
             {
@@ -40,6 +52,13 @@ public class AdminAuthController(
         if (hasDbAdmins)
         {
             return Unauthorized(Failure<AdminLoginResultDto>("账号或密码错误", 401));
+        }
+
+        // 无任何管理员账号时的兜底：仅允许开发环境使用内置账号引导，避免生产环境裸奔
+        if (!environment.IsDevelopment())
+        {
+            return Unauthorized(Failure<AdminLoginResultDto>(
+                "后台尚未初始化管理员账号，请先执行 002-admin-auth-seed.sql", 401));
         }
 
         var username = configuration["AdminAuth:Username"] ?? "admin";

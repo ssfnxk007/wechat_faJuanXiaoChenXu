@@ -12,6 +12,7 @@
 - 按钮权限初始化 SQL：`database/migrations/003-admin-permission-seed.sql`
 - 按钮权限 EF 迁移脚本：`database/migrations/004-ef-admin-permission.sql`
 - 券模板商品范围 EF 迁移脚本：`database/migrations/005-coupon-template-product-scope.sql`
+- 高优先级安全与性能加固：`database/migrations/008-high-priority-hardening.sql`（UserCoupon 乐观并发列 + 6 个关键索引）
 
 ## 建议执行顺序
 

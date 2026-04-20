@@ -1,4 +1,5 @@
-﻿using FaJuan.Api.Domain.Enums;
+﻿using System.ComponentModel.DataAnnotations;
+using FaJuan.Api.Domain.Enums;
 
 namespace FaJuan.Api.Domain.Entities;
 
@@ -14,4 +15,8 @@ public class UserCoupon
     public DateTime EffectiveAt { get; set; }
     public DateTime ExpireAt { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+    // 乐观并发令牌：防止并发核销造成双写
+    [Timestamp]
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 }

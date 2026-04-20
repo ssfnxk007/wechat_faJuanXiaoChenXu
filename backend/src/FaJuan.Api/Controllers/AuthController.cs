@@ -148,6 +148,8 @@ public class AuthController(
     }
 
     [HttpPost("bind-mobile")]
+    [Authorize]
+    [AdminMenuAuthorize("/users")]
     public async Task<ActionResult<ApiResponse<bool>>> BindMobile([FromBody] BindMobileRequest request, CancellationToken cancellationToken)
     {
         if (request.UserId <= 0 || string.IsNullOrWhiteSpace(request.Mobile))

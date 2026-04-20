@@ -97,7 +97,16 @@ public class WriteOffController(AppDbContext dbContext) : ApiControllerBase
             DeviceCode = request.DeviceCode?.Trim(),
             WriteOffAt = now,
         });
-        await dbContext.SaveChangesAsync();
+
+        try
+        {
+            await dbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // 并发核销：另一笔请求已写入 Used，此处直接返回"已核销"
+            return BadRequest(Failure<CouponWriteOffResultDto>("券已核销"));
+        }
 
         return Ok(Success(new CouponWriteOffResultDto
         {

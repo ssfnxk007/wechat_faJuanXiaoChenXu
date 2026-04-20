@@ -165,7 +165,7 @@ public class CouponOrdersController(AppDbContext dbContext) : ApiControllerBase
 
         var entity = new CouponOrder
         {
-            OrderNo = $"CP{DateTime.Now:yyyyMMddHHmmssfff}",
+            OrderNo = OrderNoGenerator.Create("CP"),
             AppUserId = request.UserId,
             CouponPackId = request.CouponPackId,
             OrderAmount = pack.SalePrice,

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FaJuan.Api.Infrastructure.Auth;
 
-public class AdminMenuAuthorizeFilter(AppDbContext dbContext, IConfiguration configuration) : IAsyncAuthorizationFilter
+public class AdminMenuAuthorizeFilter(AppDbContext dbContext, IConfiguration configuration, IHostEnvironment environment) : IAsyncAuthorizationFilter
 {
     public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
     {
@@ -25,7 +25,8 @@ public class AdminMenuAuthorizeFilter(AppDbContext dbContext, IConfiguration con
 
         var hasDbAdmins = await dbContext.AdminUsers.AsNoTracking().AnyAsync();
         var fallbackAdmin = configuration["AdminAuth:Username"] ?? "admin";
-        if (!hasDbAdmins && string.Equals(username, fallbackAdmin, StringComparison.OrdinalIgnoreCase))
+        // 兜底管理员仅在开发环境 + 数据库为空时放行；生产要求必须有正式 AdminUser
+        if (!hasDbAdmins && environment.IsDevelopment() && string.Equals(username, fallbackAdmin, StringComparison.OrdinalIgnoreCase))
         {
             return;
         }

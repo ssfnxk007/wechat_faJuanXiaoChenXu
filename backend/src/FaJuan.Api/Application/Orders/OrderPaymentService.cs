@@ -1,4 +1,5 @@
-﻿using FaJuan.Api.Domain.Entities;
+﻿using FaJuan.Api.Application.Common;
+using FaJuan.Api.Domain.Entities;
 using FaJuan.Api.Domain.Enums;
 using FaJuan.Api.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -52,7 +53,7 @@ public class OrderPaymentService(AppDbContext dbContext)
                     AppUserId = order.AppUserId,
                     CouponTemplateId = template.Id,
                     CouponOrderId = order.Id,
-                    CouponCode = $"CPN{now:yyyyMMddHHmmssfff}{index}",
+                    CouponCode = $"{OrderNoGenerator.Create("CPN")}{index:D2}",
                     Status = UserCouponStatus.Unused,
                     ReceivedAt = now,
                     EffectiveAt = template.ValidPeriodType == CouponValidPeriodType.FixedDateRange ? (template.ValidFrom ?? now) : now,
