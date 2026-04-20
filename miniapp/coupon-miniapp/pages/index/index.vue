@@ -107,7 +107,9 @@
         <SectionHeader eyebrow="SELECTED GOODS" title="推荐商品" subtitle="适合搭配用券" action-text="查看更多" @action-click="goMall" />
         <view class="cm-grid-2 product-grid">
           <view class="product-card cm-card" v-for="item in products" :key="item.id" @click="goProductDetail(item.id)">
-            <view class="product-image" :style="item.imageUrl ? { backgroundImage: `url(${item.imageUrl})` } : {}"></view>
+            <view class="product-image">
+              <image v-if="item.imageUrl" class="product-image-img" :src="item.imageUrl" mode="aspectFit" />
+            </view>
             <text class="product-title">{{ item.title }}</text>
             <text class="product-desc">{{ item.desc }}</text>
             <view class="product-footer">
@@ -541,11 +543,15 @@ onShow(() => {
   padding: 18rpx;
 }
 .product-image {
+  position: relative;
   height: 220rpx;
   border-radius: 20rpx;
   background: linear-gradient(135deg, rgba(45, 91, 72, 0.12) 0%, rgba(183, 155, 99, 0.18) 100%);
-  background-size: cover;
-  background-position: center;
+  overflow: hidden;
+}
+.product-image-img {
+  width: 100%;
+  height: 100%;
 }
 .product-title {
   color: $cm-text-primary;

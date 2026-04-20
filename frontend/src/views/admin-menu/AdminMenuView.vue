@@ -1,78 +1,73 @@
 <template>
-  <div class="business-page">
-    <div class="page-header-row">
-      <div>
+  <div class="business-page page-v2 admin-menu-page">
+    <section class="hero-panel admin-menu-hero">
+      <div class="hero-copy">
+        <span class="page-kicker">系统管理</span>
         <h2>菜单管理</h2>
-        <p>维护后台菜单树、路由路径与组件标识，统一作为导航展示和角色授权的数据基础。</p>
+        <p>维护后台菜单树、路由路径与组件标识，统一作为导航展示和角色授权的数据基础。页面优先服务结构核查与节点维护，不做展示型堆叠。</p>
+        <div class="hero-tags">
+          <span class="badge info">树形层级</span>
+          <span class="badge success">路由映射</span>
+          <span class="badge warning">角色授权基础</span>
+        </div>
       </div>
-      <div class="inline-actions">
-        <button type="button" class="ghost-button" @click="loadData">刷新菜单</button>
-        <button v-if="canCreate" type="button" @click="openCreateRootDialog">新增顶级菜单</button>
+      <div class="hero-side hero-side-grid">
+        <article class="quick-card compact">
+          <span class="quick-card-label">菜单节点</span>
+          <strong>{{ flatItems.length }}</strong>
+          <p>当前系统菜单节点总数</p>
+        </article>
+        <article class="quick-card compact">
+          <span class="quick-card-label">顶级菜单</span>
+          <strong>{{ rootCount }}</strong>
+          <p>根节点菜单数量</p>
+        </article>
+        <article class="quick-card compact">
+          <span class="quick-card-label">启用菜单</span>
+          <strong>{{ enabledCount }}</strong>
+          <p>当前可见菜单数量</p>
+        </article>
+        <article class="quick-card compact">
+          <span class="quick-card-label">层级深度</span>
+          <strong>{{ maxLevel + 1 }}</strong>
+          <p>当前菜单树最大层级</p>
+        </article>
       </div>
-    </div>
+    </section>
 
-    <div class="stats-grid">
-      <article class="stat-card">
+    <section class="stats-grid stats-grid-v2">
+      <article class="stat-card accent-blue">
         <span class="label">菜单节点</span>
         <strong class="stat-value">{{ flatItems.length }}</strong>
         <span class="stat-footnote">当前系统菜单节点总数</span>
       </article>
-      <article class="stat-card">
+      <article class="stat-card accent-indigo">
         <span class="label">顶级菜单</span>
         <strong class="stat-value">{{ rootCount }}</strong>
         <span class="stat-footnote">根节点菜单数量</span>
       </article>
-      <article class="stat-card">
+      <article class="stat-card accent-green">
         <span class="label">启用菜单</span>
         <strong class="stat-value">{{ enabledCount }}</strong>
         <span class="stat-footnote">当前可见菜单数量</span>
       </article>
-      <article class="stat-card">
+      <article class="stat-card accent-amber">
         <span class="label">层级深度</span>
         <strong class="stat-value">{{ maxLevel + 1 }}</strong>
         <span class="stat-footnote">当前菜单树最大层级</span>
       </article>
-    </div>
+    </section>
 
-    <div class="hero-panel">
-      <div class="hero-copy">
-        <div class="badge info">导航与授权基础数据</div>
-        <h2>让菜单树、路由配置和权限结构保持一致</h2>
-        <p>本页聚焦后台菜单层级维护。你可以按树形结构查看菜单归属关系，并继续完成新增下级、编辑、删除等操作，保证导航和权限配置始终同步。</p>
-        <div class="hero-tags">
-          <span class="tag">树形层级可读</span>
-          <span class="tag">支持新增下级</span>
-          <span class="tag">支持状态管理</span>
-          <span class="tag">统一授权来源</span>
-        </div>
-      </div>
-
-      <div class="hero-side">
-        <div class="quick-card">
-          <strong>菜单树</strong>
-          <p>按层级展示父子关系，适合快速审查导航结构和归属范围。</p>
-        </div>
-        <div class="quick-card">
-          <strong>路由映射</strong>
-          <p>每个节点同步展示路由路径和组件标识，便于页面映射核查。</p>
-        </div>
-        <div class="quick-card">
-          <strong>授权基础</strong>
-          <p>角色菜单授权依赖此处数据，菜单结构调整后可直接进入角色配置。</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="card toolbar-card">
+    <section class="card toolbar-card card-v2 operations-card">
       <div class="toolbar-row">
         <div class="toolbar-title">
-          <h3>结构概览</h3>
+          <span class="section-kicker">结构概览</span>
+          <h3>菜单树工作台</h3>
           <p class="section-tip">通过层级、状态和路径信息统一查看菜单配置，便于后台导航维护和授权核查。</p>
         </div>
-        <div class="summary-inline">
-          <span class="badge info">根节点 {{ rootCount }}</span>
-          <span class="badge success">子级 {{ childCount }}</span>
-          <span class="badge warning">最大深度 {{ maxLevel + 1 }}</span>
+        <div class="toolbar-actions">
+          <button type="button" class="ghost-button" @click="loadData">刷新菜单</button>
+          <button v-if="canCreate" type="button" class="primary-button" @click="openCreateRootDialog">新增顶级菜单</button>
         </div>
       </div>
 
@@ -93,90 +88,121 @@
           <small>当前可见菜单在总节点中的占比</small>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="card">
-      <div class="section-head">
-        <div class="section-head-main">
-          <h3>菜单树</h3>
-          <p class="section-tip">支持新增下级、编辑节点和删除未引用菜单；树形列保留缩进与层级线索，方便快速识别结构。</p>
+    <section class="admin-menu-content-grid">
+      <article class="card card-v2 data-card archive-card">
+        <div class="section-head">
+          <div class="section-head-main">
+            <span class="section-kicker">菜单树</span>
+            <h3>菜单列表</h3>
+            <p class="section-tip">支持新增下级、编辑节点和删除未引用菜单；树形列保留缩进与层级线索，方便快速识别结构。</p>
+          </div>
+          <div class="inline-metrics">
+            <span class="badge info">当前 {{ flatItems.length }} 个节点</span>
+            <span class="badge success">已启用 {{ enabledCount }} 个</span>
+          </div>
         </div>
-        <div class="inline-metrics">
-          <span class="badge info">当前 {{ flatItems.length }} 个节点</span>
-          <span class="badge success">已启用 {{ enabledCount }} 个</span>
-        </div>
-      </div>
 
-      <div class="table-wrap">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>菜单名称</th>
-              <th>路由路径</th>
-              <th>组件</th>
-              <th>排序</th>
-              <th>状态</th>
-              <th>创建时间</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in flatItems" :key="item.id">
-              <td class="cell-strong">{{ item.id }}</td>
-              <td>
-                <div class="menu-tree-cell" :style="{ '--menu-level': item.level }">
-                  <span class="tree-indent" aria-hidden="true"></span>
-                  <span class="tree-node-dot" :class="item.level === 0 ? 'root' : 'child'"></span>
-                  <div class="menu-tree-main">
-                    <span class="menu-tree-name">{{ item.name }}</span>
-                    <span class="menu-tree-meta">{{ item.parentId ? `上级ID：${item.parentId}` : '顶级菜单' }}</span>
+        <div class="table-wrap table-wrap-v2">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>菜单名称</th>
+                <th>路由路径</th>
+                <th>组件</th>
+                <th>排序</th>
+                <th>状态</th>
+                <th>创建时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in flatItems" :key="item.id">
+                <td class="cell-strong">{{ item.id }}</td>
+                <td>
+                  <div class="menu-tree-cell" :style="{ '--menu-level': item.level }">
+                    <span class="tree-indent" aria-hidden="true"></span>
+                    <span class="tree-node-dot" :class="item.level === 0 ? 'root' : 'child'"></span>
+                    <div class="menu-tree-main">
+                      <span class="menu-tree-name">{{ item.name }}</span>
+                      <span class="menu-tree-meta">{{ item.parentId ? `上级ID：${item.parentId}` : '顶级菜单' }}</span>
+                    </div>
                   </div>
-                </div>
-              </td>
-              <td class="cell-mono">{{ item.path }}</td>
-              <td>{{ item.component }}</td>
-              <td>{{ item.sort }}</td>
-              <td>
-                <span :class="['status-badge', item.isEnabled ? 'success' : 'danger']">{{ item.isEnabled ? '启用' : '停用' }}</span>
-              </td>
-              <td>{{ formatDate(item.createdAt) }}</td>
-              <td>
-                <div class="table-actions">
-                  <button v-if="canCreate" type="button" class="action-button" @click="openCreateChildDialog(item)">新增下级</button>
-                  <button v-if="canEdit" type="button" class="action-button" @click="openEditDialog(item)">编辑</button>
-                  <button v-if="canDelete" type="button" class="action-button danger" @click="removeItem(item)">删除</button>
-                </div>
-              </td>
-            </tr>
-            <tr v-if="flatItems.length === 0">
-              <td colspan="8" class="empty-text">暂无菜单数据</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+                </td>
+                <td class="cell-mono">{{ item.path }}</td>
+                <td>{{ item.component }}</td>
+                <td>{{ item.sort }}</td>
+                <td>
+                  <span :class="['status-badge', item.isEnabled ? 'success' : 'danger']">{{ item.isEnabled ? '启用' : '停用' }}</span>
+                </td>
+                <td>{{ formatDate(item.createdAt) }}</td>
+                <td>
+                  <div class="table-actions">
+                    <button v-if="canCreate" type="button" class="action-button" @click="openCreateChildDialog(item)">新增下级</button>
+                    <button v-if="canEdit" type="button" class="action-button" @click="openEditDialog(item)">编辑</button>
+                    <button v-if="canDelete" type="button" class="action-button danger" @click="removeItem(item)">删除</button>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="flatItems.length === 0">
+                <td colspan="8" class="empty-text">暂无菜单数据</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card card-v2 data-card">
+        <div class="section-head">
+          <div class="section-head-main">
+            <span class="section-kicker">维护要点</span>
+            <h3>菜单侧规则</h3>
+            <p class="section-tip">把菜单管理最容易踩坑的边界固定下来，减少导航和授权脱节问题。</p>
+          </div>
+        </div>
+        <div class="guide-list">
+          <div class="guide-item">
+            <strong>菜单是导航入口，也是授权前置条件</strong>
+            <p>角色菜单授权依赖这里的数据；只加按钮权限、不补菜单，页面仍可能 403。</p>
+          </div>
+          <div class="guide-item">
+            <strong>路径、组件、菜单树要一起核对</strong>
+            <p>新增后台模块时，路由 path、组件标识和菜单树位置应同时确认，避免配置脱节。</p>
+          </div>
+          <div class="guide-item">
+            <strong>层级调整先看授权影响</strong>
+            <p>新增下级、改父级或删节点前，先确认角色授权和实际导航是否会被连带影响。</p>
+          </div>
+        </div>
+      </article>
+    </section>
 
     <div v-if="dialogVisible" class="dialog-mask" @click.self="closeDialog">
-      <div class="dialog-card wide">
+      <div class="dialog-card dialog-card-v2 admin-menu-dialog-card wide">
         <div class="dialog-head">
           <div class="dialog-head-main">
+            <span class="section-kicker">菜单表单</span>
             <h3>{{ editingId ? '编辑菜单' : '新增菜单' }}</h3>
             <p>{{ editingId ? '修改菜单的路径、组件、排序和启用状态。' : '新增菜单节点并配置所属层级与展示信息。' }}</p>
           </div>
           <button type="button" class="ghost-button" @click="closeDialog">关闭</button>
         </div>
 
-        <div class="grid-form dialog-form">
-          <select v-model="form.parentId">
-            <option :value="undefined">顶级菜单</option>
-            <option v-for="item in parentOptions" :key="item.id" :value="item.id">{{ item.label }}</option>
-          </select>
-          <input v-model.trim="form.name" type="text" placeholder="菜单名称" />
-          <input v-model.trim="form.path" type="text" placeholder="路由路径，如 /admin-users" />
-          <input v-model.trim="form.component" type="text" placeholder="组件标识，如 AdminUserView" />
-          <input v-model.number="form.sort" type="number" placeholder="排序号" />
-          <label class="checkbox-field">
+        <div class="grid-form dialog-form admin-menu-form-grid">
+          <label>
+            <span>父级菜单</span>
+            <select v-model="form.parentId">
+              <option :value="undefined">顶级菜单</option>
+              <option v-for="item in parentOptions" :key="item.id" :value="item.id">{{ item.label }}</option>
+            </select>
+          </label>
+          <label><span>菜单名称</span><input v-model.trim="form.name" type="text" placeholder="菜单名称" /></label>
+          <label><span>路由路径</span><input v-model.trim="form.path" type="text" placeholder="路由路径，如 /admin-users" /></label>
+          <label><span>组件标识</span><input v-model.trim="form.component" type="text" placeholder="组件标识，如 AdminUserView" /></label>
+          <label><span>排序号</span><input v-model.number="form.sort" type="number" placeholder="排序号" /></label>
+          <label class="checkbox-field checkbox-card">
             <input v-model="form.isEnabled" type="checkbox" />
             <span>启用菜单</span>
           </label>
@@ -184,7 +210,7 @@
 
         <div class="dialog-actions">
           <button type="button" class="ghost-button" :disabled="submitting || deleting" @click="closeDialog">取消</button>
-          <button v-if="editingId ? canEdit : canCreate" type="button" :disabled="submitting || deleting" @click="submit">{{ submitting ? '提交中...' : (editingId ? '保存修改' : '保存新增') }}</button>
+          <button v-if="editingId ? canEdit : canCreate" type="button" class="primary-button" :disabled="submitting || deleting" @click="submit">{{ submitting ? '提交中...' : (editingId ? '保存修改' : '保存新增') }}</button>
         </div>
       </div>
     </div>
@@ -237,17 +263,13 @@ const enabledCount = computed(() => flatItems.value.filter((item) => item.isEnab
 const childCount = computed(() => flatItems.value.filter((item) => !!item.parentId).length)
 const maxLevel = computed(() => flatItems.value.reduce((max, item) => Math.max(max, item.level), 0))
 const sortRangeText = computed(() => {
-  if (flatItems.value.length === 0) {
-    return '-'
-  }
+  if (flatItems.value.length === 0) return '-'
 
   const values = flatItems.value.map((item) => item.sort)
   return `${Math.min(...values)} - ${Math.max(...values)}`
 })
 const enabledRate = computed(() => {
-  if (flatItems.value.length === 0) {
-    return '0%'
-  }
+  if (flatItems.value.length === 0) return '0%'
 
   return `${Math.round((enabledCount.value / flatItems.value.length) * 100)}%`
 })
@@ -297,9 +319,7 @@ const closeDialog = () => {
 }
 
 const submit = async () => {
-  if (submitting.value) {
-    return
-  }
+  if (submitting.value) return
 
   submitting.value = true
   try {
@@ -321,13 +341,9 @@ const submit = async () => {
 }
 
 const removeItem = async (item: FlatMenuItem) => {
-  if (!window.confirm(`确认删除菜单“${item.name}”吗？`)) {
-    return
-  }
+  if (!window.confirm(`确认删除菜单“${item.name}”吗？`)) return
 
-  if (deleting.value) {
-    return
-  }
+  if (deleting.value) return
 
   deleting.value = true
   try {
@@ -347,8 +363,36 @@ onMounted(loadData)
 </script>
 
 <style scoped>
-.dialog-form {
+.admin-menu-hero {
+  background:
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.14), transparent 28%),
+    linear-gradient(135deg, #ffffff 0%, #f8fbff 52%, #f4f7fb 100%);
+}
+
+.admin-menu-content-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
+}
+
+.guide-list {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-menu-form-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-menu-form-grid label {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-menu-form-grid label span {
+  font-size: 13px;
+  font-weight: 700;
+  color: #344054;
 }
 
 .menu-overview-grid {
@@ -425,12 +469,11 @@ onMounted(loadData)
   font-size: 12px;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1100px) {
+  .hero-side-grid,
+  .admin-menu-content-grid,
+  .admin-menu-form-grid,
   .menu-overview-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .dialog-form {
     grid-template-columns: 1fr;
   }
 }

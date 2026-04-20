@@ -257,12 +257,11 @@ onMounted(async () => {
 .quick-card-spotlight { min-height: 148px; background: linear-gradient(135deg, rgba(234,179,8,.08), rgba(59,130,246,.03)); border: 1px solid rgba(234,179,8,.14); }
 .quick-card.compact { min-height: 112px; }
 .quick-card-label { display: inline-flex; width: fit-content; padding: 4px 10px; border-radius: 999px; background: rgba(37,99,235,.08); color: var(--primary); font-size: 12px; font-weight: 700; }
-.order-filter-grid { grid-template-columns: 1.2fr .8fr .8fr .8fr 1.4fr; }
-.field-card { display: grid; gap: 10px; padding: 16px; border-radius: 18px; border: 1px solid rgba(226,232,240,.96); background: linear-gradient(180deg,#fff 0%,#fbfdff 100%); }
-.field-label { font-size: 12px; font-weight: 700; color: #475467; letter-spacing: .04em; }
-.summary-field strong { font-size: 16px; }
-.summary-field p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
-.order-summary-card { grid-column: span 1; }
+.order-filter-grid { grid-template-columns: minmax(280px, 1.6fr) repeat(3, minmax(160px, .7fr)); align-items: end; }
+.order-filter-grid .field-card { padding: 12px 14px; }
+.order-filter-grid .filter-field input,
+.order-filter-grid .filter-field select { height: 42px; }
+.order-summary-card { grid-column: 1 / -1; }
 .order-dialog { width: min(720px, calc(100vw - 48px)); }
 .order-detail-dialog { width: min(1080px, calc(100vw - 48px)); }
 .order-form-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
@@ -270,9 +269,7 @@ onMounted(async () => {
 .dialog-form>label>span { font-size: 13px; font-weight: 700; color: #344054; }
 .dialog-form input,.dialog-form select,.filter-field select { width: 100%; height: 44px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 12px; background: #fff; }
 .detail-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
-.result-panel { display: grid; gap: 6px; padding: 14px 16px; border-radius: 16px; border: 1px solid rgba(226,232,240,.96); background: #fff; }
-.result-panel strong { color: #344054; font-size: 13px; }
 .detail-history-card { margin-top: 4px; }
-@media (max-width:1100px){ .order-filter-grid,.order-form-grid,.detail-grid,.hero-side-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width:1100px){ .order-filter-grid,.order-form-grid,.detail-grid,.hero-side-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); } .order-summary-card { grid-column: 1 / -1; } }
 @media (max-width:820px){ .order-filter-grid,.order-form-grid,.detail-grid,.hero-side-grid{ grid-template-columns: 1fr; } }
 </style>

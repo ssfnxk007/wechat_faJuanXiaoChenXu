@@ -127,6 +127,20 @@
           <button v-if="canGrant" type="button" class="ghost-button" @click="openImportDialog">打开导入面板</button>
         </div>
       </article>
+
+      <article class="card card-v2 action-entry-card">
+        <div class="entry-head">
+          <span class="section-kicker">重点关注</span>
+          <h3>异常与失效记录</h3>
+          <p class="section-tip">把运营最需要追的风险项单独拎出来，避免只盯着发券成功而忽略后续履约问题。</p>
+        </div>
+        <div class="entry-metrics">
+          <div>
+            <strong>已过期 / 已失效 {{ expiredCount }}</strong>
+            <span>建议优先回查失效原因、核销沟通和补发策略。</span>
+          </div>
+        </div>
+      </article>
     </section>
 
     <section class="card card-v2 data-card archive-card">
@@ -907,44 +921,8 @@ onMounted(async () => {
 
 .operation-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
-}
-
-.action-entry-card {
-  display: grid;
-  gap: 16px;
-}
-
-.entry-head {
-  display: grid;
-  gap: 8px;
-}
-
-.entry-head h3,
-.entry-head p {
-  margin: 0;
-}
-
-.entry-metrics {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.entry-metrics div {
-  display: grid;
-  gap: 4px;
-}
-
-.entry-metrics strong {
-  font-size: 18px;
-}
-
-.entry-metrics span {
-  color: var(--muted);
-  font-size: 13px;
 }
 
 .filter-panel-grid {
@@ -955,33 +933,6 @@ onMounted(async () => {
 
 .user-coupon-filter-grid {
   grid-template-columns: 0.8fr 1.2fr 0.8fr 1.2fr;
-}
-
-.field-card {
-  display: grid;
-  gap: 10px;
-  padding: 16px;
-  border-radius: 18px;
-  border: 1px solid rgba(226, 232, 240, 0.96);
-  background: linear-gradient(180deg, #fff 0%, #fbfdff 100%);
-}
-
-.field-label {
-  font-size: 12px;
-  font-weight: 700;
-  color: #475467;
-  letter-spacing: 0.04em;
-}
-
-.summary-field strong {
-  font-size: 16px;
-}
-
-.summary-field p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.6;
 }
 
 .archive-card {
@@ -998,17 +949,6 @@ onMounted(async () => {
 
 .user-coupon-form-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.dialog-form > label {
-  display: grid;
-  gap: 8px;
-}
-
-.dialog-form > label > span {
-  font-size: 13px;
-  font-weight: 700;
-  color: #344054;
 }
 
 .dialog-form input,
@@ -1028,92 +968,9 @@ onMounted(async () => {
   padding: 0 14px;
 }
 
-.search-inline {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
-}
-
-.selector-field-card {
-  display: grid;
-  gap: 12px;
-  padding: 16px;
-  border-radius: 18px;
-  border: 1px solid rgba(226, 232, 240, 0.96);
-  background: linear-gradient(180deg, #fff 0%, #fbfdff 100%);
-}
-
-.selector-field-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.selector-field-head span,
-.selector-field-head strong {
-  color: #344054;
-}
-
-.selection-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.selection-card {
-  display: grid;
-  gap: 6px;
-  padding: 14px;
-  border-radius: 16px;
-  border: 1px solid rgba(226, 232, 240, 0.96);
-  background: #fff;
-  text-align: left;
-  transition: all 0.18s ease;
-}
-
-.selection-card strong,
-.selection-card span {
-  margin: 0;
-}
-
-.selection-card span {
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.selection-card.active {
-  border-color: rgba(37, 99, 235, 0.5);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
-  background: linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%);
-}
-
 .file-field input {
   height: auto;
   padding: 10px 12px;
-}
-
-.result-board {
-  display: grid;
-  gap: 14px;
-  padding: 18px;
-  border-radius: 18px;
-  border: 1px solid rgba(226, 232, 240, 0.96);
-  background: linear-gradient(180deg, #fcfdff 0%, #f8fbff 100%);
-}
-
-.result-board-summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.result-board-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
 }
 
 .result-item-card {
@@ -1130,39 +987,11 @@ onMounted(async () => {
   margin: 0;
 }
 
-.helper-card {
-  display: grid;
-  gap: 8px;
-  padding: 16px 18px;
-  border-radius: 18px;
-  background: linear-gradient(180deg, #fff 0%, #f8fbff 100%);
-  border: 1px solid rgba(191, 219, 254, 0.72);
-}
-
-.helper-card p,
-.helper-card strong {
-  margin: 0;
-}
-
 .import-result-grid,
 .qr-meta-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
-}
-
-.result-panel {
-  display: grid;
-  gap: 6px;
-  padding: 14px 16px;
-  border-radius: 16px;
-  border: 1px solid rgba(226, 232, 240, 0.96);
-  background: #fff;
-}
-
-.result-panel strong {
-  color: #344054;
-  font-size: 13px;
 }
 
 .invalid-rows ul {

@@ -1,140 +1,200 @@
 <template>
-  <div class="business-page">
-    <div class="page-header-row">
-      <div>
+  <div class="business-page page-v2 admin-role-page">
+    <section class="hero-panel admin-role-hero">
+      <div class="hero-copy">
+        <span class="page-kicker">系统管理</span>
         <h2>角色管理</h2>
-        <p>维护后台角色与菜单、权限授权关系，统一管理 RBAC 权限模型。</p>
+        <p>维护后台角色与菜单、权限授权关系，统一管理 RBAC 权限模型。页面优先服务角色筛选、授权核对和角色维护，不做展示型堆叠。</p>
+        <div class="hero-tags">
+          <span class="badge info">角色编码</span>
+          <span class="badge success">菜单授权</span>
+          <span class="badge warning">权限授权</span>
+        </div>
       </div>
-      <div class="inline-actions">
-        <button type="button" class="ghost-button" @click="loadData">刷新列表</button>
-        <button v-if="canCreate" type="button" @click="openCreateDialog">新增角色</button>
+      <div class="hero-side hero-side-grid">
+        <article class="quick-card compact">
+          <span class="quick-card-label">角色总数</span>
+          <strong>{{ totalCount }}</strong>
+          <p>当前已创建的角色数量</p>
+        </article>
+        <article class="quick-card compact">
+          <span class="quick-card-label">启用角色</span>
+          <strong>{{ enabledCount }}</strong>
+          <p>当前可正常使用的角色</p>
+        </article>
+        <article class="quick-card compact">
+          <span class="quick-card-label">菜单数量</span>
+          <strong>{{ menuOptions.length }}</strong>
+          <p>可分配给角色的菜单项</p>
+        </article>
+        <article class="quick-card compact">
+          <span class="quick-card-label">已授权角色</span>
+          <strong>{{ grantedCount }}</strong>
+          <p>已配置菜单或权限的角色数量</p>
+        </article>
       </div>
-    </div>
+    </section>
 
-    <div class="stats-grid">
-      <article class="stat-card">
+    <section class="stats-grid stats-grid-v2">
+      <article class="stat-card accent-blue">
         <span class="label">角色总数</span>
         <strong class="stat-value">{{ totalCount }}</strong>
         <span class="stat-footnote">当前已创建的角色数量</span>
       </article>
-      <article class="stat-card">
+      <article class="stat-card accent-green">
         <span class="label">启用角色</span>
         <strong class="stat-value">{{ enabledCount }}</strong>
         <span class="stat-footnote">当前可正常使用的角色</span>
       </article>
-      <article class="stat-card">
+      <article class="stat-card accent-indigo">
         <span class="label">菜单数量</span>
         <strong class="stat-value">{{ menuOptions.length }}</strong>
         <span class="stat-footnote">可分配给角色的菜单项</span>
       </article>
-      <article class="stat-card">
+      <article class="stat-card accent-amber">
         <span class="label">已授权角色</span>
         <strong class="stat-value">{{ grantedCount }}</strong>
         <span class="stat-footnote">已配置菜单或权限的角色数量</span>
       </article>
-    </div>
+    </section>
 
-    <div class="card toolbar-card">
+    <section class="card toolbar-card card-v2 operations-card">
       <div class="toolbar-row">
         <div class="toolbar-title">
-          <h3>筛选条件</h3>
-          <p class="section-tip">支持按角色名称或编码检索，并切换每页条数。</p>
+          <span class="section-kicker">检索与动作</span>
+          <h3>角色工作台</h3>
+          <p class="section-tip">支持按角色名称或编码检索，并在同一入口完成新增、编辑和删除。</p>
         </div>
-        <div class="summary-inline">
-          <span class="badge info">总数 {{ totalCount }}</span>
-          <span class="badge success">第 {{ pageIndex }} / {{ totalPages }} 页</span>
-        </div>
-      </div>
-
-      <div class="filter-grid">
-        <input v-model.trim="query.keyword" type="text" placeholder="请输入角色名称或编码" @keyup.enter="handleSearch" />
-        <select v-model.number="pageSize" @change="handlePageSizeChange">
-          <option :value="10">每页 10 条</option>
-          <option :value="20">每页 20 条</option>
-          <option :value="50">每页 50 条</option>
-        </select>
-        <input :value="querySummary" type="text" readonly />
         <div class="toolbar-actions">
-          <button type="button" @click="handleSearch">查询</button>
-          <button type="button" class="ghost-button" @click="resetQuery">重置</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="section-head">
-        <div class="section-head-main">
-          <h3>角色列表</h3>
-          <p class="section-tip">查看角色编码、账号数量、菜单数量、权限数量与启用状态。</p>
+          <button type="button" class="ghost-button" @click="resetQuery">重置筛选</button>
+          <button type="button" class="ghost-button" @click="loadData">刷新列表</button>
+          <button v-if="canCreate" type="button" class="primary-button" @click="openCreateDialog">新增角色</button>
         </div>
       </div>
 
-      <div class="table-wrap">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>角色名称</th>
-              <th>角色编码</th>
-              <th>账号数量</th>
-              <th>菜单数</th>
-              <th>权限数</th>
-              <th>状态</th>
-              <th>创建时间</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in items" :key="item.id">
-              <td class="cell-strong">{{ item.id }}</td>
-              <td>{{ item.name }}</td>
-              <td class="cell-mono">{{ item.code }}</td>
-              <td>{{ item.userCount }}</td>
-              <td>{{ item.menuCount }}</td>
-              <td>{{ item.permissionCount }}</td>
-              <td>
-                <span :class="['status-badge', item.isEnabled ? 'success' : 'danger']">
-                  {{ item.isEnabled ? '启用' : '停用' }}
-                </span>
-              </td>
-              <td>{{ formatDate(item.createdAt) }}</td>
-              <td>
-                <div class="table-actions">
-                  <button v-if="canEdit" type="button" class="action-button" :disabled="submitting || deleting" @click="openEditDialog(item)">编辑</button>
-                  <button v-if="canDelete" type="button" class="action-button danger" :disabled="submitting || deleting" @click="removeItem(item)">{{ deleting ? '删除中...' : '删除' }}</button>
-                </div>
-              </td>
-            </tr>
-            <tr v-if="items.length === 0">
-              <td colspan="9" class="empty-text">暂无角色数据</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="pager">
-        <div class="pager-info">第 {{ pageIndex }} 页，共 {{ totalPages }} 页 / 共 {{ totalCount }} 条</div>
-        <div class="pager-actions">
-          <button type="button" class="ghost-button" :disabled="pageIndex <= 1" @click="goPrevPage">上一页</button>
-          <button type="button" class="ghost-button" :disabled="pageIndex >= totalPages" @click="goNextPage">下一页</button>
+      <div class="filter-panel-grid admin-role-filter-grid">
+        <label class="field-card filter-field">
+          <span class="field-label">角色关键字</span>
+          <input v-model.trim="query.keyword" type="text" placeholder="请输入角色名称或编码" @keyup.enter="handleSearch" />
+        </label>
+        <label class="field-card filter-field compact-field">
+          <span class="field-label">分页条数</span>
+          <select v-model.number="pageSize" @change="handlePageSizeChange">
+            <option :value="10">每页 10 条</option>
+            <option :value="20">每页 20 条</option>
+            <option :value="50">每页 50 条</option>
+          </select>
+        </label>
+        <div class="field-card summary-field">
+          <span class="field-label">当前筛选</span>
+          <strong>{{ querySummary }}</strong>
+          <p>角色页负责汇总菜单和权限授权边界，账号页只绑定角色，不直接配置细粒度权限。</p>
         </div>
       </div>
-    </div>
+    </section>
+
+    <section class="admin-role-content-grid">
+      <article class="card card-v2 data-card archive-card">
+        <div class="section-head">
+          <div class="section-head-main">
+            <span class="section-kicker">角色档案</span>
+            <h3>角色列表</h3>
+            <p class="section-tip">查看角色编码、账号数量、菜单数量、权限数量与启用状态。</p>
+          </div>
+        </div>
+
+        <div class="table-wrap table-wrap-v2">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>角色名称</th>
+                <th>角色编码</th>
+                <th>账号数量</th>
+                <th>菜单数</th>
+                <th>权限数</th>
+                <th>状态</th>
+                <th>创建时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in items" :key="item.id">
+                <td class="cell-strong">{{ item.id }}</td>
+                <td>{{ item.name }}</td>
+                <td class="cell-mono">{{ item.code }}</td>
+                <td>{{ item.userCount }}</td>
+                <td>{{ item.menuCount }}</td>
+                <td>{{ item.permissionCount }}</td>
+                <td>
+                  <span :class="['status-badge', item.isEnabled ? 'success' : 'danger']">
+                    {{ item.isEnabled ? '启用' : '停用' }}
+                  </span>
+                </td>
+                <td>{{ formatDate(item.createdAt) }}</td>
+                <td>
+                  <div class="table-actions">
+                    <button v-if="canEdit" type="button" class="action-button" :disabled="submitting || deleting" @click="openEditDialog(item)">编辑</button>
+                    <button v-if="canDelete" type="button" class="action-button danger" :disabled="submitting || deleting" @click="removeItem(item)">{{ deleting ? '删除中...' : '删除' }}</button>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="items.length === 0">
+                <td colspan="9" class="empty-text">暂无角色数据</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pager pager-v2">
+          <div class="pager-info">第 {{ pageIndex }} 页，共 {{ totalPages }} 页 / 共 {{ totalCount }} 条</div>
+          <div class="pager-actions">
+            <button type="button" class="ghost-button" :disabled="pageIndex <= 1" @click="goPrevPage">上一页</button>
+            <button type="button" class="ghost-button" :disabled="pageIndex >= totalPages" @click="goNextPage">下一页</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="card card-v2 data-card">
+        <div class="section-head">
+          <div class="section-head-main">
+            <span class="section-kicker">授权要点</span>
+            <h3>角色侧规则</h3>
+            <p class="section-tip">把 RBAC 里最容易混淆的边界固定下来，减少角色设计反复返工。</p>
+          </div>
+        </div>
+        <div class="guide-list">
+          <div class="guide-item">
+            <strong>角色是授权边界，不是账号本身</strong>
+            <p>角色页决定一个职责能访问哪些菜单和按钮权限，账号页只做角色绑定。</p>
+          </div>
+          <div class="guide-item">
+            <strong>菜单与权限要同时看</strong>
+            <p>只有菜单授权可能导致能见不能用，只有按钮授权可能导致路由 403；两者必须一起核对。</p>
+          </div>
+          <div class="guide-item">
+            <strong>删除角色前先确认引用关系</strong>
+            <p>角色被账号绑定时更建议先停用或调整授权，而不是直接删除。</p>
+          </div>
+        </div>
+      </article>
+    </section>
 
     <div v-if="dialogVisible" class="dialog-mask" @click.self="closeDialog">
-      <div class="dialog-card wide">
+      <div class="dialog-card dialog-card-v2 admin-role-dialog-card wide">
         <div class="dialog-head">
-          <div>
+          <div class="dialog-head-main">
+            <span class="section-kicker">角色表单</span>
             <h3>{{ editingId ? '编辑角色' : '新增角色' }}</h3>
             <p>{{ editingId ? '调整角色名称、编码与授权范围。' : '创建新的后台角色并配置菜单与权限。' }}</p>
           </div>
           <button type="button" class="ghost-button" @click="closeDialog">关闭</button>
         </div>
 
-        <div class="grid-form dialog-form">
-          <input v-model.trim="form.name" type="text" placeholder="请输入角色名称" />
-          <input v-model.trim="form.code" type="text" placeholder="请输入角色编码，如 coupon-admin" />
-          <label class="checkbox-field field-span-2">
+        <div class="grid-form dialog-form admin-role-form-grid">
+          <label><span>角色名称</span><input v-model.trim="form.name" type="text" placeholder="请输入角色名称" /></label>
+          <label><span>角色编码</span><input v-model.trim="form.code" type="text" placeholder="请输入角色编码，如 coupon-admin" /></label>
+          <label class="checkbox-field checkbox-card field-span-2">
             <input v-model="form.isEnabled" type="checkbox" />
             <span>启用角色</span>
           </label>
@@ -162,7 +222,7 @@
 
         <div class="dialog-actions">
           <button type="button" class="ghost-button" :disabled="submitting || deleting" @click="closeDialog">取消</button>
-          <button v-if="editingId ? canEdit : canCreate" type="button" :disabled="submitting || deleting" @click="submit">
+          <button v-if="editingId ? canEdit : canCreate" type="button" class="primary-button" :disabled="submitting || deleting" @click="submit">
             {{ submitting ? '提交中...' : (editingId ? '保存修改' : '创建角色') }}
           </button>
         </div>
@@ -349,7 +409,48 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.dialog-form {
+.admin-role-hero {
+  background:
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.14), transparent 28%),
+    linear-gradient(135deg, #ffffff 0%, #f8fbff 52%, #f4f7fb 100%);
+}
+
+.admin-role-filter-grid {
+  grid-template-columns: 1.4fr 0.8fr 1fr;
+}
+
+.admin-role-content-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
+}
+
+.guide-list {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-role-form-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-role-form-grid label {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-role-form-grid label span {
+  font-size: 13px;
+  font-weight: 700;
+  color: #344054;
+}
+
+@media (max-width: 1100px) {
+  .hero-side-grid,
+  .admin-role-filter-grid,
+  .admin-role-content-grid,
+  .admin-role-form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

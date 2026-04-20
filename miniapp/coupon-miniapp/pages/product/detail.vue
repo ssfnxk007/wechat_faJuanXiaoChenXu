@@ -1,34 +1,33 @@
 <template>
   <view :class="['cm-page', themeClass]">
-    <view class="product-hero" :style="coverStyle">
-      <view class="product-hero-mask"></view>
-      <view class="cm-nav-spacer"></view>
-      <view class="cm-container product-hero-content">
-        <view class="product-topbar">
-          <view class="product-back" @click="goBack">返回</view>
-          <view class="product-badge">商品详情</view>
-        </view>
+    <view class="cm-nav-spacer"></view>
+    <view class="cm-container product-body">
+      <view class="product-topbar">
+        <view class="product-back" @click="goBack">返回</view>
+        <view class="product-badge">商品详情</view>
+      </view>
 
-        <view class="product-head-copy">
-          <text class="product-eyebrow">PRODUCT DETAIL</text>
+      <view class="product-gallery" v-if="galleryImages.length">
+        <image
+          v-for="(image, index) in galleryImages"
+          :key="`${image}-${index}`"
+          class="gallery-image cm-card"
+          :src="image"
+          mode="widthFix"
+        />
+      </view>
+
+      <view class="cm-section">
+        <view class="product-info-card cm-card">
           <text class="product-title">{{ detail.title }}</text>
-          <text class="product-subtitle">{{ detail.tag || '支持搭配优惠券使用' }}</text>
-        </view>
-
-        <view class="hero-summary cm-card">
-          <view>
-            <text class="price-label">参考售价</text>
-            <view class="price-row">
-              <text class="price-unit">¥</text>
-              <text class="price-value">{{ detail.price || '--' }}</text>
-            </view>
+          <view class="price-row">
+            <text class="price-unit">¥</text>
+            <text class="price-value">{{ detail.price || '--' }}</text>
+            <view class="hero-tag" v-if="detail.tag">{{ detail.tag }}</view>
           </view>
-          <view class="hero-tag">{{ detail.tag || '商品' }}</view>
         </view>
       </view>
-    </view>
 
-    <view class="cm-container product-body">
       <view class="cm-section">
         <SectionHeader eyebrow="DESCRIPTION" title="商品说明" subtitle="用于商品展示与活动承接" />
         <view class="desc-card cm-card">
@@ -42,13 +41,6 @@
           <view class="highlight-card cm-card" v-for="item in detail.highlights" :key="item">
             <text class="highlight-text">{{ item }}</text>
           </view>
-        </view>
-      </view>
-
-      <view class="cm-section" v-if="detail.detailImages.length">
-        <SectionHeader eyebrow="DETAIL IMAGES" title="商品展示" subtitle="展示商品主图与详情图" />
-        <view class="gallery-stack">
-          <image v-for="(image, index) in detail.detailImages" :key="`${image}-${index}`" class="gallery-image cm-card" :src="image" mode="widthFix" />
         </view>
       </view>
 
@@ -98,14 +90,14 @@
         </view>
       </view>
 
-      <view class="action-bar cm-card">
-        <view class="action-copy">
-          <text class="action-title">{{ detail.title }}</text>
-          <text class="action-desc">可以先领券，再返回商品页下单或到店核销。</text>
+      <view class="buy-bar cm-card">
+        <view class="buy-left">
+          <text class="buy-title">{{ detail.title }}</text>
+          <text class="buy-summary">领券后下单或到店核销更优惠</text>
         </view>
-        <view class="action-buttons">
-          <view class="ghost-action" @click="goMall">返回商城</view>
-          <view class="primary-action" @click="goCouponCenter">去领券</view>
+        <view class="buy-right">
+          <text class="buy-price">¥{{ detail.price || '--' }}</text>
+          <view class="buy-button" @click="goCouponCenter">去领券</view>
         </view>
       </view>
     </view>
@@ -134,7 +126,15 @@ const detail = ref({
   recommendedCoupons: [],
 })
 
-const coverStyle = computed(() => detail.value.imageUrl ? { backgroundImage: `url(${detail.value.imageUrl})` } : {})
+const galleryImages = computed(() => {
+  const list = []
+  const cover = detail.value.imageUrl
+  if (cover) list.push(cover)
+  detail.value.detailImages.forEach(img => {
+    if (img && !list.includes(img)) list.push(img)
+  })
+  return list
+})
 
 onLoad(async (options = {}) => {
   const id = Number(options.id || options.productId || 0)
@@ -167,10 +167,6 @@ function goBack() {
   uni.navigateBack({ delta: 1 })
 }
 
-function goMall() {
-  uni.switchTab({ url: '/pages/mall/index' })
-}
-
 function goCouponCenter() {
   uni.switchTab({ url: '/pages/coupon/index' })
 }
@@ -193,30 +189,9 @@ function formatThreshold(value, fallback) {
 </script>
 
 <style lang="scss" scoped>
-.product-hero {
-  position: relative;
-  overflow: hidden;
-  min-height: 420rpx;
-  background: linear-gradient(135deg, #264337 0%, #4b6650 52%, #aa9664 100%);
-  background-size: cover;
-  background-position: center;
-  color: #fffaf4;
-  border-bottom-left-radius: 48rpx;
-  border-bottom-right-radius: 48rpx;
-}
-
-.product-hero-mask {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(18, 24, 38, 0.24) 0%, rgba(18, 24, 38, 0.64) 100%);
-}
-
-.product-hero-content {
-  position: relative;
-  display: grid;
-  gap: 24rpx;
+.product-body {
   padding-top: 18rpx;
-  padding-bottom: 42rpx;
+  padding-bottom: 40rpx;
 }
 
 .product-topbar,
@@ -228,12 +203,14 @@ function formatThreshold(value, fallback) {
   gap: 16rpx;
 }
 
+.product-topbar {
+  margin-bottom: 20rpx;
+}
+
 .product-back,
 .product-badge,
 .hero-tag,
-.coupon-action,
-.primary-action,
-.ghost-action {
+.coupon-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -244,48 +221,39 @@ function formatThreshold(value, fallback) {
 }
 
 .product-back,
-.product-badge,
+.product-badge {
+  background: rgba(15, 23, 42, 0.06);
+  color: $cm-text-primary;
+}
+
 .hero-tag {
-  background: rgba(255, 255, 255, 0.14);
-}
-
-.product-head-copy {
-  display: grid;
-  gap: 12rpx;
-}
-
-.product-eyebrow {
+  background: $cm-primary;
+  color: #fff;
   font-size: 22rpx;
-  letter-spacing: 4rpx;
-  opacity: 0.8;
+}
+
+.product-gallery {
+  display: grid;
+  gap: 18rpx;
+  margin-bottom: 24rpx;
+}
+
+.product-info-card {
+  padding: 28rpx;
+  display: grid;
+  gap: 16rpx;
 }
 
 .product-title {
-  font-size: 42rpx;
+  color: $cm-text-primary;
+  font-size: 40rpx;
   font-weight: 700;
 }
 
-.product-subtitle {
-  font-size: 24rpx;
-  opacity: 0.9;
-}
-
-.hero-summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18rpx;
-  padding: 24rpx 28rpx;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(10px);
-}
-
-.price-label,
 .desc-text,
 .highlight-text,
 .coupon-desc,
-.coupon-threshold,
-.action-desc {
+.coupon-threshold {
   color: $cm-text-secondary;
   font-size: 24rpx;
   line-height: 1.7;
@@ -295,12 +263,13 @@ function formatThreshold(value, fallback) {
   display: flex;
   align-items: baseline;
   gap: 8rpx;
-  margin-top: 10rpx;
+  flex-wrap: wrap;
 }
 
 .price-unit,
 .price-value,
 .coupon-amount {
+  color: $cm-primary-strong;
   font-weight: 700;
 }
 
@@ -309,28 +278,20 @@ function formatThreshold(value, fallback) {
 }
 
 .price-value {
-  font-size: 44rpx;
+  font-size: 46rpx;
 }
 
-.hero-tag,
 .coupon-type {
   color: #fffaf4;
 }
 
-.product-body {
-  padding-top: 28rpx;
-  padding-bottom: 40rpx;
-}
-
 .desc-card,
 .highlight-card,
-.coupon-card,
-.action-bar {
+.coupon-card {
   padding: 24rpx;
 }
 
 .highlight-stack,
-.gallery-stack,
 .coupon-stack {
   display: grid;
   gap: 18rpx;
@@ -375,36 +336,62 @@ function formatThreshold(value, fallback) {
   font-size: 42rpx;
 }
 
-.coupon-action,
-.primary-action {
+.coupon-action {
   background: $cm-primary;
   color: #fff;
 }
 
-.action-bar {
-  display: grid;
-  gap: 18rpx;
+.buy-bar {
+  position: sticky;
+  bottom: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+  margin-top: 22rpx;
+  padding: 22rpx 24rpx;
+  backdrop-filter: blur(18rpx);
+  z-index: 10;
 }
 
-.action-title {
+.buy-left,
+.buy-right {
+  display: grid;
+  gap: 8rpx;
+}
+
+.buy-right {
+  justify-items: end;
+}
+
+.buy-title {
   color: $cm-text-primary;
-  font-size: 30rpx;
+  font-size: 28rpx;
   font-weight: 700;
 }
 
-.action-buttons {
-  display: flex;
-  gap: 16rpx;
+.buy-summary {
+  color: $cm-text-secondary;
+  font-size: 22rpx;
 }
 
-.ghost-action {
-  background: rgba(15, 23, 42, 0.06);
-  color: $cm-text-primary;
+.buy-price {
+  color: $cm-primary-strong;
+  font-size: 38rpx;
+  font-weight: 700;
 }
 
-.theme-light .product-hero {
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  color: #111827;
+.buy-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 64rpx;
+  padding: 0 36rpx;
+  border-radius: 999rpx;
+  background: $cm-primary;
+  color: #fff;
+  font-size: 26rpx;
+  font-weight: 700;
 }
 
 .theme-light .product-back,
@@ -413,21 +400,6 @@ function formatThreshold(value, fallback) {
 .theme-light .coupon-type {
   background: rgba(15, 23, 42, 0.06);
   color: #475569;
-}
-
-.theme-light .hero-summary {
-  background: rgba(255, 255, 255, 0.82);
-}
-
-.theme-candy .product-hero {
-  background: linear-gradient(135deg, #e0e7ff 0%, #dbeafe 52%, #bfdbfe 100%);
-  color: #1e3a8a;
-}
-
-.theme-candy .product-hero-mask {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(191, 219, 254, 0.3) 100%),
-    radial-gradient(circle at right top, rgba(255, 255, 255, 0.88), transparent 32%);
 }
 
 .theme-candy .product-back,
@@ -439,14 +411,10 @@ function formatThreshold(value, fallback) {
   color: #2563eb;
 }
 
-.theme-candy .product-subtitle {
-  color: #3b82f6;
-}
-
-.theme-candy .hero-summary,
+.theme-candy .product-info-card,
 .theme-candy .coupon-card,
 .theme-candy .coupon-card-secondary,
-.theme-candy .action-bar {
+.theme-candy .buy-bar {
   background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
   border: 1rpx solid rgba(191, 219, 254, 0.7);
   box-shadow: 0 18rpx 44rpx rgba(37, 99, 235, 0.06);
@@ -461,38 +429,25 @@ function formatThreshold(value, fallback) {
 }
 
 .theme-candy .coupon-action,
-.theme-candy .primary-action {
+.theme-candy .buy-button {
   background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
   color: #ffffff;
   box-shadow: 0 18rpx 36rpx rgba(37, 99, 235, 0.18);
 }
 
-.theme-candy .action-title {
+.theme-candy .buy-title {
   color: #1e3a8a;
 }
 
-.theme-candy .action-desc {
+.theme-candy .buy-summary {
   color: #64748b;
 }
 
-.theme-candy .ghost-action {
-  background: rgba(59, 130, 246, 0.05);
-  border: 1rpx solid rgba(191, 219, 254, 0.65);
+.theme-candy .buy-price {
   color: #2563eb;
 }
 
 /* ========== Orange Theme ========== */
-.theme-orange .product-hero {
-  background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 52%, #FED7AA 100%);
-  color: #9A3412;
-}
-
-.theme-orange .product-hero-mask {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(254, 215, 170, 0.3) 100%),
-    radial-gradient(circle at right top, rgba(255, 255, 255, 0.88), transparent 32%);
-}
-
 .theme-orange .product-back,
 .theme-orange .product-badge,
 .theme-orange .hero-tag,
@@ -502,14 +457,10 @@ function formatThreshold(value, fallback) {
   color: #EA580C;
 }
 
-.theme-orange .product-subtitle {
-  color: #F97316;
-}
-
-.theme-orange .hero-summary,
+.theme-orange .product-info-card,
 .theme-orange .coupon-card,
 .theme-orange .coupon-card-secondary,
-.theme-orange .action-bar {
+.theme-orange .buy-bar {
   background: linear-gradient(180deg, #ffffff 0%, #FFFBF5 100%);
   border: 1rpx solid rgba(254, 215, 170, 0.7);
   box-shadow: 0 18rpx 44rpx rgba(234, 88, 12, 0.06);
@@ -524,38 +475,25 @@ function formatThreshold(value, fallback) {
 }
 
 .theme-orange .coupon-action,
-.theme-orange .primary-action {
+.theme-orange .buy-button {
   background: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
   color: #ffffff;
   box-shadow: 0 18rpx 36rpx rgba(234, 88, 12, 0.18);
 }
 
-.theme-orange .action-title {
+.theme-orange .buy-title {
   color: #9A3412;
 }
 
-.theme-orange .action-desc {
+.theme-orange .buy-summary {
   color: #64748b;
 }
 
-.theme-orange .ghost-action {
-  background: rgba(249, 115, 22, 0.05);
-  border: 1rpx solid rgba(254, 215, 170, 0.65);
+.theme-orange .buy-price {
   color: #EA580C;
 }
 
 /* ========== Red Theme ========== */
-.theme-red .product-hero {
-  background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 52%, #FFCDD2 100%);
-  color: #B71C1C;
-}
-
-.theme-red .product-hero-mask {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 205, 210, 0.3) 100%),
-    radial-gradient(circle at right top, rgba(255, 255, 255, 0.88), transparent 32%);
-}
-
 .theme-red .product-back,
 .theme-red .product-badge,
 .theme-red .hero-tag,
@@ -565,14 +503,10 @@ function formatThreshold(value, fallback) {
   color: #E53935;
 }
 
-.theme-red .product-subtitle {
-  color: #EF5350;
-}
-
-.theme-red .hero-summary,
+.theme-red .product-info-card,
 .theme-red .coupon-card,
 .theme-red .coupon-card-secondary,
-.theme-red .action-bar {
+.theme-red .buy-bar {
   background: linear-gradient(180deg, #ffffff 0%, #FFEBEE 100%);
   border: 1rpx solid rgba(255, 205, 210, 0.7);
   box-shadow: 0 18rpx 44rpx rgba(229, 57, 53, 0.06);
@@ -587,23 +521,21 @@ function formatThreshold(value, fallback) {
 }
 
 .theme-red .coupon-action,
-.theme-red .primary-action {
+.theme-red .buy-button {
   background: linear-gradient(135deg, #EF5350 0%, #F48080 100%);
   color: #ffffff;
   box-shadow: 0 18rpx 36rpx rgba(229, 57, 53, 0.18);
 }
 
-.theme-red .action-title {
+.theme-red .buy-title {
   color: #B71C1C;
 }
 
-.theme-red .action-desc {
+.theme-red .buy-summary {
   color: #64748b;
 }
 
-.theme-red .ghost-action {
-  background: rgba(239, 83, 80, 0.05);
-  border: 1rpx solid rgba(255, 205, 210, 0.65);
+.theme-red .buy-price {
   color: #E53935;
 }
 </style>

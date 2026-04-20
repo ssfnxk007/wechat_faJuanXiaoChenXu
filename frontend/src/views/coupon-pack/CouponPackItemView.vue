@@ -32,6 +32,29 @@
       </div>
     </section>
 
+    <section class="stats-grid stats-grid-v2">
+      <article class="stat-card accent-blue">
+        <span class="label">当前明细数</span>
+        <strong class="stat-value">{{ items.length }}</strong>
+        <span class="stat-footnote">当前券包下已配置的模板条目数量</span>
+      </article>
+      <article class="stat-card accent-indigo">
+        <span class="label">当前券包</span>
+        <strong class="stat-value stat-value-text">{{ selectedCouponPackName || '-' }}</strong>
+        <span class="stat-footnote">列表与表单均围绕当前券包维护</span>
+      </article>
+      <article class="stat-card accent-green">
+        <span class="label">总数量</span>
+        <strong class="stat-value">{{ totalQuantity }}</strong>
+        <span class="stat-footnote">当前券包内各券模板张数合计</span>
+      </article>
+      <article class="stat-card accent-amber">
+        <span class="label">配置原则</span>
+        <strong class="stat-value stat-value-text">先选券包</strong>
+        <span class="stat-footnote">避免混合维护不同券包的内容</span>
+      </article>
+    </section>
+
     <section class="card toolbar-card card-v2 operations-card">
       <div class="toolbar-row">
         <div class="toolbar-title">
@@ -58,54 +81,80 @@
       </div>
     </section>
 
-    <section class="card card-v2 data-card archive-card">
-      <div class="section-head">
-        <div class="section-head-main">
-          <span class="section-kicker">明细档案</span>
-          <h3>券包明细列表</h3>
-          <p class="section-tip">展示券模板名称、发放数量与所属券包，便于运营核对券包内容。</p>
+    <section class="item-content-grid">
+      <article class="card card-v2 data-card archive-card">
+        <div class="section-head">
+          <div class="section-head-main">
+            <span class="section-kicker">明细档案</span>
+            <h3>券包明细列表</h3>
+            <p class="section-tip">展示券模板名称、发放数量与所属券包，便于运营核对券包内容。</p>
+          </div>
+          <div class="inline-metrics">
+            <span class="badge info">条目 {{ items.length }}</span>
+            <span class="badge warning">总数量 {{ totalQuantity }}</span>
+          </div>
         </div>
-        <div class="inline-metrics">
-          <span class="badge info">条目 {{ items.length }}</span>
-          <span class="badge warning">总数量 {{ totalQuantity }}</span>
-        </div>
-      </div>
 
-      <div class="table-wrap table-wrap-v2">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>券模板信息</th>
-              <th>数量</th>
-              <th>所属券包</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in items" :key="item.id">
-              <td class="cell-strong">{{ item.id }}</td>
-              <td>
-                <div class="table-primary-cell">
-                  <strong>{{ item.couponTemplateName }}</strong>
-                  <span>券模板配置</span>
-                </div>
-              </td>
-              <td><span class="badge success">{{ item.quantity }} 张</span></td>
-              <td>{{ selectedCouponPackName || `券包 #${item.couponPackId}` }}</td>
-              <td>
-                <div class="table-actions">
-                  <button v-if="canEdit" type="button" class="action-button" @click="openEditDialog(item)">编辑</button>
-                  <button v-if="canDelete" type="button" class="action-button danger" @click="removeItem(item)">删除</button>
-                </div>
-              </td>
-            </tr>
-            <tr v-if="items.length === 0">
-              <td colspan="5" class="empty-text">当前券包没有明细记录</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <div class="table-wrap table-wrap-v2">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>券模板信息</th>
+                <th>数量</th>
+                <th>所属券包</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in items" :key="item.id">
+                <td class="cell-strong">{{ item.id }}</td>
+                <td>
+                  <div class="table-primary-cell">
+                    <strong>{{ item.couponTemplateName }}</strong>
+                    <span>券模板配置</span>
+                  </div>
+                </td>
+                <td><span class="badge success">{{ item.quantity }} 张</span></td>
+                <td>{{ selectedCouponPackName || `券包 #${item.couponPackId}` }}</td>
+                <td>
+                  <div class="table-actions">
+                    <button v-if="canEdit" type="button" class="action-button" @click="openEditDialog(item)">编辑</button>
+                    <button v-if="canDelete" type="button" class="action-button danger" @click="removeItem(item)">删除</button>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="items.length === 0">
+                <td colspan="5" class="empty-text">当前券包没有明细记录</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card card-v2 data-card">
+        <div class="section-head">
+          <div class="section-head-main">
+            <span class="section-kicker">维护要点</span>
+            <h3>明细配置规则</h3>
+            <p class="section-tip">把影响发券结果的关键规则固定下来，降低误配风险。</p>
+          </div>
+        </div>
+        <div class="item-guide-list">
+          <div class="guide-item">
+            <strong>先选券包，再配模板</strong>
+            <p>明细始终围绕当前券包维护，避免跨券包混合编辑导致结果错乱。</p>
+          </div>
+          <div class="guide-item">
+            <strong>数量直接影响实际发券</strong>
+            <p>每条明细的数量会进入支付成功后的实际发券结果，应谨慎核对。</p>
+          </div>
+          <div class="guide-item">
+            <strong>模板名称比 ID 更适合运营核对</strong>
+            <p>列表优先展示模板名称和数量，减少纯编号视图带来的识别成本。</p>
+          </div>
+        </div>
+      </article>
     </section>
 
     <div v-if="dialogVisible" class="dialog-mask" @click.self="closeDialog">
@@ -289,17 +338,23 @@ onMounted(async () => {
 .quick-card-spotlight { min-height: 148px; background: linear-gradient(135deg, rgba(20,184,166,.08), rgba(59,130,246,.03)); border: 1px solid rgba(20,184,166,.14); }
 .quick-card.compact { min-height: 112px; }
 .quick-card-label { display: inline-flex; width: fit-content; padding: 4px 10px; border-radius: 999px; background: rgba(37,99,235,.08); color: var(--primary); font-size: 12px; font-weight: 700; }
+.stat-value-text { font-size: 22px; }
 .filter-panel-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: 14px; }
 .field-card { display: grid; gap: 10px; padding: 16px; border-radius: 18px; border: 1px solid rgba(226,232,240,.96); background: linear-gradient(180deg,#fff 0%,#fbfdff 100%); }
 .field-label { font-size: 12px; font-weight: 700; color: #475467; letter-spacing: .04em; }
 .summary-field strong { font-size: 16px; }
 .summary-field p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.item-content-grid { display: grid; gap: 18px; grid-template-columns: minmax(0, 1.55fr) minmax(320px, 1fr); }
+.item-guide-list,.guide-item { display: grid; gap: 12px; }
+.guide-item { padding: 16px; border-radius: 16px; border: 1px solid rgba(226,232,240,.96); background: linear-gradient(180deg,#fff 0%,#f8fbff 100%); }
+.guide-item p,.guide-item strong { margin: 0; }
+.guide-item p { color: var(--muted); }
 .item-dialog { width: min(760px, calc(100vw - 48px)); }
 .item-form-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
 .dialog-form>label { display: grid; gap: 8px; }
 .dialog-form>label>span { font-size: 13px; font-weight: 700; color: #344054; }
 .dialog-form input,
 .dialog-form select { width: 100%; height: 44px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 12px; background: #fff; }
-@media (max-width:1100px){ .filter-panel-grid,.item-form-grid,.hero-side-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
-@media (max-width:820px){ .filter-panel-grid,.item-form-grid,.hero-side-grid{ grid-template-columns: 1fr; } }
+@media (max-width:1100px){ .filter-panel-grid,.item-form-grid,.hero-side-grid,.item-content-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width:820px){ .filter-panel-grid,.item-form-grid,.hero-side-grid,.item-content-grid{ grid-template-columns: 1fr; } }
 </style>

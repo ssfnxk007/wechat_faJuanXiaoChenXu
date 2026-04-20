@@ -21,7 +21,9 @@
       <SectionHeader title="精选商品" subtitle="搭配用券更划算" />
       <view class="cm-grid-2 goods-grid">
         <view class="goods-card cm-card" v-for="item in goods" :key="item.id" @click="goProductDetail(item.id)">
-          <view class="goods-cover" :style="item.imageUrl ? { backgroundImage: `url(${item.imageUrl})` } : {}"></view>
+          <view class="goods-cover">
+            <image v-if="item.imageUrl" class="goods-cover-img" :src="item.imageUrl" mode="aspectFit" />
+          </view>
           <text class="goods-title">{{ item.title }}</text>
           <text class="goods-text">{{ item.desc }}</text>
           <view class="goods-footer">
@@ -95,11 +97,15 @@ const goProductDetail = (id) => {
   padding: 18rpx;
 }
 .goods-cover {
+  position: relative;
   height: 220rpx;
   border-radius: 20rpx;
   background: linear-gradient(135deg, rgba(45, 91, 72, 0.12) 0%, rgba(183, 155, 99, 0.18) 100%);
-  background-size: cover;
-  background-position: center;
+  overflow: hidden;
+}
+.goods-cover-img {
+  width: 100%;
+  height: 100%;
 }
 .goods-title {
   color: $cm-text-primary;

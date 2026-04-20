@@ -58,6 +58,36 @@
       </div>
     </section>
 
+    <section class="product-guide-grid">
+      <article class="card card-v2 action-entry-card">
+        <div class="entry-head">
+          <span class="section-kicker">建档原则</span>
+          <h3>商品档案优先级</h3>
+          <p class="section-tip">主图、ERP 编码和售价是第一优先级，详情图可在档案建立后继续补充。</p>
+        </div>
+        <div class="entry-metrics">
+          <div>
+            <strong>主图必填，详情图可后置</strong>
+            <span>先满足识别和售卖最小闭环，再逐步丰富详情素材。</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="card card-v2 action-entry-card">
+        <div class="entry-head">
+          <span class="section-kicker">素材规则</span>
+          <h3>图片素材使用方式</h3>
+          <p class="section-tip">统一从 `product / shared` 里选图，减少重复上传与素材分散。</p>
+        </div>
+        <div class="entry-metrics">
+          <div>
+            <strong>共享素材优先复用</strong>
+            <span>主图负责列表识别，详情图负责页面补充说明。</span>
+          </div>
+        </div>
+      </article>
+    </section>
+
     <section class="card card-v2 data-card">
       <div class="section-head"><div class="section-head-main"><span class="section-kicker">商品档案</span><h3>商品列表</h3><p class="section-tip">展示主图、ERP 编码、售价与状态，便于券模板和核销模块复用。</p></div><div class="inline-metrics"><span class="badge info">总数 {{ totalCount }}</span><span class="badge warning">每页 {{ pageSize }}</span></div></div>
       <div class="table-wrap table-wrap-v2">
@@ -335,35 +365,20 @@ onMounted(loadData)
 <style scoped>
 .product-hero { background: radial-gradient(circle at top right, rgba(59,130,246,.14), transparent 28%), linear-gradient(135deg, #ffffff 0%, #f8fbff 52%, #f4f7fb 100%); }
 .hero-side-stack { align-content: stretch; }
-.hero-side-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
 .quick-card-spotlight { min-height: 148px; background: linear-gradient(135deg, rgba(59,130,246,.08), rgba(16,185,129,.03)); border: 1px solid rgba(59,130,246,.14); }
-.quick-card.compact { min-height: 112px; }
-.quick-card-label { display: inline-flex; width: fit-content; padding: 4px 10px; border-radius: 999px; background: rgba(37,99,235,.08); color: var(--primary); font-size: 12px; font-weight: 700; }
+.product-guide-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; }
 .product-filter-grid,.media-filter-grid { grid-template-columns: 1.4fr .8fr 1fr; }
-.field-card,.selector-field-card { display: grid; gap: 10px; padding: 16px; border-radius: 18px; border: 1px solid rgba(226,232,240,.96); background: linear-gradient(180deg,#fff 0%,#fbfdff 100%); }
-.field-label { font-size: 12px; font-weight: 700; color: #475467; letter-spacing: .04em; }
-.summary-field strong { font-size: 16px; }
-.summary-field p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
 .product-thumb-cell { display: flex; align-items: center; }
 .product-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 12px; border: 1px solid var(--line); background: #fff; }
 .product-dialog-card { width: min(980px, calc(100vw - 48px)); }
 .product-form-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
-.dialog-form>label { display: grid; gap: 8px; }
-.dialog-form>label>span,.selector-field-head span { font-size: 13px; font-weight: 700; color: #344054; }
 .dialog-form input,.dialog-form select { width: 100%; min-height: 44px; padding: 10px 14px; border: 1px solid var(--line-strong); border-radius: 12px; background: #fff; }
-.selector-field-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.upload-trigger { position: relative; overflow: hidden; }
-.upload-trigger input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .selected-main-preview { display: grid; grid-template-columns: 120px minmax(0,1fr) auto; gap: 14px; align-items: center; }
 .selected-main-image,.selected-detail-image,.media-card-image { width: 120px; height: 120px; object-fit: cover; border-radius: 16px; border: 1px solid var(--line); background: #fff; }
 .selected-detail-list { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
 .selected-detail-card { display: grid; grid-template-columns: 120px minmax(0,1fr) auto; gap: 12px; align-items: center; padding: 12px; border-radius: 16px; border: 1px solid var(--line); background: #fff; }
 .media-selector-dialog { width: min(1080px, calc(100vw - 48px)); }
 .selector-actions { justify-content: flex-end; }
-.media-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px; }
-.media-card { display: grid; gap: 8px; padding: 12px; border-radius: 18px; border: 1px solid var(--line); background: #fff; text-align: left; }
-.media-card strong,.media-card span { margin: 0; }
-.media-empty { grid-column: 1 / -1; }
-@media (max-width:1100px){ .hero-side-grid,.product-filter-grid,.media-filter-grid,.product-form-grid,.selected-detail-list,.media-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); } .selected-main-preview,.selected-detail-card{ grid-template-columns: 1fr; } }
-@media (max-width:820px){ .hero-side-grid,.product-filter-grid,.media-filter-grid,.product-form-grid,.selected-detail-list,.media-grid{ grid-template-columns: 1fr; } }
+@media (max-width:1100px){ .hero-side-grid,.product-guide-grid,.product-filter-grid,.media-filter-grid,.product-form-grid,.selected-detail-list,.media-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); } .selected-main-preview,.selected-detail-card{ grid-template-columns: 1fr; } }
+@media (max-width:820px){ .hero-side-grid,.product-guide-grid,.product-filter-grid,.media-filter-grid,.product-form-grid,.selected-detail-list,.media-grid{ grid-template-columns: 1fr; } }
 </style>
