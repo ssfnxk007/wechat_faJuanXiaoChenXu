@@ -29,6 +29,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<AdminRoleMenu> AdminRoleMenus => Set<AdminRoleMenu>();
     public DbSet<AdminPermission> AdminPermissions => Set<AdminPermission>();
     public DbSet<AdminRolePermission> AdminRolePermissions => Set<AdminRolePermission>();
+    public DbSet<WeChatPaySetting> WeChatPaySettings => Set<WeChatPaySetting>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -302,6 +303,34 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasKey(x => x.Id);
             entity.Property(x => x.CreatedAt).HasColumnType("datetime");
             entity.HasIndex(x => new { x.AdminRoleId, x.AdminPermissionId }).IsUnique();
+        });
+
+        modelBuilder.Entity<WeChatPaySetting>(entity =>
+        {
+            entity.ToTable("WeChatPaySetting");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Id).ValueGeneratedNever();
+            entity.Property(x => x.AppId).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.MerchantId).HasMaxLength(32).IsRequired();
+            entity.Property(x => x.MerchantSerialNo).HasMaxLength(128).IsRequired();
+            entity.Property(x => x.PrivateKeyPem).HasColumnType("nvarchar(max)").IsRequired();
+            entity.Property(x => x.ApiV3Key).HasMaxLength(128).IsRequired();
+            entity.Property(x => x.NotifyUrl).HasMaxLength(512).IsRequired();
+            entity.Property(x => x.EnableMockFallback).IsRequired();
+            entity.Property(x => x.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasData(new WeChatPaySetting
+            {
+                Id = 1,
+                AppId = string.Empty,
+                MerchantId = string.Empty,
+                MerchantSerialNo = string.Empty,
+                PrivateKeyPem = string.Empty,
+                ApiV3Key = string.Empty,
+                NotifyUrl = string.Empty,
+                EnableMockFallback = true,
+                UpdatedAt = new DateTime(2026, 4, 20, 0, 0, 0, DateTimeKind.Utc),
+            });
         });
     }
 }
