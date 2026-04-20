@@ -43,7 +43,7 @@ defineProps({
   align-items: center;
   justify-content: center;
   gap: 6rpx;
-  background: linear-gradient(180deg, rgba(45, 91, 72, 0.94) 0%, rgba(76, 112, 92, 0.92) 100%);
+  background: var(--cm-coupon-side-bg, linear-gradient(180deg, rgba(45, 91, 72, 0.94) 0%, rgba(76, 112, 92, 0.92) 100%));
   color: #fffdf9;
 }
 .coupon-tag {
@@ -78,8 +78,11 @@ defineProps({
 .coupon-button {
   margin-top: 10rpx;
   padding: 10rpx 20rpx;
+  border: 1rpx solid var(--cm-coupon-button-border, rgba(255, 255, 255, 0.18));
   border-radius: 999rpx;
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--cm-coupon-button-bg, rgba(255, 255, 255, 0.16));
+  color: var(--cm-coupon-button-color, #fffdf9);
   font-size: 22rpx;
+  font-weight: 600;
 }
 </style>

@@ -645,4 +645,201 @@ onLoad((options) => {
   border: 1rpx solid rgba(226, 232, 240, 0.9);
   box-shadow: 0 18rpx 44rpx rgba(15, 23, 42, 0.06);
 }
+
+.theme-candy.pack-detail-page {
+  background: linear-gradient(180deg, #eff6ff 0%, #f8fbff 44%, #ffffff 100%);
+}
+
+.theme-candy .pack-hero {
+  background: linear-gradient(135deg, #e0e7ff 0%, #dbeafe 52%, #bfdbfe 100%);
+  color: #1e3a8a;
+}
+
+.theme-candy .pack-hero-mask {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(191, 219, 254, 0.28) 100%),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.88), transparent 30%),
+    radial-gradient(circle at left bottom, rgba(219, 234, 254, 0.72), transparent 24%);
+}
+
+.theme-candy .pack-eyebrow,
+.theme-candy .pack-subtitle {
+  color: #3b82f6;
+}
+
+.theme-candy .pack-back,
+.theme-candy .pack-status,
+.theme-candy .hero-tag,
+.theme-candy .price-badge {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1rpx solid rgba(191, 219, 254, 0.7);
+  color: #2563eb;
+}
+
+.theme-candy .price-unit,
+.theme-candy .price-value,
+.theme-candy .buy-price {
+  color: #2563eb;
+}
+
+.theme-candy .overview-item,
+.theme-candy .step-index {
+  background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
+  border: 1rpx solid rgba(191, 219, 254, 0.7);
+}
+
+.theme-candy .buy-title {
+  color: #1e3a8a;
+}
+
+.theme-candy .buy-summary {
+  color: #64748b;
+}
+
+.theme-candy .buy-button {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  box-shadow: 0 18rpx 36rpx rgba(37, 99, 235, 0.22);
+}
+
+.theme-candy .buy-button.disabled {
+  box-shadow: none;
+}
+
+.theme-candy .buy-bar {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1rpx solid rgba(191, 219, 254, 0.8);
+  box-shadow: 0 18rpx 44rpx rgba(37, 99, 235, 0.08);
+}
+
+/* ========== Orange Theme ========== */
+.theme-orange.pack-detail-page {
+  background: linear-gradient(180deg, #FFFBF5 0%, #f8fbff 44%, #ffffff 100%);
+}
+
+.theme-orange .pack-hero {
+  background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 52%, #FED7AA 100%);
+  color: #9A3412;
+}
+
+.theme-orange .pack-hero-mask {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(254, 215, 170, 0.28) 100%),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.88), transparent 30%),
+    radial-gradient(circle at left bottom, rgba(255, 237, 213, 0.72), transparent 24%);
+}
+
+.theme-orange .pack-eyebrow,
+.theme-orange .pack-subtitle {
+  color: #F97316;
+}
+
+.theme-orange .pack-back,
+.theme-orange .pack-status,
+.theme-orange .hero-tag,
+.theme-orange .price-badge {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1rpx solid rgba(254, 215, 170, 0.7);
+  color: #EA580C;
+}
+
+.theme-orange .price-unit,
+.theme-orange .price-value,
+.theme-orange .buy-price {
+  color: #EA580C;
+}
+
+.theme-orange .overview-item,
+.theme-orange .step-index {
+  background: linear-gradient(180deg, #ffffff 0%, #FFFBF5 100%);
+  border: 1rpx solid rgba(254, 215, 170, 0.7);
+}
+
+.theme-orange .buy-title {
+  color: #9A3412;
+}
+
+.theme-orange .buy-summary {
+  color: #64748b;
+}
+
+.theme-orange .buy-button {
+  background: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
+  box-shadow: 0 18rpx 36rpx rgba(234, 88, 12, 0.22);
+}
+
+.theme-orange .buy-button.disabled {
+  box-shadow: none;
+}
+
+.theme-orange .buy-bar {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1rpx solid rgba(254, 215, 170, 0.8);
+  box-shadow: 0 18rpx 44rpx rgba(234, 88, 12, 0.08);
+}
+
+/* ========== Red Theme ========== */
+.theme-red.pack-detail-page {
+  background: linear-gradient(180deg, #FFEBEE 0%, #f8fbff 44%, #ffffff 100%);
+}
+
+.theme-red .pack-hero {
+  background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 52%, #FFCDD2 100%);
+  color: #B71C1C;
+}
+
+.theme-red .pack-hero-mask {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 205, 210, 0.28) 100%),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.88), transparent 30%),
+    radial-gradient(circle at left bottom, rgba(255, 235, 238, 0.72), transparent 24%);
+}
+
+.theme-red .pack-eyebrow,
+.theme-red .pack-subtitle {
+  color: #EF5350;
+}
+
+.theme-red .pack-back,
+.theme-red .pack-status,
+.theme-red .hero-tag,
+.theme-red .price-badge {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1rpx solid rgba(255, 205, 210, 0.7);
+  color: #E53935;
+}
+
+.theme-red .price-unit,
+.theme-red .price-value,
+.theme-red .buy-price {
+  color: #E53935;
+}
+
+.theme-red .overview-item,
+.theme-red .step-index {
+  background: linear-gradient(180deg, #ffffff 0%, #FFEBEE 100%);
+  border: 1rpx solid rgba(255, 205, 210, 0.7);
+}
+
+.theme-red .buy-title {
+  color: #B71C1C;
+}
+
+.theme-red .buy-summary {
+  color: #64748b;
+}
+
+.theme-red .buy-button {
+  background: linear-gradient(135deg, #EF5350 0%, #F48080 100%);
+  box-shadow: 0 18rpx 36rpx rgba(229, 57, 53, 0.22);
+}
+
+.theme-red .buy-button.disabled {
+  box-shadow: none;
+}
+
+.theme-red .buy-bar {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1rpx solid rgba(255, 205, 210, 0.8);
+  box-shadow: 0 18rpx 44rpx rgba(229, 57, 53, 0.08);
+}
 </style>

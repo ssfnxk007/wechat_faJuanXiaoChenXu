@@ -11,6 +11,7 @@ using FaJuan.Api.Infrastructure.Persistence;
 using FaJuan.Api.Infrastructure.WeChatPay;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using QRCoder;
@@ -468,8 +469,9 @@ public class MiniAppController(
 
     [HttpPost("coupon-templates/{id:long}/claim")]
     [MiniAppAuthorize]
-    public async Task<ActionResult<ApiResponse<MiniAppClaimCouponResultDto>>> ClaimCouponTemplate(long id, [FromBody] MiniAppClaimCouponRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<ApiResponse<MiniAppClaimCouponResultDto>>> ClaimCouponTemplate(long id, [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] MiniAppClaimCouponRequest? request, CancellationToken cancellationToken)
     {
+        _ = request;
         var userId = GetCurrentUserId();
         if (!userId.HasValue || userId.Value <= 0)
         {

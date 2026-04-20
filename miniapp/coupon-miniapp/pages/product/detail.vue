@@ -418,4 +418,192 @@ function formatThreshold(value, fallback) {
 .theme-light .hero-summary {
   background: rgba(255, 255, 255, 0.82);
 }
+
+.theme-candy .product-hero {
+  background: linear-gradient(135deg, #e0e7ff 0%, #dbeafe 52%, #bfdbfe 100%);
+  color: #1e3a8a;
+}
+
+.theme-candy .product-hero-mask {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(191, 219, 254, 0.3) 100%),
+    radial-gradient(circle at right top, rgba(255, 255, 255, 0.88), transparent 32%);
+}
+
+.theme-candy .product-back,
+.theme-candy .product-badge,
+.theme-candy .hero-tag,
+.theme-candy .coupon-type {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1rpx solid rgba(191, 219, 254, 0.7);
+  color: #2563eb;
+}
+
+.theme-candy .product-subtitle {
+  color: #3b82f6;
+}
+
+.theme-candy .hero-summary,
+.theme-candy .coupon-card,
+.theme-candy .coupon-card-secondary,
+.theme-candy .action-bar {
+  background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
+  border: 1rpx solid rgba(191, 219, 254, 0.7);
+  box-shadow: 0 18rpx 44rpx rgba(37, 99, 235, 0.06);
+}
+
+.theme-candy .coupon-amount-box {
+  color: #2563eb;
+}
+
+.theme-candy .secondary-box {
+  color: #1e3a8a;
+}
+
+.theme-candy .coupon-action,
+.theme-candy .primary-action {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  color: #ffffff;
+  box-shadow: 0 18rpx 36rpx rgba(37, 99, 235, 0.18);
+}
+
+.theme-candy .action-title {
+  color: #1e3a8a;
+}
+
+.theme-candy .action-desc {
+  color: #64748b;
+}
+
+.theme-candy .ghost-action {
+  background: rgba(59, 130, 246, 0.05);
+  border: 1rpx solid rgba(191, 219, 254, 0.65);
+  color: #2563eb;
+}
+
+/* ========== Orange Theme ========== */
+.theme-orange .product-hero {
+  background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 52%, #FED7AA 100%);
+  color: #9A3412;
+}
+
+.theme-orange .product-hero-mask {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(254, 215, 170, 0.3) 100%),
+    radial-gradient(circle at right top, rgba(255, 255, 255, 0.88), transparent 32%);
+}
+
+.theme-orange .product-back,
+.theme-orange .product-badge,
+.theme-orange .hero-tag,
+.theme-orange .coupon-type {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1rpx solid rgba(254, 215, 170, 0.7);
+  color: #EA580C;
+}
+
+.theme-orange .product-subtitle {
+  color: #F97316;
+}
+
+.theme-orange .hero-summary,
+.theme-orange .coupon-card,
+.theme-orange .coupon-card-secondary,
+.theme-orange .action-bar {
+  background: linear-gradient(180deg, #ffffff 0%, #FFFBF5 100%);
+  border: 1rpx solid rgba(254, 215, 170, 0.7);
+  box-shadow: 0 18rpx 44rpx rgba(234, 88, 12, 0.06);
+}
+
+.theme-orange .coupon-amount-box {
+  color: #EA580C;
+}
+
+.theme-orange .secondary-box {
+  color: #9A3412;
+}
+
+.theme-orange .coupon-action,
+.theme-orange .primary-action {
+  background: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
+  color: #ffffff;
+  box-shadow: 0 18rpx 36rpx rgba(234, 88, 12, 0.18);
+}
+
+.theme-orange .action-title {
+  color: #9A3412;
+}
+
+.theme-orange .action-desc {
+  color: #64748b;
+}
+
+.theme-orange .ghost-action {
+  background: rgba(249, 115, 22, 0.05);
+  border: 1rpx solid rgba(254, 215, 170, 0.65);
+  color: #EA580C;
+}
+
+/* ========== Red Theme ========== */
+.theme-red .product-hero {
+  background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 52%, #FFCDD2 100%);
+  color: #B71C1C;
+}
+
+.theme-red .product-hero-mask {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 205, 210, 0.3) 100%),
+    radial-gradient(circle at right top, rgba(255, 255, 255, 0.88), transparent 32%);
+}
+
+.theme-red .product-back,
+.theme-red .product-badge,
+.theme-red .hero-tag,
+.theme-red .coupon-type {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1rpx solid rgba(255, 205, 210, 0.7);
+  color: #E53935;
+}
+
+.theme-red .product-subtitle {
+  color: #EF5350;
+}
+
+.theme-red .hero-summary,
+.theme-red .coupon-card,
+.theme-red .coupon-card-secondary,
+.theme-red .action-bar {
+  background: linear-gradient(180deg, #ffffff 0%, #FFEBEE 100%);
+  border: 1rpx solid rgba(255, 205, 210, 0.7);
+  box-shadow: 0 18rpx 44rpx rgba(229, 57, 53, 0.06);
+}
+
+.theme-red .coupon-amount-box {
+  color: #E53935;
+}
+
+.theme-red .secondary-box {
+  color: #B71C1C;
+}
+
+.theme-red .coupon-action,
+.theme-red .primary-action {
+  background: linear-gradient(135deg, #EF5350 0%, #F48080 100%);
+  color: #ffffff;
+  box-shadow: 0 18rpx 36rpx rgba(229, 57, 53, 0.18);
+}
+
+.theme-red .action-title {
+  color: #B71C1C;
+}
+
+.theme-red .action-desc {
+  color: #64748b;
+}
+
+.theme-red .ghost-action {
+  background: rgba(239, 83, 80, 0.05);
+  border: 1rpx solid rgba(255, 205, 210, 0.65);
+  color: #E53935;
+}
 </style>

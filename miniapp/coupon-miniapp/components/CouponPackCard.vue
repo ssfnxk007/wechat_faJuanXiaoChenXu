@@ -35,7 +35,7 @@ defineProps({
   gap: 10rpx;
   min-height: 240rpx;
   padding: 28rpx;
-  background: linear-gradient(135deg, rgba(44, 74, 58, 0.92) 0%, rgba(95, 116, 83, 0.88) 54%, rgba(191, 167, 117, 0.72) 100%);
+  background: var(--cm-pack-cover-bg, linear-gradient(135deg, rgba(44, 74, 58, 0.92) 0%, rgba(95, 116, 83, 0.88) 54%, rgba(191, 167, 117, 0.72) 100%));
   color: #fffaf3;
 }
 .pack-badge {
@@ -59,7 +59,7 @@ defineProps({
   padding: 24rpx 28rpx 28rpx;
 }
 .pack-price {
-  color: $cm-primary-strong;
+  color: var(--cm-theme-primary-strong, $cm-primary-strong);
   font-size: 44rpx;
   font-weight: 700;
 }
@@ -78,9 +78,11 @@ defineProps({
   min-width: 152rpx;
   padding: 18rpx 24rpx;
   border-radius: 999rpx;
-  background: linear-gradient(135deg, #325d49 0%, #5f7453 100%);
-  color: #fffdf8;
+  background: var(--cm-pack-action-bg, linear-gradient(135deg, #325d49 0%, #5f7453 100%));
+  box-shadow: var(--cm-pack-action-shadow, none);
+  color: var(--cm-pack-action-color, #fffdf8);
   text-align: center;
   font-size: 24rpx;
+  font-weight: 600;
 }
 </style>

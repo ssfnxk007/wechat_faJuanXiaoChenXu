@@ -15,6 +15,17 @@
     </view>
 
     <view class="cm-container activity-body">
+      <view class="action-bar cm-card">
+        <view class="action-copy">
+          <text class="action-title">{{ activity.ctaTitle }}</text>
+          <text class="action-desc">{{ activity.ctaDesc }}</text>
+        </view>
+        <view class="action-buttons">
+          <view class="primary-action" @click="handlePrimaryAction">{{ activity.ctaText }}</view>
+          <view class="ghost-action" @click="goBack">稍后再看</view>
+        </view>
+      </view>
+
       <view class="activity-brief cm-card">
         <view class="brief-item" v-for="item in activity.briefs" :key="item.label">
           <text class="brief-label">{{ item.label }}</text>
@@ -52,16 +63,10 @@
         </view>
       </view>
 
-      <view class="action-bar cm-card">
-        <view class="action-copy">
-          <text class="action-title">{{ activity.ctaTitle }}</text>
-          <text class="action-desc">{{ activity.ctaDesc }}</text>
-        </view>
-        <view class="action-buttons">
-          <view class="ghost-action" @click="goBack">稍后再看</view>
-          <view class="primary-action" @click="handlePrimaryAction">{{ activity.ctaText }}</view>
-        </view>
-      </view>
+    </view>
+
+    <view class="sticky-cta">
+      <view class="sticky-primary" @click="handlePrimaryAction">{{ activity.ctaText }}</view>
     </view>
   </view>
 </template>
@@ -282,7 +287,7 @@ function handlePrimaryAction() {
   display: grid;
   gap: 22rpx;
   padding-top: 24rpx;
-  padding-bottom: 40rpx;
+  padding-bottom: 180rpx;
 }
 
 .activity-brief,
@@ -347,5 +352,266 @@ function handlePrimaryAction() {
 .theme-light .activity-chip {
   background: rgba(15, 23, 42, 0.06);
   color: #475569;
+}
+
+.theme-candy .activity-hero {
+  background: linear-gradient(135deg, #e0e7ff 0%, #dbeafe 52%, #bfdbfe 100%);
+  color: #1e3a8a;
+}
+
+.theme-candy .activity-hero-mask {
+  background:
+    radial-gradient(circle at right top, rgba(255, 255, 255, 0.88), transparent 34%),
+    radial-gradient(circle at left bottom, rgba(219, 234, 254, 0.7), transparent 28%);
+}
+
+.theme-candy .activity-back,
+.theme-candy .activity-chip {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1rpx solid rgba(191, 219, 254, 0.7);
+  color: #2563eb;
+}
+
+.theme-candy .activity-subtitle {
+  color: #3b82f6;
+}
+
+.theme-candy .activity-brief,
+.theme-candy .step-card,
+.theme-candy .rule-card,
+.theme-candy .action-bar {
+  background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
+  border: 1rpx solid rgba(191, 219, 254, 0.7);
+  box-shadow: 0 18rpx 44rpx rgba(37, 99, 235, 0.06);
+}
+
+.theme-candy .brief-value,
+.theme-candy .step-title,
+.theme-candy .action-title {
+  color: #1e3a8a;
+}
+
+.theme-candy .step-index,
+.theme-candy .rule-index {
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+}
+
+.theme-candy .action-desc {
+  color: #64748b;
+}
+
+.theme-candy .primary-action {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  color: #ffffff;
+  box-shadow: 0 18rpx 36rpx rgba(37, 99, 235, 0.18);
+}
+
+.theme-candy .ghost-action {
+  background: rgba(59, 130, 246, 0.05);
+  border: 1rpx solid rgba(191, 219, 254, 0.65);
+  color: #2563eb;
+}
+
+/* ========== Orange Theme ========== */
+.theme-orange .activity-hero {
+  background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 52%, #FED7AA 100%);
+  color: #9A3412;
+}
+
+.theme-orange .activity-hero-mask {
+  background:
+    radial-gradient(circle at right top, rgba(255, 255, 255, 0.88), transparent 34%),
+    radial-gradient(circle at left bottom, rgba(255, 237, 213, 0.7), transparent 28%);
+}
+
+.theme-orange .activity-back,
+.theme-orange .activity-chip {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1rpx solid rgba(254, 215, 170, 0.7);
+  color: #EA580C;
+}
+
+.theme-orange .activity-subtitle {
+  color: #F97316;
+}
+
+.theme-orange .activity-brief,
+.theme-orange .step-card,
+.theme-orange .rule-card,
+.theme-orange .action-bar {
+  background: linear-gradient(180deg, #ffffff 0%, #FFFBF5 100%);
+  border: 1rpx solid rgba(254, 215, 170, 0.7);
+  box-shadow: 0 18rpx 44rpx rgba(234, 88, 12, 0.06);
+}
+
+.theme-orange .brief-value,
+.theme-orange .step-title,
+.theme-orange .action-title {
+  color: #9A3412;
+}
+
+.theme-orange .step-index,
+.theme-orange .rule-index {
+  background: rgba(249, 115, 22, 0.1);
+  color: #EA580C;
+}
+
+.theme-orange .action-desc {
+  color: #64748b;
+}
+
+.theme-orange .primary-action {
+  background: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
+  color: #ffffff;
+  box-shadow: 0 18rpx 36rpx rgba(234, 88, 12, 0.18);
+}
+
+.theme-orange .ghost-action {
+  background: rgba(249, 115, 22, 0.05);
+  border: 1rpx solid rgba(254, 215, 170, 0.65);
+  color: #EA580C;
+}
+
+/* ========== Red Theme ========== */
+.theme-red .activity-hero {
+  background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 52%, #FFCDD2 100%);
+  color: #B71C1C;
+}
+
+.theme-red .activity-hero-mask {
+  background:
+    radial-gradient(circle at right top, rgba(255, 255, 255, 0.88), transparent 34%),
+    radial-gradient(circle at left bottom, rgba(255, 235, 238, 0.7), transparent 28%);
+}
+
+.theme-red .activity-back,
+.theme-red .activity-chip {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1rpx solid rgba(255, 205, 210, 0.7);
+  color: #E53935;
+}
+
+.theme-red .activity-subtitle {
+  color: #EF5350;
+}
+
+.theme-red .activity-brief,
+.theme-red .step-card,
+.theme-red .rule-card,
+.theme-red .action-bar {
+  background: linear-gradient(180deg, #ffffff 0%, #FFEBEE 100%);
+  border: 1rpx solid rgba(255, 205, 210, 0.7);
+  box-shadow: 0 18rpx 44rpx rgba(229, 57, 53, 0.06);
+}
+
+.theme-red .brief-value,
+.theme-red .step-title,
+.theme-red .action-title {
+  color: #B71C1C;
+}
+
+.theme-red .step-index,
+.theme-red .rule-index {
+  background: rgba(239, 83, 80, 0.1);
+  color: #E53935;
+}
+
+.theme-red .action-desc {
+  color: #64748b;
+}
+
+.theme-red .primary-action {
+  background: linear-gradient(135deg, #EF5350 0%, #F48080 100%);
+  color: #ffffff;
+  box-shadow: 0 18rpx 36rpx rgba(229, 57, 53, 0.18);
+}
+
+.theme-red .ghost-action {
+  background: rgba(239, 83, 80, 0.05);
+  border: 1rpx solid rgba(255, 205, 210, 0.65);
+  color: #E53935;
+}
+
+/* ========== 强化首屏主行动 CTA ========== */
+.action-bar .action-buttons {
+  justify-content: flex-start;
+}
+
+.action-bar .primary-action {
+  flex: 1;
+  min-height: 80rpx;
+  font-size: 28rpx;
+  font-weight: 700;
+  padding: 0 32rpx;
+}
+
+.action-bar .ghost-action {
+  min-height: 80rpx;
+  padding: 0 28rpx;
+  font-size: 24rpx;
+}
+
+/* ========== 吸底快速操作 ========== */
+.sticky-cta {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: flex;
+  padding: 14rpx 24rpx calc(14rpx + env(safe-area-inset-bottom)) 24rpx;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(14rpx);
+  border-top: 1rpx solid rgba(15, 23, 42, 0.08);
+}
+
+.sticky-primary {
+  flex: 1;
+  min-height: 88rpx;
+  border-radius: 999rpx;
+  background: $cm-primary;
+  color: #ffffff;
+  font-size: 30rpx;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 14rpx 28rpx rgba(39, 75, 58, 0.18);
+}
+
+.theme-light .sticky-cta {
+  background: rgba(255, 255, 255, 0.94);
+  border-top-color: rgba(15, 23, 42, 0.08);
+}
+
+.theme-candy .sticky-cta {
+  background: rgba(239, 246, 255, 0.92);
+  border-top-color: rgba(191, 219, 254, 0.7);
+}
+
+.theme-candy .sticky-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  box-shadow: 0 14rpx 28rpx rgba(37, 99, 235, 0.2);
+}
+
+.theme-orange .sticky-cta {
+  background: rgba(255, 251, 245, 0.92);
+  border-top-color: rgba(254, 215, 170, 0.7);
+}
+
+.theme-orange .sticky-primary {
+  background: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
+  box-shadow: 0 14rpx 28rpx rgba(234, 88, 12, 0.2);
+}
+
+.theme-red .sticky-cta {
+  background: rgba(255, 235, 238, 0.92);
+  border-top-color: rgba(255, 205, 210, 0.7);
+}
+
+.theme-red .sticky-primary {
+  background: linear-gradient(135deg, #EF5350 0%, #F48080 100%);
+  box-shadow: 0 14rpx 28rpx rgba(229, 57, 53, 0.2);
 }
 </style>

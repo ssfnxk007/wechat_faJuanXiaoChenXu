@@ -134,6 +134,37 @@ const goProductDetail = (id) => {
   font-size: 20rpx;
 }
 
+.theme-candy .search-card,
+.theme-candy .goods-card {
+  background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
+  border: 1rpx solid rgba(191, 219, 254, 0.85);
+  box-shadow: 0 16rpx 40rpx rgba(37, 99, 235, 0.08);
+}
+
+.theme-candy .search-placeholder,
+.theme-candy .goods-text {
+  color: #64748b;
+}
+
+.theme-candy .search-action {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.theme-candy .goods-cover {
+  background: linear-gradient(180deg, #f8fafc 0%, #dbeafe 100%);
+  border: 1rpx solid rgba(219, 234, 254, 0.9);
+}
+
+.theme-candy .goods-price {
+  color: #2563eb;
+}
+
+.theme-candy .goods-tag {
+  background: rgba(59, 130, 246, 0.08);
+  color: #60a5fa;
+}
+
 .theme-light .search-card {
   background: #ffffff;
   border: 1rpx solid rgba(226, 232, 240, 0.9);
@@ -156,5 +187,69 @@ const goProductDetail = (id) => {
 .theme-light .goods-tag {
   background: rgba(15, 23, 42, 0.06);
   color: #475569;
+}
+
+/* ========== Orange Theme ========== */
+.theme-orange .search-card,
+.theme-orange .goods-card {
+  background: linear-gradient(180deg, #ffffff 0%, #FFFBF5 100%);
+  border: 1rpx solid rgba(254, 215, 170, 0.85);
+  box-shadow: 0 16rpx 40rpx rgba(234, 88, 12, 0.08);
+}
+
+.theme-orange .search-placeholder,
+.theme-orange .goods-text {
+  color: #64748b;
+}
+
+.theme-orange .search-action {
+  color: #EA580C;
+  font-weight: 700;
+}
+
+.theme-orange .goods-cover {
+  background: linear-gradient(180deg, #FFFBF5 0%, #FFEDD5 100%);
+  border: 1rpx solid rgba(255, 237, 213, 0.9);
+}
+
+.theme-orange .goods-price {
+  color: #EA580C;
+}
+
+.theme-orange .goods-tag {
+  background: rgba(249, 115, 22, 0.08);
+  color: #FB923C;
+}
+
+/* ========== Red Theme ========== */
+.theme-red .search-card,
+.theme-red .goods-card {
+  background: linear-gradient(180deg, #ffffff 0%, #FFEBEE 100%);
+  border: 1rpx solid rgba(255, 205, 210, 0.85);
+  box-shadow: 0 16rpx 40rpx rgba(229, 57, 53, 0.08);
+}
+
+.theme-red .search-placeholder,
+.theme-red .goods-text {
+  color: #64748b;
+}
+
+.theme-red .search-action {
+  color: #E53935;
+  font-weight: 700;
+}
+
+.theme-red .goods-cover {
+  background: linear-gradient(180deg, #FFFBFA 0%, #FFCDD2 100%);
+  border: 1rpx solid rgba(255, 235, 238, 0.9);
+}
+
+.theme-red .goods-price {
+  color: #E53935;
+}
+
+.theme-red .goods-tag {
+  background: rgba(239, 83, 80, 0.08);
+  color: #F48080;
 }
 </style>

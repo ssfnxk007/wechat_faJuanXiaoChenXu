@@ -105,6 +105,17 @@ function normalizeCouponMeta(item, fallback = {}) {
   return String(firstValue(item, ['meta', 'remark'], fallback.meta || '门店通用'))
 }
 
+function mapBanner(item, fallback = {}) {
+  return {
+    id: firstValue(item, ['id', 'bannerId'], fallback.id || Date.now()),
+    title: String(firstValue(item, ['title', 'name'], fallback.title || '')),
+    subtitle: String(firstValue(item, ['subtitle'], fallback.subtitle || '')),
+    ctaText: String(firstValue(item, ['ctaText'], fallback.ctaText || '')),
+    illustrationUrl: String(firstValue(item, ['illustrationUrl', 'imageUrl', 'fileUrl'], fallback.illustrationUrl || '')),
+    linkUrl: String(firstValue(item, ['linkUrl', 'url'], fallback.linkUrl || ''))
+  }
+}
+
 function normalizeHomeData(payload = {}) {
   const sourceCoupons = toList(payload.directCoupons || payload.featuredCoupons || payload.coupons)
   const newcomerSource = payload.newcomerCoupon || payload.welcomeCoupon || sourceCoupons.find((item) => item?.isNewUserOnly)
@@ -126,8 +137,12 @@ function normalizeHomeData(payload = {}) {
   const products = (toList(payload.products || payload.recommendedProducts || payload.productItems) || mockHomeData.products)
     .map((item, index) => mapProduct(item, mockHomeData.products[index] || {}))
 
+  const banners = toList(payload.banners)
+    .map((item, index) => mapBanner(item, mockHomeData.banners[index] || {}))
+    .filter((item) => item.illustrationUrl || item.title)
+
   return {
-    banners: toList(payload.banners).length ? toList(payload.banners) : mockHomeData.banners,
+    banners: banners.length ? banners : mockHomeData.banners,
     newcomerCoupon: newcomer,
     directCoupons: directCoupons.length ? directCoupons : mockHomeData.directCoupons,
     featuredPacks: featuredPacks.length ? featuredPacks : mockHomeData.featuredPacks,

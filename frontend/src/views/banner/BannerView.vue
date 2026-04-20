@@ -197,7 +197,8 @@
                 <button v-if="selectedAsset" type="button" class="ghost-button" @click="clearSelectedAsset">清空</button>
               </div>
             </div>
-            <input ref="fileInputRef" type="file" accept="image/*" class="hidden-file-input" @change="handleFileChange" />
+            <p class="asset-picker-tip">推荐上传透明底 PNG（只保留主体元素，如钱包/礼盒/红包），banner 背景色由小程序主题决定。也支持 JPG / GIF / WebP，但带背景的图可能出现色差。</p>
+            <input ref="fileInputRef" type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden-file-input" @change="handleFileChange" />
 
             <div v-if="selectedAsset" class="selected-asset-card">
               <img :src="selectedAsset.fileUrl" :alt="selectedAsset.name" class="selected-asset-image" />
@@ -207,7 +208,7 @@
                 <span>素材分区：{{ selectedAsset.bucketType }}</span>
               </div>
             </div>
-            <div v-else class="empty-asset-state">请上传图片或选择已有素材。</div>
+            <div v-else class="empty-asset-state">请上传图片或选择已有素材，推荐透明底 PNG。</div>
           </div>
         </div>
 
@@ -711,6 +712,17 @@ onMounted(loadData)
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+}
+
+.asset-picker-tip {
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #b45309;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
 }
 
 .compact-actions,

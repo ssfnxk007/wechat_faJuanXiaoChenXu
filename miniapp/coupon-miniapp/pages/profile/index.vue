@@ -199,4 +199,104 @@ const menus = [
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   border: 1rpx solid rgba(226, 232, 240, 0.9);
 }
+
+/* ========== Candy Theme ========== */
+.theme-candy .profile-hero,
+.theme-candy .profile-stats,
+.theme-candy .menu-card {
+  background: #ffffff;
+  border: 1rpx solid rgba(191, 219, 254, 0.6);
+  box-shadow: 0 14rpx 36rpx rgba(37, 99, 235, 0.05);
+}
+
+.theme-candy .profile-avatar {
+  background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
+  color: #ffffff;
+}
+
+.theme-candy .profile-badge {
+  background: rgba(59, 130, 246, 0.08);
+  color: #2563EB;
+}
+
+.theme-candy .stat-item {
+  background: linear-gradient(180deg, #F8FAFC 0%, #EFF6FF 100%);
+  border: 1rpx solid rgba(219, 234, 254, 0.8);
+}
+
+.theme-candy .menu-title,
+.theme-candy .stat-value {
+  color: #1E3A8A;
+}
+
+.theme-candy .menu-arrow {
+  color: #93C5FD;
+}
+
+
+/* ========== Orange Theme ========== */
+.theme-orange .profile-hero,
+.theme-orange .profile-stats,
+.theme-orange .menu-card {
+  background: #ffffff;
+  border: 1rpx solid rgba(254, 215, 170, 0.6);
+  box-shadow: 0 14rpx 36rpx rgba(234, 88, 12, 0.05);
+}
+
+.theme-orange .profile-avatar {
+  background: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
+  color: #ffffff;
+}
+
+.theme-orange .profile-badge {
+  background: rgba(249, 115, 22, 0.08);
+  color: #EA580C;
+}
+
+.theme-orange .stat-item {
+  background: linear-gradient(180deg, #FFFBF5 0%, #FFFBF5 100%);
+  border: 1rpx solid rgba(255, 237, 213, 0.8);
+}
+
+.theme-orange .menu-title,
+.theme-orange .stat-value {
+  color: #9A3412;
+}
+
+.theme-orange .menu-arrow {
+  color: #FDBA74;
+}
+
+/* ========== Red Theme ========== */
+.theme-red .profile-hero,
+.theme-red .profile-stats,
+.theme-red .menu-card {
+  background: #ffffff;
+  border: 1rpx solid rgba(255, 205, 210, 0.6);
+  box-shadow: 0 14rpx 36rpx rgba(229, 57, 53, 0.05);
+}
+
+.theme-red .profile-avatar {
+  background: linear-gradient(135deg, #EF5350 0%, #F48080 100%);
+  color: #ffffff;
+}
+
+.theme-red .profile-badge {
+  background: rgba(239, 83, 80, 0.08);
+  color: #E53935;
+}
+
+.theme-red .stat-item {
+  background: linear-gradient(180deg, #FFFBFA 0%, #FFEBEE 100%);
+  border: 1rpx solid rgba(255, 235, 238, 0.8);
+}
+
+.theme-red .menu-title,
+.theme-red .stat-value {
+  color: #B71C1C;
+}
+
+.theme-red .menu-arrow {
+  color: #FECDD3;
+}
 </style>

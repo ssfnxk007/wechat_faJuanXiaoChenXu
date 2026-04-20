@@ -1,4 +1,4 @@
-import { patchSessionStatus, updateSession, useSessionStore } from '@/store/session'
+import { clearSession, patchSessionStatus, updateSession, useSessionStore } from '@/store/session'
 import { requestWithFallback, request } from '@/utils/request'
 
 function loginByWeChat() {
@@ -13,7 +13,7 @@ function loginByWeChat() {
 
 export async function fetchWeChatStatus() {
   const result = await requestWithFallback(
-    { url: '/api/auth/wechat-status' },
+    { url: '/api/auth/wechat-status', skipAuthIntercept: true },
     () => ({ isConfigured: false, message: '后端微信配置状态暂不可用' })
   )
 
@@ -27,9 +27,13 @@ export async function fetchWeChatStatus() {
   return result
 }
 
-export async function ensureMiniProgramLogin() {
+export async function ensureMiniProgramLogin(options = {}) {
   const session = useSessionStore()
-  if (session.userId) {
+  const force = Boolean(options && options.force)
+
+  if (force) {
+    clearSession()
+  } else if (session.userId && session.token) {
     return session
   }
 
@@ -48,6 +52,7 @@ export async function ensureMiniProgramLogin() {
     const response = await request({
       url: '/api/auth/mini-login',
       method: 'POST',
+      skipAuthIntercept: true,
       data: {
         code: loginResult.code,
         nickname: session.nickname || ''

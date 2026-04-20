@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>方案A：糖果高亮色 (科技蓝+翡翠绿)</title>
+<style>
+  body { background: #1e293b; padding: 40px; font-family: system-ui, sans-serif; display: flex; justify-content: center; flex-direction: column; align-items: center; gap: 20px;}
+  h2 { color: white; margin: 0; font-size: 16px; font-weight: normal; }
+  .container { width: 375px; background: white; padding: 20px;} 
+  /* 缩放以匹配真机视觉比例 */
+  .entry-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .entry-card {
+    position: relative;
+    overflow: hidden;
+    height: 100px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+  .entry-copy {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+  }
+  .entry-title {
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: 0.5px;
+  }
+  .entry-subtitle {
+    font-size: 11px;
+    line-height: 1.4;
+    opacity: 0.85;
+    margin-top: 2px;
+  }
+  .entry-go {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    align-self: start;
+    margin-top: 10px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    backdrop-filter: blur(4px);
+  }
+  .entry-go-text { font-size: 11px; font-weight: 600; line-height: 1.2; letter-spacing: 0.5px;}
+  .entry-go-arrow { font-size: 12px; font-family: monospace; font-weight: bold; line-height: 1.2; margin-top: -1px;}
+  .entry-deco {
+    position: absolute;
+    right: -12px;
+    bottom: -14px;
+    z-index: 1;
+    transform: rotate(-10deg);
+  }
+  .entry-deco-icon {
+    width: 80px;
+    height: 80px;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    filter: drop-shadow(0 5px 8px rgba(0, 0, 0, 0.15));
+  }
+  .entry-deco-icon--mall {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M19.16 8h-3.21V6.98c0-2.19-1.78-3.98-3.95-3.98-2.17 0-3.95 1.79-3.95 3.98V8H4.84c-1.12 0-1.95 1.05-1.74 2.15l1.6 8.35A3.94 3.94 0 008.57 22h6.86a3.94 3.94 0 003.87-3.5l1.6-8.35c.21-1.1-.62-2.15-1.74-2.15zM10.15 6.98c0-.98.81-1.8 1.85-1.8.94 0 1.76.73 1.84 1.66l.01.14V8h-3.7V6.98zm-1.18 5.76a1.08 1.08 0 01-1.07-1.09c0-.6.48-1.09 1.07-1.09s1.08.49 1.08 1.09c0 .6-.48 1.09-1.08 1.09zm6.06 0a1.08 1.08 0 01-1.08-1.09c0-.6.48-1.09 1.08-1.09.59 0 1.07.49 1.07 1.09 0 .6-.48 1.09-1.07 1.09z'/%3E%3C/svg%3E");
+  }
+  .entry-deco-icon--free {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' fill='white' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21.5 10c-.83 0-1.5-.67-1.5-1.5V6a2 2 0 00-2-2H6a2 2 0 00-2 2v2.5C4 9.33 3.33 10 2.5 10v4c.83 0 1.5.67 1.5 1.5V18a2 2 0 002 2h12a2 2 0 002-2v-2.5c0-.83.67-1.5 1.5-1.5v-4zm-11.5 5H7v-2h3v2zm0-4H7V9h3v2zm5 4h-3v-2h3v2zm0-4h-3V9h3v2z'/%3E%3C/svg%3E");
+  }
+
+  /* 方案 A: 科技糖果色 */
+  .entry-card--mall {
+    background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+  .entry-card--free {
+    background: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+  .entry-go {
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+  }
+  .entry-deco { opacity: 0.35; } 
+</style>
+</head>
+<body>
+<h2>方案 A: 还原参考截图的高明度科技色</h2>
+<div class="container">
+  <div class="entry-grid">
+    <div class="entry-card entry-card--mall">
+      <div class="entry-copy">
+        <span class="entry-title">商城购券</span>
+        <span class="entry-subtitle">精选券包 组合优惠</span>
+        <div class="entry-go">
+          <span class="entry-go-text">GO</span>
+          <span class="entry-go-arrow">&gt;</span>
+        </div>
+      </div>
+      <div class="entry-deco">
+        <div class="entry-deco-icon entry-deco-icon--mall"></div>
+      </div>
+    </div>
+    <div class="entry-card entry-card--free">
+      <div class="entry-copy">
+        <span class="entry-title">免费领券</span>
+        <span class="entry-subtitle">新人专享 到店核销</span>
+        <div class="entry-go">
+          <span class="entry-go-text">GO</span>
+          <span class="entry-go-arrow">&gt;</span>
+        </div>
+      </div>
+      <div class="entry-deco">
+        <div class="entry-deco-icon entry-deco-icon--free"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -51,7 +51,14 @@ defineProps({
   font-size: 24rpx;
 }
 .action {
-  color: $cm-primary;
+  flex-shrink: 0;
+  padding: 12rpx 22rpx;
+  border: 1rpx solid var(--cm-theme-action-border, rgba(45, 91, 72, 0.12));
+  border-radius: 999rpx;
+  background: var(--cm-theme-action-bg, rgba(45, 91, 72, 0.08));
+  color: var(--cm-theme-action-color, $cm-primary-strong);
   font-size: 24rpx;
+  font-weight: 600;
+  line-height: 1;
 }
 </style>

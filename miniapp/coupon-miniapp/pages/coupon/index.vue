@@ -53,6 +53,7 @@ import SectionHeader from '@/components/SectionHeader.vue'
 import CouponCard from '@/components/CouponCard.vue'
 import { useTheme } from '@/composables/use-theme'
 import { getMiniAppUserCoupons } from '@/api/miniapp'
+import { ensureMiniProgramLogin } from '@/api/auth'
 import { useSessionStore } from '@/store/session'
 
 const session = useSessionStore()
@@ -114,6 +115,15 @@ function mapCoupon(item) {
 }
 
 async function loadCoupons() {
+  try {
+    await ensureMiniProgramLogin()
+  } catch (error) {
+    console.warn('[coupon-list] ensure login failed', error)
+    uni.showToast({ title: '微信登录失败，请稍后重试', icon: 'none' })
+    coupons.value = []
+    return
+  }
+
   if (!session.userId) {
     coupons.value = []
     return
@@ -131,6 +141,7 @@ async function loadCoupons() {
   } catch (error) {
     coupons.value = []
     console.warn('[coupon-list] loadCoupons failed', error)
+    uni.showToast({ title: '加载券列表失败', icon: 'none' })
   }
 }
 
@@ -287,6 +298,106 @@ onShow(() => {
 
 .theme-light .primary-action {
   background: #111827;
+  color: #ffffff;
+}
+
+/* ========== Candy Theme ========== */
+.theme-candy .summary-badge {
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563EB;
+}
+
+.theme-candy .segment-item {
+  background: #ffffff;
+  border: 1rpx solid rgba(191, 219, 254, 0.6);
+  color: #3B82F6;
+}
+
+.theme-candy .segment-item.active {
+  background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.theme-candy .empty-card {
+  background: #ffffff;
+  border: 1rpx solid rgba(191, 219, 254, 0.6);
+}
+
+.theme-candy .ghost-action {
+  background: rgba(59, 130, 246, 0.05);
+  color: #2563EB;
+}
+
+.theme-candy .primary-action {
+  background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
+  color: #ffffff;
+}
+
+
+/* ========== Orange Theme ========== */
+.theme-orange .summary-badge {
+  background: rgba(249, 115, 22, 0.1);
+  color: #EA580C;
+}
+
+.theme-orange .segment-item {
+  background: #ffffff;
+  border: 1rpx solid rgba(254, 215, 170, 0.6);
+  color: #F97316;
+}
+
+.theme-orange .segment-item.active {
+  background: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.theme-orange .empty-card {
+  background: #ffffff;
+  border: 1rpx solid rgba(254, 215, 170, 0.6);
+}
+
+.theme-orange .ghost-action {
+  background: rgba(249, 115, 22, 0.05);
+  color: #EA580C;
+}
+
+.theme-orange .primary-action {
+  background: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
+  color: #ffffff;
+}
+
+/* ========== Red Theme ========== */
+.theme-red .summary-badge {
+  background: rgba(239, 83, 80, 0.1);
+  color: #E53935;
+}
+
+.theme-red .segment-item {
+  background: #ffffff;
+  border: 1rpx solid rgba(255, 205, 210, 0.6);
+  color: #EF5350;
+}
+
+.theme-red .segment-item.active {
+  background: linear-gradient(135deg, #EF5350 0%, #F48080 100%);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.theme-red .empty-card {
+  background: #ffffff;
+  border: 1rpx solid rgba(255, 205, 210, 0.6);
+}
+
+.theme-red .ghost-action {
+  background: rgba(239, 83, 80, 0.05);
+  color: #E53935;
+}
+
+.theme-red .primary-action {
+  background: linear-gradient(135deg, #EF5350 0%, #F48080 100%);
   color: #ffffff;
 }
 </style>

@@ -122,12 +122,18 @@ const currentStatus = ref('all')
 const orders = ref([])
 
 const loadOrders = async () => {
-  await ensureMiniProgramLogin()
-  const result = await fetchOrderList({
-    pageIndex: 1,
-    pageSize: 50
-  })
-  orders.value = result.items
+  try {
+    await ensureMiniProgramLogin()
+    const result = await fetchOrderList({
+      pageIndex: 1,
+      pageSize: 50
+    })
+    orders.value = result.items
+  } catch (error) {
+    console.warn('[order-list] loadOrders failed', error)
+    orders.value = []
+    uni.showToast({ title: error?.message || '加载订单失败', icon: 'none' })
+  }
 }
 
 onShow(() => {
@@ -530,6 +536,274 @@ const filteredOrders = computed(() => {
 
 .theme-light .primary-action {
   background: #111827;
+  color: #ffffff;
+}
+
+/* ========== Candy Theme ========== */
+.theme-candy .order-hero {
+  background: linear-gradient(135deg, #E0E7FF 0%, #DBEAFE 52%, #BFDBFE 100%);
+}
+
+.theme-candy .hero-copy {
+  color: #1E3A8A;
+}
+
+.theme-candy .hero-eyebrow,
+.theme-candy .hero-subtitle {
+  color: #3B82F6;
+}
+
+.theme-candy .hero-stats {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.theme-candy .stat-item {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.theme-candy .stat-value {
+  color: #1E3A8A;
+}
+
+.theme-candy .stat-label {
+  color: #3B82F6;
+}
+
+.theme-candy .status-tab {
+  background: #ffffff;
+  border-color: rgba(191, 219, 254, 0.6);
+  color: #3B82F6;
+}
+
+.theme-candy .status-tab.active {
+  background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
+  color: #ffffff;
+  box-shadow: 0 18rpx 36rpx rgba(37, 99, 235, 0.18);
+}
+
+.theme-candy .summary-side {
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563EB;
+}
+
+.theme-candy .order-cover {
+  background: linear-gradient(180deg, #F8FAFC 0%, #DBEAFE 100%);
+  border: 1rpx solid rgba(219, 234, 254, 0.9);
+}
+
+.theme-candy .order-status.status-paid,
+.theme-candy .order-status.status-completed {
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563EB;
+}
+
+.theme-candy .order-status.status-pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: #D97706; /* 橙色作为警告/待办色 */
+}
+
+.theme-candy .order-tag {
+  background: rgba(59, 130, 246, 0.08);
+  color: #2563EB;
+}
+
+.theme-candy .order-meta-grid,
+.theme-candy .notice-card {
+  background: #ffffff;
+  border: 1rpx solid rgba(191, 219, 254, 0.6);
+}
+
+.theme-candy .meta-value.price {
+  color: #2563EB;
+}
+
+.theme-candy .ghost-action {
+  background: rgba(59, 130, 246, 0.05);
+  color: #2563EB;
+  border-color: rgba(191, 219, 254, 0.5);
+}
+
+.theme-candy .primary-action {
+  background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
+  color: #ffffff;
+}
+
+
+/* ========== Orange Theme ========== */
+.theme-orange .order-hero {
+  background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 52%, #FED7AA 100%);
+}
+
+.theme-orange .hero-copy {
+  color: #9A3412;
+}
+
+.theme-orange .hero-eyebrow,
+.theme-orange .hero-subtitle {
+  color: #F97316;
+}
+
+.theme-orange .hero-stats {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.theme-orange .stat-item {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.theme-orange .stat-value {
+  color: #9A3412;
+}
+
+.theme-orange .stat-label {
+  color: #F97316;
+}
+
+.theme-orange .status-tab {
+  background: #ffffff;
+  border-color: rgba(254, 215, 170, 0.6);
+  color: #F97316;
+}
+
+.theme-orange .status-tab.active {
+  background: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
+  color: #ffffff;
+  box-shadow: 0 18rpx 36rpx rgba(234, 88, 12, 0.18);
+}
+
+.theme-orange .summary-side {
+  background: rgba(249, 115, 22, 0.1);
+  color: #EA580C;
+}
+
+.theme-orange .order-cover {
+  background: linear-gradient(180deg, #FFFBF5 0%, #FFEDD5 100%);
+  border: 1rpx solid rgba(255, 237, 213, 0.9);
+}
+
+.theme-orange .order-status.status-paid,
+.theme-orange .order-status.status-completed {
+  background: rgba(249, 115, 22, 0.1);
+  color: #EA580C;
+}
+
+.theme-orange .order-status.status-pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: #D97706; /* 橙色作为警告/待办色 */
+}
+
+.theme-orange .order-tag {
+  background: rgba(249, 115, 22, 0.08);
+  color: #EA580C;
+}
+
+.theme-orange .order-meta-grid,
+.theme-orange .notice-card {
+  background: #ffffff;
+  border: 1rpx solid rgba(254, 215, 170, 0.6);
+}
+
+.theme-orange .meta-value.price {
+  color: #EA580C;
+}
+
+.theme-orange .ghost-action {
+  background: rgba(249, 115, 22, 0.05);
+  color: #EA580C;
+  border-color: rgba(254, 215, 170, 0.5);
+}
+
+.theme-orange .primary-action {
+  background: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
+  color: #ffffff;
+}
+
+/* ========== Red Theme ========== */
+.theme-red .order-hero {
+  background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 52%, #FFCDD2 100%);
+}
+
+.theme-red .hero-copy {
+  color: #B71C1C;
+}
+
+.theme-red .hero-eyebrow,
+.theme-red .hero-subtitle {
+  color: #EF5350;
+}
+
+.theme-red .hero-stats {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.theme-red .stat-item {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.theme-red .stat-value {
+  color: #B71C1C;
+}
+
+.theme-red .stat-label {
+  color: #EF5350;
+}
+
+.theme-red .status-tab {
+  background: #ffffff;
+  border-color: rgba(255, 205, 210, 0.6);
+  color: #EF5350;
+}
+
+.theme-red .status-tab.active {
+  background: linear-gradient(135deg, #EF5350 0%, #F48080 100%);
+  color: #ffffff;
+  box-shadow: 0 18rpx 36rpx rgba(229, 57, 53, 0.18);
+}
+
+.theme-red .summary-side {
+  background: rgba(239, 83, 80, 0.1);
+  color: #E53935;
+}
+
+.theme-red .order-cover {
+  background: linear-gradient(180deg, #FFFBFA 0%, #FFCDD2 100%);
+  border: 1rpx solid rgba(255, 235, 238, 0.9);
+}
+
+.theme-red .order-status.status-paid,
+.theme-red .order-status.status-completed {
+  background: rgba(239, 83, 80, 0.1);
+  color: #E53935;
+}
+
+.theme-red .order-status.status-pending {
+  background: rgba(245, 158, 11, 0.1);
+  color: #D97706; /* 橙色作为警告/待办色 */
+}
+
+.theme-red .order-tag {
+  background: rgba(239, 83, 80, 0.08);
+  color: #E53935;
+}
+
+.theme-red .order-meta-grid,
+.theme-red .notice-card {
+  background: #ffffff;
+  border: 1rpx solid rgba(255, 205, 210, 0.6);
+}
+
+.theme-red .meta-value.price {
+  color: #E53935;
+}
+
+.theme-red .ghost-action {
+  background: rgba(239, 83, 80, 0.05);
+  color: #E53935;
+  border-color: rgba(255, 205, 210, 0.5);
+}
+
+.theme-red .primary-action {
+  background: linear-gradient(135deg, #EF5350 0%, #F48080 100%);
   color: #ffffff;
 }
 </style>

@@ -311,6 +311,7 @@ onLoad(async (options) => {
     await loadUserCouponDetail(options?.id)
   } catch (error) {
     console.warn('[coupon-detail] onLoad failed', error)
+    uni.showToast({ title: error?.message || '加载券详情失败', icon: 'none' })
   }
 })
 
@@ -589,6 +590,96 @@ onShareAppMessage(() => {
   font-size: 20rpx;
 }
 
+.theme-candy .detail-hero {
+  background: linear-gradient(135deg, #e0e7ff 0%, #dbeafe 52%, #bfdbfe 100%);
+  color: #1e3a8a;
+}
+
+.theme-candy .hero-overlay {
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.9), transparent 32%),
+    radial-gradient(circle at left center, rgba(219, 234, 254, 0.65), transparent 26%);
+}
+
+.theme-candy .detail-back,
+.theme-candy .detail-status {
+  background: rgba(255, 255, 255, 0.58);
+  color: #2563eb;
+  border: 1rpx solid rgba(191, 219, 254, 0.75);
+}
+
+.theme-candy .detail-type,
+.theme-candy .detail-desc {
+  color: #3b82f6;
+}
+
+.theme-candy .detail-title,
+.theme-candy .qr-card-title,
+.theme-candy .claim-title {
+  color: #1e40af;
+}
+
+.theme-candy .qr-card,
+.theme-candy .claim-card,
+.theme-candy .info-card,
+.theme-candy .rule-card,
+.theme-candy .goods-card {
+  background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
+  border: 1rpx solid rgba(191, 219, 254, 0.85);
+  box-shadow: 0 16rpx 40rpx rgba(37, 99, 235, 0.08);
+}
+
+.theme-candy .qr-card-note,
+.theme-candy .claim-note,
+.theme-candy .coupon-code,
+.theme-candy .qr-empty-desc,
+.theme-candy .goods-desc {
+  color: #64748b;
+}
+
+.theme-candy .qr-box,
+.theme-candy .claim-stat {
+  background: linear-gradient(180deg, #f8fafc 0%, #dbeafe 100%);
+  border: 1rpx solid rgba(219, 234, 254, 0.9);
+}
+
+.theme-candy .qr-empty-title,
+.theme-candy .claim-stat-value,
+.theme-candy .goods-price {
+  color: #2563eb;
+}
+
+.theme-candy .claim-stat-label,
+.theme-candy .info-label {
+  color: #60a5fa;
+}
+
+.theme-candy .qr-action {
+  font-weight: 700;
+}
+
+.theme-candy .qr-action.primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  color: #ffffff;
+  box-shadow: 0 18rpx 36rpx rgba(37, 99, 235, 0.18);
+}
+
+.theme-candy .qr-action.secondary {
+  background: rgba(59, 130, 246, 0.08);
+  color: #2563eb;
+  border: 1rpx solid rgba(191, 219, 254, 0.7);
+}
+
+.theme-candy .goods-cover {
+  background: linear-gradient(180deg, #f8fafc 0%, #dbeafe 100%);
+  border: 1rpx solid rgba(219, 234, 254, 0.9);
+}
+
+.theme-candy .goods-tag {
+  background: rgba(59, 130, 246, 0.08);
+  color: #60a5fa;
+}
+
 .theme-light .detail-hero {
   background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   color: #0f172a;
@@ -619,5 +710,187 @@ onShareAppMessage(() => {
 .theme-light .goods-price,
 .theme-light .claim-stat-value {
   color: #111827;
+}
+
+/* ========== Orange Theme ========== */
+.theme-orange .detail-hero {
+  background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 52%, #FED7AA 100%);
+  color: #9A3412;
+}
+
+.theme-orange .hero-overlay {
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.9), transparent 32%),
+    radial-gradient(circle at left center, rgba(255, 237, 213, 0.65), transparent 26%);
+}
+
+.theme-orange .detail-back,
+.theme-orange .detail-status {
+  background: rgba(255, 255, 255, 0.58);
+  color: #EA580C;
+  border: 1rpx solid rgba(254, 215, 170, 0.75);
+}
+
+.theme-orange .detail-type,
+.theme-orange .detail-desc {
+  color: #F97316;
+}
+
+.theme-orange .detail-title,
+.theme-orange .qr-card-title,
+.theme-orange .claim-title {
+  color: #C2410C;
+}
+
+.theme-orange .qr-card,
+.theme-orange .claim-card,
+.theme-orange .info-card,
+.theme-orange .rule-card,
+.theme-orange .goods-card {
+  background: linear-gradient(180deg, #ffffff 0%, #FFFBF5 100%);
+  border: 1rpx solid rgba(254, 215, 170, 0.85);
+  box-shadow: 0 16rpx 40rpx rgba(234, 88, 12, 0.08);
+}
+
+.theme-orange .qr-card-note,
+.theme-orange .claim-note,
+.theme-orange .coupon-code,
+.theme-orange .qr-empty-desc,
+.theme-orange .goods-desc {
+  color: #64748b;
+}
+
+.theme-orange .qr-box,
+.theme-orange .claim-stat {
+  background: linear-gradient(180deg, #FFFBF5 0%, #FFEDD5 100%);
+  border: 1rpx solid rgba(255, 237, 213, 0.9);
+}
+
+.theme-orange .qr-empty-title,
+.theme-orange .claim-stat-value,
+.theme-orange .goods-price {
+  color: #EA580C;
+}
+
+.theme-orange .claim-stat-label,
+.theme-orange .info-label {
+  color: #FB923C;
+}
+
+.theme-orange .qr-action {
+  font-weight: 700;
+}
+
+.theme-orange .qr-action.primary {
+  background: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
+  color: #ffffff;
+  box-shadow: 0 18rpx 36rpx rgba(234, 88, 12, 0.18);
+}
+
+.theme-orange .qr-action.secondary {
+  background: rgba(249, 115, 22, 0.08);
+  color: #EA580C;
+  border: 1rpx solid rgba(254, 215, 170, 0.7);
+}
+
+.theme-orange .goods-cover {
+  background: linear-gradient(180deg, #FFFBF5 0%, #FFEDD5 100%);
+  border: 1rpx solid rgba(255, 237, 213, 0.9);
+}
+
+.theme-orange .goods-tag {
+  background: rgba(249, 115, 22, 0.08);
+  color: #FB923C;
+}
+
+/* ========== Red Theme ========== */
+.theme-red .detail-hero {
+  background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 52%, #FFCDD2 100%);
+  color: #B71C1C;
+}
+
+.theme-red .hero-overlay {
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.9), transparent 32%),
+    radial-gradient(circle at left center, rgba(255, 235, 238, 0.65), transparent 26%);
+}
+
+.theme-red .detail-back,
+.theme-red .detail-status {
+  background: rgba(255, 255, 255, 0.58);
+  color: #E53935;
+  border: 1rpx solid rgba(255, 205, 210, 0.75);
+}
+
+.theme-red .detail-type,
+.theme-red .detail-desc {
+  color: #EF5350;
+}
+
+.theme-red .detail-title,
+.theme-red .qr-card-title,
+.theme-red .claim-title {
+  color: #C62828;
+}
+
+.theme-red .qr-card,
+.theme-red .claim-card,
+.theme-red .info-card,
+.theme-red .rule-card,
+.theme-red .goods-card {
+  background: linear-gradient(180deg, #ffffff 0%, #FFEBEE 100%);
+  border: 1rpx solid rgba(255, 205, 210, 0.85);
+  box-shadow: 0 16rpx 40rpx rgba(229, 57, 53, 0.08);
+}
+
+.theme-red .qr-card-note,
+.theme-red .claim-note,
+.theme-red .coupon-code,
+.theme-red .qr-empty-desc,
+.theme-red .goods-desc {
+  color: #64748b;
+}
+
+.theme-red .qr-box,
+.theme-red .claim-stat {
+  background: linear-gradient(180deg, #FFFBFA 0%, #FFCDD2 100%);
+  border: 1rpx solid rgba(255, 235, 238, 0.9);
+}
+
+.theme-red .qr-empty-title,
+.theme-red .claim-stat-value,
+.theme-red .goods-price {
+  color: #E53935;
+}
+
+.theme-red .claim-stat-label,
+.theme-red .info-label {
+  color: #F48080;
+}
+
+.theme-red .qr-action {
+  font-weight: 700;
+}
+
+.theme-red .qr-action.primary {
+  background: linear-gradient(135deg, #EF5350 0%, #F48080 100%);
+  color: #ffffff;
+  box-shadow: 0 18rpx 36rpx rgba(229, 57, 53, 0.18);
+}
+
+.theme-red .qr-action.secondary {
+  background: rgba(239, 83, 80, 0.08);
+  color: #E53935;
+  border: 1rpx solid rgba(255, 205, 210, 0.7);
+}
+
+.theme-red .goods-cover {
+  background: linear-gradient(180deg, #FFFBFA 0%, #FFCDD2 100%);
+  border: 1rpx solid rgba(255, 235, 238, 0.9);
+}
+
+.theme-red .goods-tag {
+  background: rgba(239, 83, 80, 0.08);
+  color: #F48080;
 }
 </style>

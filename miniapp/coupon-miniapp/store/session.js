@@ -5,6 +5,7 @@ const API_BASE_URL_STORAGE_KEY = 'coupon-miniapp:api-base-url'
 const THEME_STORAGE_KEY = 'coupon-miniapp:theme-code'
 const DEFAULT_API_BASE_URL = 'http://10.168.1.106:5265'
 const DEFAULT_THEME_CODE = 'green'
+const VALID_THEME_CODES = new Set(['green', 'light', 'candy', 'orange', 'red'])
 
 const state = reactive({
   hydrated: false,
@@ -23,6 +24,11 @@ const state = reactive({
 
 function trimText(value) {
   return typeof value === 'string' ? value.trim() : ''
+}
+
+function normalizeThemeCode(themeCode) {
+  const normalized = trimText(themeCode).toLowerCase()
+  return VALID_THEME_CODES.has(normalized) ? normalized : ''
 }
 
 function persistSession() {
@@ -46,7 +52,7 @@ export function hydrateSessionStore() {
   const savedThemeCode = trimText(uni.getStorageSync(THEME_STORAGE_KEY))
 
   state.apiBaseUrl = savedBaseUrl || DEFAULT_API_BASE_URL
-  state.themeCode = savedThemeCode === 'light' ? 'light' : DEFAULT_THEME_CODE
+  state.themeCode = normalizeThemeCode(savedThemeCode) || DEFAULT_THEME_CODE
   state.userId = Number(savedSession.userId) > 0 ? Number(savedSession.userId) : null
   state.miniOpenId = trimText(savedSession.miniOpenId)
   state.mobile = trimText(savedSession.mobile)
@@ -70,7 +76,13 @@ export function setApiBaseUrl(baseUrl) {
 }
 
 export function setThemeCode(themeCode) {
-  const normalized = trimText(themeCode).toLowerCase() === 'light' ? 'light' : DEFAULT_THEME_CODE
+  hydrateSessionStore()
+
+  const normalized = normalizeThemeCode(themeCode)
+  if (!normalized) {
+    return state.themeCode
+  }
+
   state.themeCode = normalized
   uni.setStorageSync(THEME_STORAGE_KEY, normalized)
   return state.themeCode

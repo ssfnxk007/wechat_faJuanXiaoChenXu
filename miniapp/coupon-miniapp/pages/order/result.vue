@@ -350,4 +350,264 @@ onLoad((options) => {
   background: linear-gradient(135deg, #2d5b48 0%, #5f7453 100%);
   color: #fffdf8;
 }
+
+.theme-light .order-result-page {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.theme-light .result-hero {
+  background: linear-gradient(180deg, #ffffff 0%, #eef2ff 100%);
+  color: #0f172a;
+}
+
+.theme-light .result-mask {
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.86), transparent 32%),
+    radial-gradient(circle at left bottom, rgba(226, 232, 240, 0.42), transparent 26%);
+}
+
+.theme-light .result-back,
+.theme-light .result-icon {
+  background: rgba(15, 23, 42, 0.06);
+  color: #334155;
+}
+
+.theme-light .result-subtitle,
+.theme-light .action-desc,
+.theme-light .granted-desc,
+.theme-light .summary-label {
+  color: #64748b;
+}
+
+.theme-light .summary-card,
+.theme-light .granted-card,
+.theme-light .action-card {
+  background: #ffffff;
+  border: 1rpx solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 14rpx 36rpx rgba(15, 23, 42, 0.05);
+}
+
+.theme-light .summary-value.price,
+.theme-light .granted-count {
+  color: #111827;
+}
+
+.theme-light .ghost-action {
+  background: rgba(15, 23, 42, 0.05);
+  color: #475569;
+}
+
+.theme-light .primary-action {
+  background: #111827;
+  color: #ffffff;
+}
+
+.theme-candy .order-result-page {
+  background: linear-gradient(180deg, #eff6ff 0%, #f8fafc 100%);
+}
+
+.theme-candy .result-hero {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 52%, #93c5fd 100%);
+  color: #1e3a8a;
+}
+
+.theme-candy .result-mask {
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.88), transparent 30%),
+    radial-gradient(circle at left bottom, rgba(191, 219, 254, 0.58), transparent 24%);
+}
+
+.theme-candy .result-back {
+  background: rgba(255, 255, 255, 0.5);
+  color: #2563eb;
+  border: 1rpx solid rgba(191, 219, 254, 0.75);
+}
+
+.theme-candy .result-icon {
+  background: rgba(255, 255, 255, 0.54);
+  color: #2563eb;
+}
+
+.theme-candy .result-subtitle,
+.theme-candy .action-desc,
+.theme-candy .granted-desc,
+.theme-candy .summary-label {
+  color: #3b82f6;
+}
+
+.theme-candy .summary-card,
+.theme-candy .granted-card,
+.theme-candy .action-card {
+  background: #ffffff;
+  border: 1rpx solid rgba(191, 219, 254, 0.75);
+  box-shadow: 0 16rpx 40rpx rgba(37, 99, 235, 0.08);
+}
+
+.theme-candy .granted-type {
+  background: rgba(59, 130, 246, 0.08);
+  color: #2563eb;
+  width: fit-content;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+}
+
+.theme-candy .granted-count,
+.theme-candy .summary-value.price {
+  color: #2563eb;
+}
+
+.theme-candy .summary-value.success {
+  color: #0f766e;
+}
+
+.theme-candy .ghost-action {
+  background: rgba(59, 130, 246, 0.06);
+  color: #2563eb;
+  border: 1rpx solid rgba(191, 219, 254, 0.65);
+}
+
+.theme-candy .primary-action {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  color: #ffffff;
+}
+
+/* ========== Orange Theme ========== */
+.theme-orange .order-result-page {
+  background: linear-gradient(180deg, #FFFBF5 0%, #FFFBF5 100%);
+}
+
+.theme-orange .result-hero {
+  background: linear-gradient(135deg, #FFEDD5 0%, #FED7AA 52%, #FDBA74 100%);
+  color: #9A3412;
+}
+
+.theme-orange .result-mask {
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.88), transparent 30%),
+    radial-gradient(circle at left bottom, rgba(254, 215, 170, 0.58), transparent 24%);
+}
+
+.theme-orange .result-back {
+  background: rgba(255, 255, 255, 0.5);
+  color: #EA580C;
+  border: 1rpx solid rgba(254, 215, 170, 0.75);
+}
+
+.theme-orange .result-icon {
+  background: rgba(255, 255, 255, 0.54);
+  color: #EA580C;
+}
+
+.theme-orange .result-subtitle,
+.theme-orange .action-desc,
+.theme-orange .granted-desc,
+.theme-orange .summary-label {
+  color: #F97316;
+}
+
+.theme-orange .summary-card,
+.theme-orange .granted-card,
+.theme-orange .action-card {
+  background: #ffffff;
+  border: 1rpx solid rgba(254, 215, 170, 0.75);
+  box-shadow: 0 16rpx 40rpx rgba(234, 88, 12, 0.08);
+}
+
+.theme-orange .granted-type {
+  background: rgba(249, 115, 22, 0.08);
+  color: #EA580C;
+  width: fit-content;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+}
+
+.theme-orange .granted-count,
+.theme-orange .summary-value.price {
+  color: #EA580C;
+}
+
+.theme-orange .summary-value.success {
+  color: #0f766e;
+}
+
+.theme-orange .ghost-action {
+  background: rgba(249, 115, 22, 0.06);
+  color: #EA580C;
+  border: 1rpx solid rgba(254, 215, 170, 0.65);
+}
+
+.theme-orange .primary-action {
+  background: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
+  color: #ffffff;
+}
+
+/* ========== Red Theme ========== */
+.theme-red .order-result-page {
+  background: linear-gradient(180deg, #FFEBEE 0%, #FFFBFA 100%);
+}
+
+.theme-red .result-hero {
+  background: linear-gradient(135deg, #FFCDD2 0%, #FFCDD2 52%, #FECDD3 100%);
+  color: #B71C1C;
+}
+
+.theme-red .result-mask {
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.88), transparent 30%),
+    radial-gradient(circle at left bottom, rgba(255, 205, 210, 0.58), transparent 24%);
+}
+
+.theme-red .result-back {
+  background: rgba(255, 255, 255, 0.5);
+  color: #E53935;
+  border: 1rpx solid rgba(255, 205, 210, 0.75);
+}
+
+.theme-red .result-icon {
+  background: rgba(255, 255, 255, 0.54);
+  color: #E53935;
+}
+
+.theme-red .result-subtitle,
+.theme-red .action-desc,
+.theme-red .granted-desc,
+.theme-red .summary-label {
+  color: #EF5350;
+}
+
+.theme-red .summary-card,
+.theme-red .granted-card,
+.theme-red .action-card {
+  background: #ffffff;
+  border: 1rpx solid rgba(255, 205, 210, 0.75);
+  box-shadow: 0 16rpx 40rpx rgba(229, 57, 53, 0.08);
+}
+
+.theme-red .granted-type {
+  background: rgba(239, 83, 80, 0.08);
+  color: #E53935;
+  width: fit-content;
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+}
+
+.theme-red .granted-count,
+.theme-red .summary-value.price {
+  color: #E53935;
+}
+
+.theme-red .summary-value.success {
+  color: #0f766e;
+}
+
+.theme-red .ghost-action {
+  background: rgba(239, 83, 80, 0.06);
+  color: #E53935;
+  border: 1rpx solid rgba(255, 205, 210, 0.65);
+}
+
+.theme-red .primary-action {
+  background: linear-gradient(135deg, #EF5350 0%, #F48080 100%);
+  color: #ffffff;
+}
 </style>
