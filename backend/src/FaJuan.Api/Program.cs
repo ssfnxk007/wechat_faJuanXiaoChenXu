@@ -6,6 +6,7 @@ using FaJuan.Api.Infrastructure.Auth;
 using FaJuan.Api.Infrastructure.Media;
 using FaJuan.Api.Infrastructure.MiniApp;
 using FaJuan.Api.Infrastructure.Persistence;
+using FaJuan.Api.Infrastructure.Startup;
 using FaJuan.Api.Infrastructure.WeChat;
 using FaJuan.Api.Infrastructure.WeChatPay;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -105,6 +106,8 @@ builder.Services.AddScoped<WeChatPaySettingsProvider>();
 builder.Services.AddHttpClient<WeChatPayService>();
 
 var app = builder.Build();
+
+TimeZoneAssertion.Assert();
 
 using (var scope = app.Services.CreateScope())
 {
