@@ -4,10 +4,12 @@ using FaJuan.Api.Application.Common.Models;
 using FaJuan.Api.Contracts;
 using FaJuan.Api.Domain.Entities;
 using FaJuan.Api.Infrastructure.Auth;
+using FaJuan.Api.Infrastructure.Media;
 using FaJuan.Api.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace FaJuan.Api.Controllers;
 
@@ -153,11 +155,22 @@ public class MediaAssetsController(AppDbContext dbContext, IWebHostEnvironment e
 
     [AdminPermissionAuthorize("product.create")]
     [HttpPost("upload")]
-    public async Task<ActionResult<ApiResponse<MediaAssetUploadResultDto>>> Upload([FromForm] IFormFile file)
+    public async Task<ActionResult<ApiResponse<MediaAssetUploadResultDto>>> Upload(
+        [FromForm] IFormFile file,
+        [FromQuery] string? bucketType,
+        [FromServices] ImageCompressor imageCompressor,
+        [FromServices] IOptions<UploadOptions> uploadOptions)
     {
         if (file is null || file.Length == 0)
         {
             return BadRequest(Failure<MediaAssetUploadResultDto>("上传文件不能为空"));
+        }
+
+        var options = uploadOptions.Value;
+        if (file.Length > options.MaxFileSizeBytes)
+        {
+            var maxMb = Math.Max(1, options.MaxFileSizeBytes / 1024 / 1024);
+            return BadRequest(Failure<MediaAssetUploadResultDto>($"单张图片不能超过 {maxMb} MB"));
         }
 
         var extension = Path.GetExtension(file.FileName);
@@ -167,16 +180,25 @@ public class MediaAssetsController(AppDbContext dbContext, IWebHostEnvironment e
             return BadRequest(Failure<MediaAssetUploadResultDto>("仅支持 jpg、jpeg、png、gif、webp 图片"));
         }
 
+        byte[] compressed;
+        try
+        {
+            await using var stream = file.OpenReadStream();
+            var longSide = imageCompressor.GetLongSideLimit(bucketType);
+            compressed = await imageCompressor.CompressToWebpAsync(stream, longSide, HttpContext.RequestAborted);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(Failure<MediaAssetUploadResultDto>(ex.Message));
+        }
+
         var uploadRoot = Path.Combine(environment.WebRootPath ?? Path.Combine(environment.ContentRootPath, "wwwroot"), "uploads", "media");
         Directory.CreateDirectory(uploadRoot);
 
-        var fileName = $"{DateTime.Now:yyyyMMddHHmmssfff}_{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
+        var fileName = $"{DateTime.Now:yyyyMMddHHmmssfff}_{Guid.NewGuid():N}.webp";
         var filePath = Path.Combine(uploadRoot, fileName);
 
-        await using (var stream = System.IO.File.Create(filePath))
-        {
-            await file.CopyToAsync(stream);
-        }
+        await System.IO.File.WriteAllBytesAsync(filePath, compressed, HttpContext.RequestAborted);
 
         var fileUrl = $"/uploads/media/{fileName}";
         return Ok(Success(new MediaAssetUploadResultDto

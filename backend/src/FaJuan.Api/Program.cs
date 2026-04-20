@@ -3,11 +3,13 @@ using FaJuan.Api.Application.Orders;
 using FaJuan.Api.Application.UserCoupons;
 using FaJuan.Api.Contracts;
 using FaJuan.Api.Infrastructure.Auth;
+using FaJuan.Api.Infrastructure.Media;
 using FaJuan.Api.Infrastructure.MiniApp;
 using FaJuan.Api.Infrastructure.Persistence;
 using FaJuan.Api.Infrastructure.WeChat;
 using FaJuan.Api.Infrastructure.WeChatPay;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -41,6 +43,18 @@ builder.Services.AddCors(options =>
 builder.Services.Configure<WeChatMiniProgramOptions>(builder.Configuration.GetSection("WeChatMiniProgram"));
 builder.Services.Configure<WeChatPayOptions>(builder.Configuration.GetSection("WeChatPay"));
 builder.Services.Configure<MiniAppThemeSettingsOptions>(builder.Configuration.GetSection("MiniAppTheme"));
+builder.Services.Configure<UploadOptions>(builder.Configuration.GetSection("Uploads"));
+
+var uploadMaxBytes = builder.Configuration.GetSection("Uploads").Get<UploadOptions>()?.MaxFileSizeBytes
+                     ?? new UploadOptions().MaxFileSizeBytes;
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = uploadMaxBytes;
+});
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = uploadMaxBytes;
+});
 
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "FaJuan.Api";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "FaJuan.Admin";
@@ -79,6 +93,7 @@ builder.Services.AddScoped<UserCouponGrantService>();
 builder.Services.AddSingleton<MiniAppThemeSettingsService>();
 builder.Services.AddSingleton<JwtTokenService>();
 builder.Services.AddSingleton<PasswordHashService>();
+builder.Services.AddSingleton<ImageCompressor>();
 builder.Services.AddHttpClient<WeChatMiniProgramService>();
 builder.Services.AddHttpClient<WeChatPayService>();
 
