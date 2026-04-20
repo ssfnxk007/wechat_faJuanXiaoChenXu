@@ -41,7 +41,6 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.Configure<WeChatMiniProgramOptions>(builder.Configuration.GetSection("WeChatMiniProgram"));
-builder.Services.Configure<WeChatPayOptions>(builder.Configuration.GetSection("WeChatPay"));
 builder.Services.Configure<MiniAppThemeSettingsOptions>(builder.Configuration.GetSection("MiniAppTheme"));
 builder.Services.Configure<UploadOptions>(builder.Configuration.GetSection("Uploads"));
 
@@ -102,6 +101,7 @@ builder.Services.AddHttpClient<WeChatMiniProgramService>()
                                  | System.Net.DecompressionMethods.Deflate
                                  | System.Net.DecompressionMethods.Brotli,
     });
+builder.Services.AddScoped<WeChatPaySettingsProvider>();
 builder.Services.AddHttpClient<WeChatPayService>();
 
 var app = builder.Build();
