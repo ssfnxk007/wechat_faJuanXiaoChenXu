@@ -1,53 +1,51 @@
-﻿using System.Security.Cryptography;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
+using FaJuan.Api.Application.Common;
 using FaJuan.Api.Contracts;
-using Microsoft.Extensions.Options;
 
 namespace FaJuan.Api.Infrastructure.WeChatPay;
 
-public class WeChatPayService(HttpClient httpClient, IOptions<WeChatPayOptions> options)
+public class WeChatPayService(HttpClient httpClient, WeChatPaySettingsProvider settingsProvider)
 {
-    private readonly WeChatPayOptions _options = options.Value;
     private readonly Dictionary<string, RSA> _platformCertificates = new();
 
-    public bool IsConfigured()
+    public async Task<bool> IsConfiguredAsync(CancellationToken cancellationToken = default)
     {
-        return !string.IsNullOrWhiteSpace(_options.AppId)
-            && !string.IsNullOrWhiteSpace(_options.MerchantId)
-            && !string.IsNullOrWhiteSpace(_options.MerchantSerialNo)
-            && !string.IsNullOrWhiteSpace(_options.PrivateKeyPemPath)
-            && !string.IsNullOrWhiteSpace(_options.NotifyUrl);
+        var opts = await settingsProvider.GetAsync(cancellationToken);
+        return opts.IsConfigured;
     }
 
-    public WeChatPayConfigStatusDto GetStatus()
+    public async Task<WeChatPayConfigStatusDto> GetStatusAsync(CancellationToken cancellationToken = default)
     {
+        var opts = await settingsProvider.GetAsync(cancellationToken);
         return new WeChatPayConfigStatusDto
         {
-            IsConfigured = IsConfigured(),
-            EnableMockFallback = _options.EnableMockFallback,
-            AppIdPreview = Preview(_options.AppId),
-            MerchantIdPreview = Preview(_options.MerchantId),
-            NotifyUrl = _options.NotifyUrl,
-            Message = IsConfigured() ? "微信支付配置已就绪" : "请补齐 WeChatPay 配置",
+            IsConfigured = opts.IsConfigured,
+            EnableMockFallback = opts.EnableMockFallback,
+            AppIdPreview = Preview(opts.AppId),
+            MerchantIdPreview = Preview(opts.MerchantId),
+            NotifyUrl = opts.NotifyUrl,
+            Message = opts.IsConfigured ? "微信支付配置已就绪" : "请补齐 WeChatPay 配置",
         };
     }
 
     public async Task<(bool Success, string Message, CreatePaymentResultDto? Result)> CreateJsapiOrderAsync(string outTradeNo, string description, decimal amount, string openId, CancellationToken cancellationToken = default)
     {
-        if (!IsConfigured())
+        var opts = await settingsProvider.GetAsync(cancellationToken);
+        if (!opts.IsConfigured)
         {
             return (false, "微信支付配置未完成", null);
         }
 
         var requestModel = new WeChatJsapiPrepayRequest
         {
-            AppId = _options.AppId,
-            MerchantId = _options.MerchantId,
+            AppId = opts.AppId,
+            MerchantId = opts.MerchantId,
             Description = description,
             OutTradeNo = outTradeNo,
-            NotifyUrl = _options.NotifyUrl,
+            NotifyUrl = opts.NotifyUrl,
             Amount = new WeChatAmount
             {
                 Total = Convert.ToInt32(decimal.Round(amount * 100, 0, MidpointRounding.AwayFromZero)),
@@ -61,7 +59,7 @@ public class WeChatPayService(HttpClient httpClient, IOptions<WeChatPayOptions> 
         var body = JsonSerializer.Serialize(requestModel);
         var nonce = Guid.NewGuid().ToString("N");
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-        var authorization = BuildAuthorization("POST", "/v3/pay/transactions/jsapi", timestamp, nonce, body);
+        var authorization = BuildAuthorization("POST", "/v3/pay/transactions/jsapi", timestamp, nonce, body, opts);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.mch.weixin.qq.com/v3/pay/transactions/jsapi");
         request.Headers.TryAddWithoutValidation("Authorization", authorization);
@@ -88,7 +86,7 @@ public class WeChatPayService(HttpClient httpClient, IOptions<WeChatPayOptions> 
         var payTimeStamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
         var payNonce = Guid.NewGuid().ToString("N");
         var packageValue = $"prepay_id={prepayResponse.PrepayId}";
-        var paySign = SignMiniProgramPay(_options.AppId, payTimeStamp, payNonce, packageValue);
+        var paySign = SignMiniProgramPay(opts.AppId, opts.PrivateKeyPem, payTimeStamp, payNonce, packageValue);
 
         return (true, "下单成功", new CreatePaymentResultDto
         {
@@ -104,9 +102,10 @@ public class WeChatPayService(HttpClient httpClient, IOptions<WeChatPayOptions> 
         });
     }
 
-    public WeChatTransactionResource? TryDecryptCallback(string requestBody)
+    public async Task<WeChatTransactionResource?> TryDecryptCallbackAsync(string requestBody, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(_options.ApiV3Key))
+        var opts = await settingsProvider.GetAsync(cancellationToken);
+        if (string.IsNullOrWhiteSpace(opts.ApiV3Key))
         {
             return null;
         }
@@ -124,7 +123,7 @@ public class WeChatPayService(HttpClient httpClient, IOptions<WeChatPayOptions> 
         var cipherBytes = Convert.FromBase64String(envelope.Resource.CipherText);
         var nonceBytes = Encoding.UTF8.GetBytes(envelope.Resource.Nonce);
         var aadBytes = Encoding.UTF8.GetBytes(envelope.Resource.AssociatedData ?? string.Empty);
-        var keyBytes = Encoding.UTF8.GetBytes(_options.ApiV3Key);
+        var keyBytes = Encoding.UTF8.GetBytes(opts.ApiV3Key);
 
         var cipherText = cipherBytes[..^16];
         var tag = cipherBytes[^16..];
@@ -147,9 +146,11 @@ public class WeChatPayService(HttpClient httpClient, IOptions<WeChatPayOptions> 
             return false;
         }
 
+        var opts = await settingsProvider.GetAsync(cancellationToken);
+
         if (!_platformCertificates.TryGetValue(serial, out var rsa))
         {
-            rsa = await LoadPlatformCertificateAsync(serial, cancellationToken);
+            rsa = await LoadPlatformCertificateAsync(serial, opts, cancellationToken);
             if (rsa is null)
             {
                 return false;
@@ -164,9 +165,10 @@ public class WeChatPayService(HttpClient httpClient, IOptions<WeChatPayOptions> 
 
     public async Task<(bool Success, string Message, WeChatRefundResponse? Result)> RefundAsync(string outTradeNo, decimal amount, string? reason = null, CancellationToken cancellationToken = default)
     {
-        if (!IsConfigured())
+        var opts = await settingsProvider.GetAsync(cancellationToken);
+        if (!opts.IsConfigured)
         {
-            if (!_options.EnableMockFallback)
+            if (!opts.EnableMockFallback)
             {
                 return (false, "微信支付未配置完成，且已关闭模拟支付回退", null);
             }
@@ -174,12 +176,12 @@ public class WeChatPayService(HttpClient httpClient, IOptions<WeChatPayOptions> 
             return (true, "模拟退款成功", new WeChatRefundResponse
             {
                 RefundId = $"MOCK-REFUND-{Guid.NewGuid():N}",
-                OutRefundNo = $"REF{DateTime.Now:yyyyMMddHHmmssfff}",
+                OutRefundNo = OrderNoGenerator.Create("REF"),
                 Status = "SUCCESS",
             });
         }
 
-        var outRefundNo = $"REF{DateTime.Now:yyyyMMddHHmmssfff}";
+        var outRefundNo = OrderNoGenerator.Create("REF");
         var requestModel = new WeChatRefundRequest
         {
             OutRefundNo = outRefundNo,
@@ -195,7 +197,7 @@ public class WeChatPayService(HttpClient httpClient, IOptions<WeChatPayOptions> 
         var body = JsonSerializer.Serialize(requestModel);
         var nonce = Guid.NewGuid().ToString("N");
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-        var authorization = BuildAuthorization("POST", "/v3/refund/domestic/refunds", timestamp, nonce, body);
+        var authorization = BuildAuthorization("POST", "/v3/refund/domestic/refunds", timestamp, nonce, body, opts);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.mch.weixin.qq.com/v3/refund/domestic/refunds");
         request.Headers.TryAddWithoutValidation("Authorization", authorization);
@@ -222,16 +224,16 @@ public class WeChatPayService(HttpClient httpClient, IOptions<WeChatPayOptions> 
         return (true, "退款申请成功", refundResponse);
     }
 
-    private async Task<RSA?> LoadPlatformCertificateAsync(string serial, CancellationToken cancellationToken)
+    private async Task<RSA?> LoadPlatformCertificateAsync(string serial, WeChatPaySettingsSnapshot opts, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(_options.ApiV3Key))
+        if (string.IsNullOrWhiteSpace(opts.ApiV3Key))
         {
             return null;
         }
 
         var nonce = Guid.NewGuid().ToString("N");
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-        var authorization = BuildAuthorization("GET", "/v3/certificates", timestamp, nonce, string.Empty);
+        var authorization = BuildAuthorization("GET", "/v3/certificates", timestamp, nonce, string.Empty, opts);
 
         using var request = new HttpRequestMessage(HttpMethod.Get, "https://api.mch.weixin.qq.com/v3/certificates");
         request.Headers.TryAddWithoutValidation("Authorization", authorization);
@@ -261,7 +263,7 @@ public class WeChatPayService(HttpClient httpClient, IOptions<WeChatPayOptions> 
                 continue;
             }
 
-            var plainCert = DecryptCertificate(item.EncryptCertificate);
+            var plainCert = DecryptCertificate(item.EncryptCertificate, opts);
             if (string.IsNullOrWhiteSpace(plainCert))
             {
                 continue;
@@ -279,11 +281,11 @@ public class WeChatPayService(HttpClient httpClient, IOptions<WeChatPayOptions> 
         return result;
     }
 
-    private string? DecryptCertificate(WeChatPayEncryptCertificate encryptCertificate)
+    private string? DecryptCertificate(WeChatPayEncryptCertificate encryptCertificate, WeChatPaySettingsSnapshot opts)
     {
         if (string.IsNullOrWhiteSpace(encryptCertificate.CipherText)
             || string.IsNullOrWhiteSpace(encryptCertificate.Nonce)
-            || string.IsNullOrWhiteSpace(_options.ApiV3Key))
+            || string.IsNullOrWhiteSpace(opts.ApiV3Key))
         {
             return null;
         }
@@ -291,7 +293,7 @@ public class WeChatPayService(HttpClient httpClient, IOptions<WeChatPayOptions> 
         var cipherBytes = Convert.FromBase64String(encryptCertificate.CipherText);
         var nonceBytes = Encoding.UTF8.GetBytes(encryptCertificate.Nonce);
         var aadBytes = Encoding.UTF8.GetBytes(encryptCertificate.AssociatedData ?? string.Empty);
-        var keyBytes = Encoding.UTF8.GetBytes(_options.ApiV3Key);
+        var keyBytes = Encoding.UTF8.GetBytes(opts.ApiV3Key);
 
         var cipherText = cipherBytes[..^16];
         var tag = cipherBytes[^16..];
@@ -303,24 +305,23 @@ public class WeChatPayService(HttpClient httpClient, IOptions<WeChatPayOptions> 
         return Encoding.UTF8.GetString(plainBytes);
     }
 
-    private string BuildAuthorization(string method, string canonicalUrl, string timestamp, string nonce, string body)
+    private string BuildAuthorization(string method, string canonicalUrl, string timestamp, string nonce, string body, WeChatPaySettingsSnapshot opts)
     {
         var message = $"{method}\n{canonicalUrl}\n{timestamp}\n{nonce}\n{body}\n";
-        var signature = SignContent(message);
-        return $"WECHATPAY2-SHA256-RSA2048 mchid=\"{_options.MerchantId}\",nonce_str=\"{nonce}\",signature=\"{signature}\",timestamp=\"{timestamp}\",serial_no=\"{_options.MerchantSerialNo}\"";
+        var signature = SignContent(message, opts.PrivateKeyPem);
+        return $"WECHATPAY2-SHA256-RSA2048 mchid=\"{opts.MerchantId}\",nonce_str=\"{nonce}\",signature=\"{signature}\",timestamp=\"{timestamp}\",serial_no=\"{opts.MerchantSerialNo}\"";
     }
 
-    private string SignMiniProgramPay(string appId, string timestamp, string nonce, string packageValue)
+    private static string SignMiniProgramPay(string appId, string privateKeyPem, string timestamp, string nonce, string packageValue)
     {
         var message = $"{appId}\n{timestamp}\n{nonce}\n{packageValue}\n";
-        return SignContent(message);
+        return SignContent(message, privateKeyPem);
     }
 
-    private string SignContent(string content)
+    private static string SignContent(string content, string privateKeyPem)
     {
-        var pem = File.ReadAllText(_options.PrivateKeyPemPath);
         using var rsa = RSA.Create();
-        rsa.ImportFromPem(pem);
+        rsa.ImportFromPem(privateKeyPem);
         var signed = rsa.SignData(Encoding.UTF8.GetBytes(content), HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
         return Convert.ToBase64String(signed);
     }

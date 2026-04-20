@@ -13,7 +13,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using QRCoder;
 
 namespace FaJuan.Api.Controllers;
@@ -24,7 +23,6 @@ public class MiniAppController(
     OrderPaymentService orderPaymentService,
     UserCouponGrantService userCouponGrantService,
     WeChatPayService weChatPayService,
-    IOptions<WeChatPayOptions> weChatPayOptions,
     MiniAppThemeSettingsService miniAppThemeSettingsService) : ApiControllerBase
 {
     [HttpGet("settings")]
@@ -837,7 +835,7 @@ public class MiniAppController(
 
         var entity = new CouponOrder
         {
-            OrderNo = $"CP{now:yyyyMMddHHmmssfff}",
+            OrderNo = OrderNoGenerator.Create("CP"),
             AppUserId = userId.Value,
             CouponPackId = request.CouponPackId,
             OrderAmount = pack.SalePrice,
@@ -912,7 +910,7 @@ public class MiniAppController(
             transaction = new PaymentTransaction
             {
                 CouponOrderId = order.Id,
-                PaymentNo = $"PAY{DateTime.Now:yyyyMMddHHmmssfff}",
+                PaymentNo = OrderNoGenerator.Create("PAY"),
                 Amount = order.OrderAmount,
                 Status = PaymentStatus.Pending,
             };
@@ -920,9 +918,10 @@ public class MiniAppController(
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        if (!weChatPayService.IsConfigured())
+        var payStatus = await weChatPayService.GetStatusAsync(cancellationToken);
+        if (!payStatus.IsConfigured)
         {
-            if (!weChatPayOptions.Value.EnableMockFallback)
+            if (!payStatus.EnableMockFallback)
             {
                 return BadRequest(Failure<MiniAppCreateOrderPaymentResultDto>("微信支付未配置完成，且已关闭模拟支付回退"));
             }
@@ -1011,32 +1010,15 @@ public class MiniAppController(
             return NotFound(Failure<bool>("订单不存在", 404));
         }
 
-        var transactionQuery = dbContext.PaymentTransactions.Where(x => x.CouponOrderId == id);
-        if (!string.IsNullOrWhiteSpace(request.PaymentNo))
-        {
-            transactionQuery = transactionQuery.Where(x => x.PaymentNo == request.PaymentNo);
-        }
-
-        var transaction = await transactionQuery
-            .OrderByDescending(x => x.CreatedAt)
-            .FirstOrDefaultAsync(cancellationToken);
-        if (transaction is null)
-        {
-            return NotFound(Failure<bool>("支付流水不存在", 404));
-        }
-
-        if (transaction.Status == PaymentStatus.Success)
+        // 不再根据客户端上报的 channelTradeNo / rawCallback 翻转订单状态，
+        // 真实支付入账只认微信服务端回调（PaymentsController.Callback 验签后写入）。
+        // 客户端在 requestPayment 成功后调用此接口，仅用于轮询订单真实状态。
+        if (order.Status == CouponOrderStatus.Paid)
         {
             return Ok(Success(true, "支付已处理"));
         }
 
-        var result = await orderPaymentService.MarkOrderPaidAsync(transaction, request.ChannelTradeNo, request.RawCallback);
-        if (!result.Success)
-        {
-            return BadRequest(Failure<bool>(result.Message));
-        }
-
-        return Ok(Success(true, result.Message));
+        return Ok(Success(false, "支付结果确认中，请稍后重试"));
     }
 
     [HttpGet("users/coupons/{id:long}/qrcode")]

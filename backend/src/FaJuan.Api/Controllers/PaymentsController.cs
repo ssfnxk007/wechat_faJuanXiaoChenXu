@@ -1,4 +1,5 @@
-﻿using FaJuan.Api.Application.Orders;
+﻿using FaJuan.Api.Application.Common;
+using FaJuan.Api.Application.Orders;
 using FaJuan.Api.Contracts;
 using FaJuan.Api.Domain.Entities;
 using FaJuan.Api.Domain.Enums;
@@ -8,7 +9,6 @@ using FaJuan.Api.Infrastructure.WeChatPay;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace FaJuan.Api.Controllers;
 
@@ -17,13 +17,12 @@ namespace FaJuan.Api.Controllers;
 public class PaymentsController(
     AppDbContext dbContext,
     OrderPaymentService orderPaymentService,
-    WeChatPayService weChatPayService,
-    IOptions<WeChatPayOptions> weChatPayOptions) : ApiControllerBase
+    WeChatPayService weChatPayService) : ApiControllerBase
 {
     [HttpGet("wechat-status")]
-    public ActionResult<ApiResponse<WeChatPayConfigStatusDto>> GetWeChatPayStatus()
+    public async Task<ActionResult<ApiResponse<WeChatPayConfigStatusDto>>> GetWeChatPayStatus(CancellationToken cancellationToken)
     {
-        return Ok(Success(weChatPayService.GetStatus()));
+        return Ok(Success(await weChatPayService.GetStatusAsync(cancellationToken)));
     }
 
     [AdminPermissionAuthorize("coupon-order.pay")]
@@ -51,7 +50,7 @@ public class PaymentsController(
             transaction = new PaymentTransaction
             {
                 CouponOrderId = order.Id,
-                PaymentNo = $"PAY{DateTime.Now:yyyyMMddHHmmssfff}",
+                PaymentNo = OrderNoGenerator.Create("PAY"),
                 Amount = order.OrderAmount,
                 Status = PaymentStatus.Pending,
             };
@@ -59,9 +58,10 @@ public class PaymentsController(
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        if (!weChatPayService.IsConfigured())
+        var payStatus = await weChatPayService.GetStatusAsync(cancellationToken);
+        if (!payStatus.IsConfigured)
         {
-            if (!weChatPayOptions.Value.EnableMockFallback)
+            if (!payStatus.EnableMockFallback)
             {
                 return BadRequest(Failure<CreatePaymentResultDto>("微信支付未配置完成，且已关闭模拟支付回退"));
             }
@@ -129,7 +129,7 @@ public class PaymentsController(
             return BadRequest(new { code = "FAIL", message = "签名验证失败" });
         }
 
-        var transactionResource = weChatPayService.TryDecryptCallback(rawBody);
+        var transactionResource = await weChatPayService.TryDecryptCallbackAsync(rawBody, cancellationToken);
         if (transactionResource is null)
         {
             return BadRequest(new { code = "FAIL", message = "回调解密失败或配置缺失" });
