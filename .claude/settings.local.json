@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"/c/Users/ssfnxk/.claude/skills/orange-miniapp-theme/references\")",
+      "Bash(mkdir -p \"/c/Users/ssfnxk/.claude/skills/orange-miniapp-theme/assets\")",
+      "Bash(mkdir -p \"/c/Users/ssfnxk/.claude/skills/miniapp-theme-ui/evals\")",
+      "Bash(mkdir -p \"/c/Users/ssfnxk/.claude/skills/miniapp-theme-ui-workspace/iteration-1\")",
+      "Bash(mkdir -p /c/Users/ssfnxk/.claude/skills/miniapp-theme-ui-workspace/iteration-1/__TRACKED_VAR__/with_skill/outputs)",
+      "Bash(mkdir -p /c/Users/ssfnxk/.claude/skills/miniapp-theme-ui-workspace/iteration-1/__TRACKED_VAR__/without_skill/outputs)",
+      "Bash(node scripts/clone-candy-to-orange-red.js)",
+      "Bash(node -e ' *)",
+      "Bash(node scripts/patch-missed-colors.js)",
+      "Bash(claude mcp *)",
+      "mcp__stitch__list_projects",
+      "mcp__stitch__get_project",
+      "mcp__stitch__get_screen",
+      "Bash(python -c \"from PIL import Image; print\\('PIL ok'\\)\")",
+      "Read(//c/Users/ssfnxk/Desktop/**)",
+      "Bash(python -c ' *)",
+      "Read(//tmp/**)",
+      "Bash(curl -sL -o test-a-__TRACKED_VAR__.png https://lh3.googleusercontent.com/aida/ADBb0uiPSEwN1Pno-AftDZxTpiC2BlrAPXDxUX_ITxv_jdWHZsXSrZTRvqQ7quTQ4kuzQlhoJAngznPVO5HBH5r5zp8RR9IYwgO-cVpktb9ukUR8-5cZCyQgRLlIK0KQxp6PbF8HoVZmf4GfkWoy5F0N1SmXYiDG8Fs85qQFkFF7f8pbwVol0tClERNCsnlhqiqUbV0RNbD6OKszbEfKIvJfIuydwzQKobil2ZPRMV_LHjW_SiB1PeRQ9vtD3zNM=__TRACKED_VAR__)",
+      "Bash(python -c 'from PIL import Image; im=Image.open\\('\\\\''test-a-__TRACKED_VAR__.png'\\\\''\\); print\\(im.size\\)')",
+      "Bash(stat -c%s test-a-__TRACKED_VAR__.png)",
+      "Bash(python)",
+      "Bash(mv \"g:/发卷小程序/miniapp/coupon-miniapp/static/banners/image_67d58865.png\" \"g:/发卷小程序/miniapp/coupon-miniapp/static/banners/banner-wallet.png\")",
+      "Bash(mv \"g:/发卷小程序/miniapp/coupon-miniapp/static/banners/image_cf2d041b.png\" \"g:/发卷小程序/miniapp/coupon-miniapp/static/banners/banner-gift.png\")",
+      "Bash(dotnet build *)",
+      "Bash(dotnet test *)",
+      "Bash(awk '{print $5, $NF}')",
+      "Bash(gh pr *)",
+      "Bash(grep -vE \"^[+][[:space:]]*\\(//|\\\\.|/\\\\*|\\\\*|[a-z-]+:|[a-z-]+;|\\\\$|@|,|\\\\{|\\\\}|\\\\\\)\\)\")",
+      "Bash(grep -vE \"^[+-][[:space:]]*\\(/\\\\*|\\\\*|//\\)\")",
+      "Read(//g/g/发卷小程序/frontend/**)",
+      "Bash(npx vue-tsc *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}
