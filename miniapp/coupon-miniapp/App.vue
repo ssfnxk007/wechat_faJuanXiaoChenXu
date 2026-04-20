@@ -1,11 +1,11 @@
 <script>
 import { getMiniAppSettings } from '@/api/miniapp'
-import { ensureMiniProgramLogin } from '@/api/auth'
+import { ensureMiniProgramLogin, shouldRequirePhone, openPhoneOnboarding } from '@/api/auth'
 import { hydrateSessionStore } from '@/store/session'
 import { setThemeCode } from '@/store/session'
 
 export default {
-  onLaunch() {
+  async onLaunch() {
     hydrateSessionStore()
     getMiniAppSettings()
       .then((settings) => {
@@ -14,7 +14,11 @@ export default {
       .catch((error) => {
         console.warn('[coupon-miniapp] load theme settings failed', error)
       })
-    ensureMiniProgramLogin().catch((error) => {
+    ensureMiniProgramLogin().then(() => {
+      if (shouldRequirePhone()) {
+        openPhoneOnboarding({ redirect: '/pages/index/index', force: false })
+      }
+    }).catch((error) => {
       console.warn('[coupon-miniapp] mini login on launch failed', error)
     })
     console.log('Coupon MiniApp Launch')

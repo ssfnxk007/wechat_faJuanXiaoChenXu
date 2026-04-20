@@ -16,6 +16,7 @@ export interface CouponTemplateListItemDto {
   isEnabled: boolean
   remark?: string
   productIds?: number[]
+  storeIds?: number[]
   createdAt: string
 }
 
@@ -35,4 +36,5 @@ export interface SaveCouponTemplateRequest {
   isEnabled: boolean
   remark?: string
   productIds?: number[]
+  storeIds?: number[]
 }

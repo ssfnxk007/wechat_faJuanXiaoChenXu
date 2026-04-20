@@ -112,7 +112,7 @@ import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import SectionHeader from '@/components/SectionHeader.vue'
 import { useTheme } from '@/composables/use-theme'
-import { ensureMiniProgramLogin } from '@/api/auth'
+import { ensureMiniProgramLogin, ensurePhoneReady } from '@/api/auth'
 import { fetchOrderList } from '@/api/order'
 import { useSessionStore } from '@/store/session'
 
@@ -124,6 +124,14 @@ const orders = ref([])
 const loadOrders = async () => {
   try {
     await ensureMiniProgramLogin()
+    const ready = await ensurePhoneReady({
+      force: true,
+      redirect: '/pages/order/list'
+    })
+    if (!ready) {
+      orders.value = []
+      return
+    }
     const result = await fetchOrderList({
       pageIndex: 1,
       pageSize: 50

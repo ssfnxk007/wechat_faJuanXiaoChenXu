@@ -1,5 +1,9 @@
 import { request } from '@/utils/request'
 
+export function exchangeMiniAppPhoneNumber(data) {
+  return request({ url: '/api/auth/exchange-phone-number', method: 'POST', data }).then((response) => response.data)
+}
+
 export function getMiniAppHome(params) {
   return request({ url: '/api/miniapp/home', query: params }).then((response) => response.data)
 }

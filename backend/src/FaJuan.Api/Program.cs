@@ -94,7 +94,14 @@ builder.Services.AddSingleton<MiniAppThemeSettingsService>();
 builder.Services.AddSingleton<JwtTokenService>();
 builder.Services.AddSingleton<PasswordHashService>();
 builder.Services.AddSingleton<ImageCompressor>();
-builder.Services.AddHttpClient<WeChatMiniProgramService>();
+builder.Services.AddHttpClient<WeChatMiniProgramService>()
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    {
+        UseProxy = false,
+        AutomaticDecompression = System.Net.DecompressionMethods.GZip
+                                 | System.Net.DecompressionMethods.Deflate
+                                 | System.Net.DecompressionMethods.Brotli,
+    });
 builder.Services.AddHttpClient<WeChatPayService>();
 
 var app = builder.Build();

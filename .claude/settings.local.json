@@ -33,7 +33,15 @@
       "Read(//g/g/发卷小程序/frontend/**)",
       "Bash(npx vue-tsc *)",
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(gh api *)",
+      "Bash(curl -sL https://raw.githubusercontent.com/forrestchang/andrej-karpathy-skills/main/README.md)",
+      "Bash(curl -sL -o ~/.claude/CLAUDE.md https://raw.githubusercontent.com/forrestchang/andrej-karpathy-skills/main/CLAUDE.md)",
+      "PowerShell(Invoke-WebRequest -Uri \"https://raw.githubusercontent.com/forrestchang/andrej-karpathy-skills/main/CLAUDE.md\" -OutFile \"$env:USERPROFILE\\\\.claude\\\\CLAUDE.md\" -UseBasicParsing; Get-Item \"$env:USERPROFILE\\\\.claude\\\\CLAUDE.md\" | Select-Object FullName, Length)"
     ]
   }
 }

@@ -21,6 +21,7 @@ public class CouponTemplateListItemDto
     public bool IsEnabled { get; init; }
     public string? Remark { get; init; }
     public IReadOnlyCollection<long> ProductIds { get; init; } = [];
+    public IReadOnlyCollection<long> StoreIds { get; init; } = [];
     public DateTime CreatedAt { get; init; }
 }
 
@@ -41,4 +42,5 @@ public class SaveCouponTemplateRequest
     public bool IsEnabled { get; init; } = true;
     public string? Remark { get; init; }
     public IReadOnlyCollection<long> ProductIds { get; init; } = [];
+    public IReadOnlyCollection<long> StoreIds { get; init; } = [];
 }

@@ -3,6 +3,7 @@ import { reactive } from 'vue'
 const SESSION_STORAGE_KEY = 'coupon-miniapp:session'
 const API_BASE_URL_STORAGE_KEY = 'coupon-miniapp:api-base-url'
 const THEME_STORAGE_KEY = 'coupon-miniapp:theme-code'
+const ONBOARDING_STORAGE_KEY = 'coupon-miniapp:onboarding'
 const DEFAULT_API_BASE_URL = 'http://10.168.1.106:5265'
 const DEFAULT_THEME_CODE = 'green'
 const VALID_THEME_CODES = new Set(['green', 'light', 'candy', 'orange', 'red'])
@@ -19,7 +20,8 @@ const state = reactive({
   token: '',
   wechatConfigured: false,
   loginStatus: 'idle',
-  loginMessage: ''
+  loginMessage: '',
+  skippedPhoneOnboarding: false
 })
 
 function trimText(value) {
@@ -97,8 +99,31 @@ export function updateSession(payload = {}) {
   state.nickname = trimText(payload.nickname || state.nickname)
   state.isNewUser = typeof payload.isNewUser === 'boolean' ? payload.isNewUser : state.isNewUser
   state.token = trimText(payload.token || state.token)
+  if (state.mobile) {
+    state.skippedPhoneOnboarding = false
+    uni.removeStorageSync(ONBOARDING_STORAGE_KEY)
+  }
 
   persistSession()
+  return state
+}
+
+export function hydrateOnboardingState() {
+  const payload = uni.getStorageSync(ONBOARDING_STORAGE_KEY) || {}
+  state.skippedPhoneOnboarding = Boolean(payload.skippedPhoneOnboarding)
+  return state
+}
+
+export function markPhoneOnboardingSkipped(skipped = true) {
+  hydrateSessionStore()
+  state.skippedPhoneOnboarding = Boolean(skipped)
+  if (state.skippedPhoneOnboarding) {
+    uni.setStorageSync(ONBOARDING_STORAGE_KEY, {
+      skippedPhoneOnboarding: true
+    })
+  } else {
+    uni.removeStorageSync(ONBOARDING_STORAGE_KEY)
+  }
   return state
 }
 
@@ -127,5 +152,7 @@ export function clearSession() {
   state.token = ''
   state.loginStatus = 'idle'
   state.loginMessage = ''
+  state.skippedPhoneOnboarding = false
   uni.removeStorageSync(SESSION_STORAGE_KEY)
+  uni.removeStorageSync(ONBOARDING_STORAGE_KEY)
 }

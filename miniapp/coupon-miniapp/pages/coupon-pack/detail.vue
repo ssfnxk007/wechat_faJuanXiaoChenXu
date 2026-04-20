@@ -113,7 +113,7 @@ import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import SectionHeader from '@/components/SectionHeader.vue'
 import { useTheme } from '@/composables/use-theme'
-import { ensureMiniProgramLogin } from '@/api/auth'
+import { ensureMiniProgramLogin, ensurePhoneReady } from '@/api/auth'
 import {
   completeMiniAppOrderPayment,
   createMiniAppOrder,
@@ -250,6 +250,13 @@ async function handleBuy() {
     await ensureMiniProgramLogin()
     if (!session.userId) {
       throw new Error('请先完成微信授权后再购买')
+    }
+    const ready = await ensurePhoneReady({
+      force: true,
+      redirect: `/pages/coupon-pack/detail?id=${packDetail.value.id}`
+    })
+    if (!ready) {
+      return
     }
 
     const order = await createMiniAppOrder({

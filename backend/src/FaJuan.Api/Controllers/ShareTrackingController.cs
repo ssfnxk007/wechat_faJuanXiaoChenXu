@@ -1,3 +1,4 @@
+using FaJuan.Api.Application.Common;
 using FaJuan.Api.Application.Common.Models;
 using FaJuan.Api.Contracts;
 using FaJuan.Api.Infrastructure.Auth;
@@ -95,8 +96,7 @@ public class ShareTrackingController(AppDbContext dbContext) : ApiControllerBase
         var totalCount = await query.CountAsync(cancellationToken);
         var items = await query
             .OrderByDescending(x => x.CreatedAt)
-            .Skip((pageIndex - 1) * pageSize)
-            .Take(pageSize)
+            .ApplyLegacyPaging(pageIndex, pageSize, x => x.Id)
             .Select(x => new ShareTrackingDetailItemDto
             {
                 Id = x.Id,

@@ -18,7 +18,8 @@ public class AuthController(
     WeChatMiniProgramService weChatMiniProgramService,
     IOptions<WeChatMiniProgramOptions> weChatOptions,
     JwtTokenService jwtTokenService,
-    UserCouponGrantService userCouponGrantService) : ApiControllerBase
+    UserCouponGrantService userCouponGrantService,
+    ILogger<AuthController> logger) : ApiControllerBase
 {
     [HttpGet("wechat-status")]
     public ActionResult<ApiResponse<WeChatConfigStatusDto>> GetWeChatStatus()
@@ -94,9 +95,56 @@ public class AuthController(
             UserId = user.Id,
             MiniOpenId = user.MiniOpenId,
             Mobile = user.Mobile,
+            Nickname = user.Nickname,
             IsNewUser = isNewUser,
             Token = tokenResult.AccessToken,
         }));
+    }
+
+    [HttpPost("exchange-phone-number")]
+    [MiniAppAuthorize]
+    public async Task<ActionResult<ApiResponse<AuthLoginResultDto>>> ExchangePhoneNumber([FromBody] ExchangePhoneNumberRequest request, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Code))
+        {
+            return BadRequest(Failure<AuthLoginResultDto>("手机号凭证不能为空"));
+        }
+
+        var userId = GetCurrentUserId();
+        if (userId is null || userId <= 0)
+        {
+            return Unauthorized(Failure<AuthLoginResultDto>("登录状态已失效", 401));
+        }
+
+        var user = await dbContext.AppUsers.FirstOrDefaultAsync(x => x.Id == userId.Value, cancellationToken);
+        if (user is null)
+        {
+            return NotFound(Failure<AuthLoginResultDto>("用户不存在", 404));
+        }
+
+        var phoneResult = await weChatMiniProgramService.GetPhoneNumberAsync(request.Code.Trim(), cancellationToken);
+        var mobile = phoneResult.PhoneNumber?.Trim();
+        if (string.IsNullOrWhiteSpace(mobile))
+        {
+            logger.LogWarning(
+                "Exchange phone number failed for user {UserId}. ErrorCode={ErrorCode} ErrorMessage={ErrorMessage}",
+                user.Id,
+                phoneResult.ErrorCode,
+                phoneResult.ErrorMessage);
+            return BadRequest(Failure<AuthLoginResultDto>(phoneResult.ErrorMessage ?? "微信手机号获取失败"));
+        }
+
+        user.Mobile = mobile;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return Ok(Success(new AuthLoginResultDto
+        {
+            UserId = user.Id,
+            MiniOpenId = user.MiniOpenId,
+            Mobile = user.Mobile,
+            Nickname = user.Nickname,
+            IsNewUser = false,
+        }, "手机号绑定成功"));
     }
 
     [HttpPost("bind-mobile")]

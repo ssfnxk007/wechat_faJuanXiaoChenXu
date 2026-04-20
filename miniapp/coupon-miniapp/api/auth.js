@@ -1,4 +1,11 @@
-import { clearSession, patchSessionStatus, updateSession, useSessionStore } from '@/store/session'
+import {
+  clearSession,
+  hydrateOnboardingState,
+  markPhoneOnboardingSkipped,
+  patchSessionStatus,
+  updateSession,
+  useSessionStore
+} from '@/store/session'
 import { requestWithFallback, request } from '@/utils/request'
 
 function loginByWeChat() {
@@ -29,6 +36,7 @@ export async function fetchWeChatStatus() {
 
 export async function ensureMiniProgramLogin(options = {}) {
   const session = useSessionStore()
+  hydrateOnboardingState()
   const force = Boolean(options && options.force)
 
   if (force) {
@@ -81,4 +89,53 @@ export async function ensureMiniProgramLogin(options = {}) {
   // #endif
 
   return session
+}
+
+export async function exchangePhoneNumber(code) {
+  const response = await request({
+    url: '/api/auth/exchange-phone-number',
+    method: 'POST',
+    data: { code }
+  })
+
+  updateSession(response.data || {})
+  if ((response.data || {}).mobile) {
+    markPhoneOnboardingSkipped(false)
+  }
+  return useSessionStore()
+}
+
+export function shouldRequirePhone(options = {}) {
+  const session = useSessionStore()
+  hydrateOnboardingState()
+  if (!session.wechatConfigured) {
+    return false
+  }
+  if (!session.userId || !session.token) {
+    return false
+  }
+  if (session.mobile) {
+    return false
+  }
+  return options.force === true || !session.skippedPhoneOnboarding
+}
+
+export function openPhoneOnboarding(options = {}) {
+  const redirect = encodeURIComponent(options.redirect || '')
+  const force = options.force ? '1' : '0'
+  const url = `/pages/onboarding/phone?redirect=${redirect}&force=${force}`
+  uni.navigateTo({ url })
+}
+
+export async function ensurePhoneReady(options = {}) {
+  await ensureMiniProgramLogin()
+  if (!shouldRequirePhone(options)) {
+    return true
+  }
+
+  openPhoneOnboarding({
+    redirect: options.redirect || '',
+    force: options.force === true
+  })
+  return false
 }

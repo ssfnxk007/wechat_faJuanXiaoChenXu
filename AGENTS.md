@@ -5,7 +5,11 @@ IF BLOCKED, TRY AN ALTERNATIVE APPROACH. ONLY ASK WHEN TRULY AMBIGUOUS OR DESTRU
 USE CODEX NATIVE SUBAGENTS FOR INDEPENDENT PARALLEL SUBTASKS WHEN THAT IMPROVES THROUGHPUT. THIS IS COMPLEMENTARY TO OMX TEAM MODE.
 <!-- END AUTONOMY DIRECTIVE -->
 <!-- omx:generated:agents-md -->
-
+## Required Reading Before Editing
+- Read relevant work logs first when continuing active business work:
+  - `Docs/2026-03-23-工作.md`
+  - `Docs/2026-03-24-工作.md`
+  - `Docs/2026-03-25-工作.md`
 # oh-my-codex - Intelligent Multi-Agent Orchestration
 
 You are running with oh-my-codex (OMX), a coordination layer for Codex CLI.

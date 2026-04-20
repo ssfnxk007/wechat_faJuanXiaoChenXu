@@ -103,7 +103,7 @@ import { computed, ref } from 'vue'
 import { onLoad, onShareAppMessage } from '@dcloudio/uni-app'
 import SectionHeader from '@/components/SectionHeader.vue'
 import { useTheme } from '@/composables/use-theme'
-import { ensureMiniProgramLogin } from '@/api/auth'
+import { ensureMiniProgramLogin, ensurePhoneReady } from '@/api/auth'
 import { claimMiniAppCouponTemplate, getMiniAppCouponTemplateDetail, getMiniAppUserCouponDetail } from '@/api/miniapp'
 import { request } from '@/utils/request'
 import { useSessionStore } from '@/store/session'
@@ -272,6 +272,13 @@ async function handleClaim() {
     await ensureMiniProgramLogin()
     if (!session.userId) {
       throw new Error('请先完成微信授权后再领取')
+    }
+    const ready = await ensurePhoneReady({
+      force: true,
+      redirect: `/pages/coupon/detail?templateId=${couponDetail.value.couponTemplateId || couponDetail.value.id}`
+    })
+    if (!ready) {
+      return
     }
 
     const result = await claimMiniAppCouponTemplate(couponDetail.value.couponTemplateId || couponDetail.value.id)

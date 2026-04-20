@@ -60,6 +60,17 @@ public class WriteOffController(AppDbContext dbContext) : ApiControllerBase
             return BadRequest(Failure<CouponWriteOffResultDto>("门店不存在或已停用"));
         }
 
+        if (!template.IsAllStores)
+        {
+            var storeInScope = await dbContext.CouponTemplateStoreScopes.AsNoTracking()
+                .AnyAsync(x => x.CouponTemplateId == template.Id && x.StoreId == request.StoreId);
+
+            if (!storeInScope)
+            {
+                return BadRequest(Failure<CouponWriteOffResultDto>("当前门店不在该券适用范围内"));
+            }
+        }
+
         if (template.TemplateType == CouponTemplateType.Product)
         {
             if (!request.ProductId.HasValue || request.ProductId.Value <= 0)

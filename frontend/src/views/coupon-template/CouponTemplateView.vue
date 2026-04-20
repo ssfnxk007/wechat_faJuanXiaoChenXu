@@ -115,6 +115,7 @@
                     <span v-if="item.isNewUserOnly" class="badge warning">新人专享</span>
                     <span :class="['badge', item.isAllStores ? 'success' : 'warning']">{{ item.isAllStores ? '全部门店可用' : '指定门店可用' }}</span>
                   </div>
+                  <span>{{ formatStoreIds(item) }}</span>
                 </div>
               </td>
               <td><div class="table-primary-cell"><strong>{{ formatValidity(item) }}</strong><span>{{ validPeriodTypeMap[item.validPeriodType] || '-' }}</span></div></td>
@@ -177,6 +178,20 @@
             <p v-else class="helper-text">当前还未选择商品。指定商品券请通过商品选择器完成配置。</p>
           </div>
 
+          <div v-if="!form.isAllStores" class="field-span-3 selector-field-card">
+            <div class="selector-field-head">
+              <span>适用门店</span>
+              <button type="button" class="ghost-button" @click="openStoreDialog">选择门店</button>
+            </div>
+            <div v-if="selectedStores.length > 0" class="selected-product-list">
+              <span v-for="store in selectedStores" :key="store.id" class="selected-product-chip">
+                {{ store.name }} / {{ store.code || `ID ${store.id}` }}
+                <button type="button" @click="removeSelectedStore(store.id)">移除</button>
+              </span>
+            </div>
+            <p v-else class="helper-text">指定门店可用时，必须至少选择一个门店。</p>
+          </div>
+
           <label class="field-span-3"><span>备注说明</span><input v-model.trim="form.remark" type="text" placeholder="用于补充适用门店、活动场景等说明" /></label>
           <label class="checkbox-field checkbox-card"><input v-model="form.isNewUserOnly" type="checkbox" /><span>仅限新人领取一次</span></label>
           <label class="checkbox-field checkbox-card"><input v-model="form.isAllStores" type="checkbox" /><span>全部门店可用</span></label>
@@ -229,6 +244,33 @@
         <div class="dialog-actions"><button type="button" class="primary-button" @click="closeMediaDialog">关闭</button></div>
       </div>
     </div>
+
+    <div v-if="storeDialogVisible" class="dialog-mask" @click.self="closeStoreDialog">
+      <div class="dialog-card dialog-card-v2 product-selector-dialog">
+        <div class="dialog-head"><div class="dialog-head-main"><span class="section-kicker">选择门店</span><h3>门店选择器</h3><p>支持按门店名称或 ERP 门店编号搜索并勾选适用门店。</p></div></div>
+        <div class="filter-panel-grid product-search-grid">
+          <label class="field-card filter-field"><span class="field-label">搜索门店</span><input v-model.trim="storeQuery.keyword" type="text" placeholder="输入门店名称或编号后回车搜索" @keyup.enter="loadStoreOptions" /></label>
+          <div class="field-card summary-field"><span class="field-label">当前结果</span><strong>{{ storeOptions.length }} 项</strong><p>勾选结果会自动回填到模板门店范围。</p></div>
+          <div class="toolbar-actions selector-actions"><button type="button" class="ghost-button" @click="loadStoreOptions">搜索</button><button type="button" class="ghost-button" @click="resetStoreQuery">重置</button></div>
+        </div>
+        <div class="table-wrap table-wrap-v2">
+          <table class="table">
+            <thead><tr><th>选择</th><th>ID</th><th>门店名称</th><th>ERP 门店编号</th><th>状态</th></tr></thead>
+            <tbody>
+              <tr v-for="store in storeOptions" :key="store.id">
+                <td><input :checked="isStoreSelected(store.id)" type="checkbox" @change="toggleStoreSelection(store)" /></td>
+                <td class="cell-strong">{{ store.id }}</td>
+                <td>{{ store.name }}</td>
+                <td>{{ store.code }}</td>
+                <td><span :class="['status-badge', store.isEnabled ? 'success' : 'danger']">{{ store.isEnabled ? '启用' : '停用' }}</span></td>
+              </tr>
+              <tr v-if="storeOptions.length === 0"><td colspan="5" class="empty-text">暂无可选门店</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="dialog-actions"><button type="button" class="primary-button" @click="closeStoreDialog">完成选择</button></div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -237,9 +279,11 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { createCouponTemplate, deleteCouponTemplate, getCouponTemplateList, updateCouponTemplate } from '@/api/coupon-template'
 import { createMediaAsset, getMediaAssetList, uploadMediaAssetFile } from '@/api/media-asset'
 import { getProductList } from '@/api/product'
+import { getStoreList } from '@/api/store'
 import type { CouponTemplateListItemDto, SaveCouponTemplateRequest } from '@/types/coupon'
 import type { MediaAssetListItemDto } from '@/types/media-asset'
 import type { ProductListItemDto } from '@/types/product'
+import type { StoreListItemDto } from '@/types/store'
 import { getErrorMessage } from '@/utils/http-error'
 import { authStorage } from '@/utils.auth'
 import { notify } from '@/utils/notify'
@@ -257,9 +301,12 @@ const validFromLocal = ref('')
 const validToLocal = ref('')
 const productDialogVisible = ref(false)
 const mediaDialogVisible = ref(false)
+const storeDialogVisible = ref(false)
 const productOptions = ref<ProductListItemDto[]>([])
 const mediaOptions = ref<MediaAssetListItemDto[]>([])
+const storeOptions = ref<StoreListItemDto[]>([])
 const selectedProducts = ref<ProductListItemDto[]>([])
+const selectedStores = ref<StoreListItemDto[]>([])
 const selectedImageAsset = ref<MediaAssetListItemDto | null>(null)
 const submitting = ref(false)
 const deleting = ref(false)
@@ -267,6 +314,7 @@ const deleting = ref(false)
 const query = reactive({ keyword: '' })
 const productQuery = reactive({ keyword: '' })
 const mediaQuery = reactive({ keyword: '' })
+const storeQuery = reactive({ keyword: '' })
 
 const typeMap: Record<number, string> = { 1: '新人券', 2: '无门槛券', 3: '指定商品券', 4: '满减券' }
 const validPeriodTypeMap: Record<number, string> = { 1: '固定日期范围', 2: '领取后 N 天有效' }
@@ -288,6 +336,7 @@ const createEmptyForm = (): CouponTemplateForm => ({
   isEnabled: true,
   remark: '',
   productIds: [],
+  storeIds: [],
 })
 
 const form = reactive<CouponTemplateForm>(createEmptyForm())
@@ -302,12 +351,14 @@ const querySummary = computed(() => `关键词：${query.keyword || '全部模�
 watch(validFromLocal, (value) => { form.validFrom = toServerDateTime(value) })
 watch(validToLocal, (value) => { form.validTo = toServerDateTime(value) })
 watch(selectedProducts, (value) => { form.productIds = value.map((item) => item.id) }, { deep: true })
+watch(selectedStores, (value) => { form.storeIds = value.map((item) => item.id) }, { deep: true })
 
 const resetForm = () => {
   Object.assign(form, createEmptyForm())
   validFromLocal.value = ''
   validToLocal.value = ''
   selectedProducts.value = []
+  selectedStores.value = []
   selectedImageAsset.value = null
 }
 
@@ -320,6 +371,13 @@ const formatProductIds = (productIds?: number[]) => {
   if (!productIds || productIds.length === 0) return '全部商品'
   if (productIds.length <= 3) return productIds.join(', ')
   return `${productIds.slice(0, 3).join(', ')} 等 ${productIds.length} 项`
+}
+
+const formatStoreIds = (item: CouponTemplateListItemDto) => {
+  if (item.isAllStores) return '全部门店'
+  if (!item.storeIds || item.storeIds.length === 0) return '未配置门店'
+  if (item.storeIds.length <= 3) return item.storeIds.join(', ')
+  return `${item.storeIds.slice(0, 3).join(', ')} 等 ${item.storeIds.length} 家`
 }
 
 const formatDiscount = (item: CouponTemplateListItemDto) => {
@@ -362,6 +420,15 @@ const loadMediaOptions = async () => {
   }
 }
 
+const loadStoreOptions = async () => {
+  try {
+    const response = await getStoreList({ keyword: storeQuery.keyword || undefined, pageIndex: 1, pageSize: 50 })
+    storeOptions.value = response.data.items
+  } catch (error) {
+    notify.error(getErrorMessage(error, '加载门店列表失败'))
+  }
+}
+
 const handleSearch = async () => { pageIndex.value = 1; await loadData() }
 const resetQuery = async () => { query.keyword = ''; pageSize.value = 10; pageIndex.value = 1; await loadData(); notify.info('已重置券模板筛选条件') }
 const handlePageSizeChange = async () => { pageIndex.value = 1; await loadData() }
@@ -388,6 +455,7 @@ const openEditDialog = (item: CouponTemplateListItemDto) => {
     isEnabled: item.isEnabled,
     remark: item.remark,
     productIds: item.productIds || [],
+    storeIds: item.storeIds || [],
   })
   validFromLocal.value = toDateTimeLocal(item.validFrom)
   validToLocal.value = toDateTimeLocal(item.validTo)
@@ -405,6 +473,15 @@ const openEditDialog = (item: CouponTemplateListItemDto) => {
     isEnabled: true,
     createdAt: '',
   }))
+  selectedStores.value = (item.storeIds || []).map((id) => ({
+    id,
+    code: '',
+    name: `门店 #${id}`,
+    contactName: '',
+    contactPhone: '',
+    isEnabled: true,
+    createdAt: '',
+  }))
   dialogVisible.value = true
 }
 
@@ -413,6 +490,10 @@ const closeDialog = () => { dialogVisible.value = false; editingId.value = null;
 const openProductDialog = async () => { productDialogVisible.value = true; await loadProductOptions() }
 const closeProductDialog = () => { productDialogVisible.value = false }
 const resetProductQuery = async () => { productQuery.keyword = ''; await loadProductOptions() }
+
+const openStoreDialog = async () => { storeDialogVisible.value = true; await loadStoreOptions() }
+const closeStoreDialog = () => { storeDialogVisible.value = false }
+const resetStoreQuery = async () => { storeQuery.keyword = ''; await loadStoreOptions() }
 
 const openMediaDialog = async () => { mediaDialogVisible.value = true; await loadMediaOptions() }
 const closeMediaDialog = () => { mediaDialogVisible.value = false }
@@ -424,6 +505,13 @@ const toggleProductSelection = (product: ProductListItemDto) => {
   else selectedProducts.value = [...selectedProducts.value, product]
 }
 const removeSelectedProduct = (productId: number) => { selectedProducts.value = selectedProducts.value.filter((item) => item.id !== productId) }
+
+const isStoreSelected = (storeId: number) => selectedStores.value.some((item) => item.id === storeId)
+const toggleStoreSelection = (store: StoreListItemDto) => {
+  if (isStoreSelected(store.id)) selectedStores.value = selectedStores.value.filter((item) => item.id !== store.id)
+  else selectedStores.value = [...selectedStores.value, store]
+}
+const removeSelectedStore = (storeId: number) => { selectedStores.value = selectedStores.value.filter((item) => item.id !== storeId) }
 
 const selectMediaAsset = (asset: MediaAssetListItemDto) => {
   selectedImageAsset.value = asset
@@ -477,6 +565,7 @@ const buildPayload = (): SaveCouponTemplateRequest => ({
   isEnabled: form.isEnabled,
   remark: form.remark?.trim() || undefined,
   productIds: form.templateType === 3 ? selectedProducts.value.map((item) => item.id) : [],
+  storeIds: form.isAllStores ? [] : selectedStores.value.map((item) => item.id),
 })
 
 const submit = async () => {
@@ -486,6 +575,7 @@ const submit = async () => {
   if (form.validPeriodType === 1 && (!form.validFrom || !form.validTo)) return notify.info('固定日期范围必须填写开始和结束时间')
   if (form.validPeriodType === 2 && (form.validDays ?? 0) <= 0) return notify.info('领取后有效天数必须大于 0')
   if (form.templateType === 3 && selectedProducts.value.length === 0) return notify.info('指定商品券必须至少选择一个商品')
+  if (!form.isAllStores && selectedStores.value.length === 0) return notify.info('指定门店可用时必须至少选择一个门店')
 
   if (submitting.value) return
   submitting.value = true

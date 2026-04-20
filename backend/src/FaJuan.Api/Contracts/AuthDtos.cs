@@ -6,6 +6,11 @@ public class MiniProgramLoginRequest
     public string? Nickname { get; init; }
 }
 
+public class ExchangePhoneNumberRequest
+{
+    public string Code { get; init; } = string.Empty;
+}
+
 public class BindMobileRequest
 {
     public long UserId { get; init; }
@@ -17,6 +22,7 @@ public class AuthLoginResultDto
     public long UserId { get; init; }
     public string MiniOpenId { get; init; } = string.Empty;
     public string? Mobile { get; init; }
+    public string? Nickname { get; init; }
     public bool IsNewUser { get; init; }
     public string? Token { get; init; }
 }
