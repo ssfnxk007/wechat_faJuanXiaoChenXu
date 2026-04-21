@@ -1,5 +1,13 @@
 <template>
   <view :class="['cm-page', themeClass]">
+    <CmPullRefresh
+      :refreshing="refreshing"
+      :loading-more="loadingMore"
+      :no-more="noMore"
+      :show-load-more="true"
+      @refresh="onRefresh"
+      @loadmore="onLoadMore"
+    >
     <view class="order-hero">
       <view class="order-hero-mask"></view>
       <view class="cm-nav-spacer"></view>
@@ -36,7 +44,7 @@
       <view class="summary-strip cm-card cm-section">
         <view class="summary-main">
           <text class="summary-title">近期订单概览</text>
-          <text class="summary-text">已支付订单可前往券包详情查看可用权益；待付款订单将为您保留当前下单信息。</text>
+          <text class="summary-text">已支付订单支持查看券包、单张售卖券和商品券到账状态；商品券会额外展示待履约提示。</text>
         </view>
         <view class="summary-side">{{ currentStatusLabel }}</view>
       </view>
@@ -98,12 +106,14 @@
       <view class="notice-card cm-card cm-section">
         <text class="notice-title">订单说明</text>
         <view class="notice-list">
-          <text class="notice-item">支付成功后，券包权益将自动进入账户，可在“我的卡券”中查看。</text>
+          <text class="notice-item">支付成功后，券包、单张售卖券和商品券都会自动进入账户。</text>
+          <text class="notice-item">商品券当前阶段会展示“待履约 / 待 ERP 处理”，后续 ERP 接入后再补自动推进。</text>
           <text class="notice-item">如遇门店网络波动，核销结果以门店系统与本页记录为准。</text>
           <text class="notice-item">订单关闭后不可恢复，请以提交页显示的支付时限为准。</text>
         </view>
       </view>
     </view>
+    </CmPullRefresh>
   </view>
 </template>
 
@@ -111,7 +121,9 @@
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import SectionHeader from '@/components/SectionHeader.vue'
+import CmPullRefresh from '@/components/CmPullRefresh.vue'
 import { useTheme } from '@/composables/use-theme'
+import { useListPagination } from '@/composables/use-list-pagination'
 import { ensureMiniProgramLogin, ensurePhoneReady } from '@/api/auth'
 import { fetchOrderList } from '@/api/order'
 import { useSessionStore } from '@/store/session'
@@ -119,33 +131,31 @@ import { useSessionStore } from '@/store/session'
 const session = useSessionStore()
 const { themeClass } = useTheme()
 const currentStatus = ref('all')
-const orders = ref([])
 
-const loadOrders = async () => {
-  try {
-    await ensureMiniProgramLogin()
-    const ready = await ensurePhoneReady({
-      force: true,
-      redirect: '/pages/order/list'
-    })
-    if (!ready) {
-      orders.value = []
-      return
-    }
-    const result = await fetchOrderList({
-      pageIndex: 1,
-      pageSize: 50
-    })
-    orders.value = result.items
-  } catch (error) {
-    console.warn('[order-list] loadOrders failed', error)
-    orders.value = []
-    uni.showToast({ title: error?.message || '加载订单失败', icon: 'none' })
+async function ordersFetcher(query) {
+  await ensureMiniProgramLogin()
+  const ready = await ensurePhoneReady({
+    force: true,
+    redirect: '/pages/order/list'
+  })
+  if (!ready) {
+    return { items: [], pageIndex: 1, totalPages: 1, totalCount: 0 }
   }
+  return fetchOrderList(query)
 }
 
+const {
+  items: orders,
+  refreshing,
+  loadingMore,
+  noMore,
+  onRefresh,
+  onLoadMore,
+  reload
+} = useListPagination(ordersFetcher, { pageSize: 10 })
+
 onShow(() => {
-  loadOrders()
+  reload()
 })
 
 const statusTabs = computed(() => {
@@ -163,7 +173,7 @@ const overviewStats = computed(() => {
   return [
     { label: '累计订单', value: String(list.length) },
     { label: '待付款', value: String(list.filter((item) => item.status === 'pending').length) },
-    { label: '待使用', value: String(list.filter((item) => item.fulfillment && item.fulfillment.indexOf('待使用') > -1).length) }
+    { label: '待处理', value: String(list.filter((item) => item.fulfillment && (item.fulfillment.indexOf('待使用') > -1 || item.fulfillment.indexOf('待履约') > -1)).length) }
   ]
 })
 
