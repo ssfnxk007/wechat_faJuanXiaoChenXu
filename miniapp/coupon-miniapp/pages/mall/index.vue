@@ -1,7 +1,9 @@
 <template>
-  <view :class="['cm-page', 'cm-container', themeClass]">
+  <view :class="['cm-page', themeClass]">
+    <CmPullRefresh :refreshing="refreshing" @refresh="handleRefresh">
+    <view class="cm-container">
     <view class="cm-nav-spacer"></view>
-    <SectionHeader eyebrow="MALL" title="券包商城" subtitle="可购券包与商品" />
+    <SectionHeader eyebrow="MALL" title="券包商城" subtitle="券包、单张券、商品券与商品一页浏览" />
 
     <view class="search-card cm-card cm-section">
       <text class="search-placeholder">搜索券包、商品或活动</text>
@@ -13,6 +15,40 @@
       <view class="page-stack">
         <view v-for="item in packs" :key="item.id" @click="goPackDetail(item.id)">
           <CouponPackCard :title="item.title" :subtitle="item.subtitle" :price="item.price" :desc="item.desc" :meta="item.meta" />
+        </view>
+      </view>
+    </view>
+
+    <view class="cm-section" v-if="standaloneCoupons.length">
+      <SectionHeader title="单张售卖券" subtitle="轻量购买，支付后立即发券" />
+      <view class="coupon-stack">
+        <view v-for="item in standaloneCoupons" :key="item.id" @click="goSaleCouponDetail(item.id)">
+          <StandaloneCouponCard
+            :title="item.title"
+            :subtitle="item.subtitle"
+            :price="item.price"
+            :desc="item.desc"
+            :meta="item.meta"
+            :fulfillment-hint="item.fulfillmentHint"
+            :theme-class="themeClass"
+          />
+        </view>
+      </view>
+    </view>
+
+    <view class="cm-section" v-if="productCoupons.length">
+      <SectionHeader title="商品券专区" subtitle="先支付发券，当前阶段显示待履约" />
+      <view class="coupon-stack">
+        <view v-for="item in productCoupons" :key="item.id" @click="goSaleCouponDetail(item.id)">
+          <ProductCouponCard
+            :title="item.title"
+            :subtitle="item.subtitle"
+            :price="item.price"
+            :desc="item.desc"
+            :product-summary="item.productSummary || item.meta"
+            :fulfillment-hint="item.fulfillmentHint"
+            :theme-class="themeClass"
+          />
         </view>
       </view>
     </view>
@@ -33,6 +69,8 @@
         </view>
       </view>
     </view>
+    </view>
+    </CmPullRefresh>
   </view>
 </template>
 
@@ -41,17 +79,39 @@ import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import SectionHeader from '@/components/SectionHeader.vue'
 import CouponPackCard from '@/components/CouponPackCard.vue'
+import StandaloneCouponCard from '@/components/StandaloneCouponCard.vue'
+import ProductCouponCard from '@/components/ProductCouponCard.vue'
 import { useTheme } from '@/composables/use-theme'
 import { fetchMallPageData } from '@/api/mall'
+import CmPullRefresh from '@/components/CmPullRefresh.vue'
 
 const packs = ref([])
+const standaloneCoupons = ref([])
+const productCoupons = ref([])
 const goods = ref([])
 const { themeClass } = useTheme()
+
+const refreshing = ref(false)
 
 const loadMallData = async () => {
   const result = await fetchMallPageData()
   packs.value = result.packs
+  standaloneCoupons.value = result.standaloneCoupons
+  productCoupons.value = result.productCoupons
   goods.value = result.goods
+}
+
+async function handleRefresh() {
+  if (refreshing.value) return
+  refreshing.value = true
+  try {
+    await loadMallData()
+  } catch (error) {
+    console.warn('[mall] refresh failed', error)
+    uni.showToast({ title: error?.message || '加载失败', icon: 'none' })
+  } finally {
+    refreshing.value = false
+  }
 }
 
 onShow(() => {
@@ -64,6 +124,10 @@ const goPackDetail = (id) => {
 
 const goProductDetail = (id) => {
   uni.navigateTo({ url: id ? `/pages/product/detail?id=${id}` : '/pages/product/detail' })
+}
+
+const goSaleCouponDetail = (id) => {
+  uni.navigateTo({ url: id ? `/pages/sale-coupon/detail?id=${id}` : '/pages/sale-coupon/detail' })
 }
 </script>
 
@@ -86,6 +150,11 @@ const goProductDetail = (id) => {
 .page-stack {
   display: grid;
   gap: 20rpx;
+  margin-top: 18rpx;
+}
+.coupon-stack {
+  display: grid;
+  gap: 18rpx;
   margin-top: 18rpx;
 }
 .goods-grid {
