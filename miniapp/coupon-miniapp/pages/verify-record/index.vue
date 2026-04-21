@@ -1,5 +1,7 @@
 <template>
-  <view :class="['cm-page', 'cm-container', themeClass]">
+  <view :class="['cm-page', themeClass]">
+    <CmPullRefresh :refreshing="refreshing" @refresh="handleRefresh">
+    <view class="cm-container">
     <view class="cm-nav-spacer"></view>
 
     <view class="record-hero cm-card">
@@ -90,14 +92,27 @@
         <text class="rules-item">若需核对历史订单，可结合订单列表中的订单号进行交叉查询。</text>
       </view>
     </view>
+    </view>
+    </CmPullRefresh>
   </view>
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import SectionHeader from '@/components/SectionHeader.vue'
+import CmPullRefresh from '@/components/CmPullRefresh.vue'
 import { useTheme } from '@/composables/use-theme'
 
 const { themeClass } = useTheme()
+const refreshing = ref(false)
+
+async function handleRefresh() {
+  if (refreshing.value) return
+  refreshing.value = true
+  await new Promise((resolve) => setTimeout(resolve, 600))
+  uni.showToast({ title: '已为您刷新', icon: 'none' })
+  refreshing.value = false
+}
 
 interface StatItem {
   label: string
