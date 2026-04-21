@@ -1,5 +1,6 @@
 <template>
   <view :class="['cm-page', themeClass]">
+    <CmPullRefresh :refreshing="refreshing" @refresh="handleRefresh">
     <view class="home-hero">
       <view class="hero-mask"></view>
       <view class="cm-nav-spacer"></view>
@@ -120,6 +121,7 @@
         </view>
       </view>
     </view>
+    </CmPullRefresh>
   </view>
 </template>
 
@@ -129,11 +131,27 @@ import { onShow } from '@dcloudio/uni-app'
 import SectionHeader from '@/components/SectionHeader.vue'
 import CouponCard from '@/components/CouponCard.vue'
 import CouponPackCard from '@/components/CouponPackCard.vue'
+import CmPullRefresh from '@/components/CmPullRefresh.vue'
 import { useTheme } from '@/composables/use-theme'
 import { fetchHomePageData } from '@/api/home'
 import { setThemeCode } from '@/store/session'
 
 const { themeClass } = useTheme()
+
+const refreshing = ref(false)
+
+async function handleRefresh() {
+  if (refreshing.value) return
+  refreshing.value = true
+  try {
+    await loadHomeData()
+  } catch (error) {
+    console.warn('[home] refresh failed', error)
+    uni.showToast({ title: error?.message || '加载失败', icon: 'none' })
+  } finally {
+    refreshing.value = false
+  }
+}
 
 const newcomerCoupon = ref({
   id: 0,
