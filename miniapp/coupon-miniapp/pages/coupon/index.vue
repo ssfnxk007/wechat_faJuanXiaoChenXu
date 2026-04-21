@@ -1,5 +1,7 @@
 <template>
-  <view :class="['cm-page', 'cm-container', 'coupon-page', themeClass]">
+  <view :class="['cm-page', 'coupon-page', themeClass]">
+    <CmPullRefresh :refreshing="refreshing" @refresh="handleRefresh">
+    <view class="cm-container">
     <view class="cm-nav-spacer"></view>
 
     <view class="summary-card cm-card">
@@ -43,6 +45,8 @@
         <view class="primary-action" @click="goMall">去商城</view>
       </view>
     </view>
+    </view>
+    </CmPullRefresh>
   </view>
 </template>
 
@@ -51,6 +55,7 @@ import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import SectionHeader from '@/components/SectionHeader.vue'
 import CouponCard from '@/components/CouponCard.vue'
+import CmPullRefresh from '@/components/CmPullRefresh.vue'
 import { useTheme } from '@/composables/use-theme'
 import { getMiniAppUserCoupons } from '@/api/miniapp'
 import { ensureMiniProgramLogin } from '@/api/auth'
@@ -60,6 +65,7 @@ const session = useSessionStore()
 const { themeClass } = useTheme()
 const currentStatus = ref(1)
 const coupons = ref([])
+const refreshing = ref(false)
 
 const statusOptions = [
   { value: 1, label: '可用券' },
@@ -168,6 +174,19 @@ function goMall() {
 onShow(() => {
   loadCoupons()
 })
+
+async function handleRefresh() {
+  if (refreshing.value) return
+  refreshing.value = true
+  try {
+    await loadCoupons()
+  } catch (error) {
+    console.warn('[coupon] refresh failed', error)
+    uni.showToast({ title: error?.message || '加载失败', icon: 'none' })
+  } finally {
+    refreshing.value = false
+  }
+}
 </script>
 
 <style lang="scss" scoped>
