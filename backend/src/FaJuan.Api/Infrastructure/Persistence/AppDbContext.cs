@@ -83,6 +83,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(x => x.ValidFrom).HasColumnType("datetime");
             entity.Property(x => x.ValidTo).HasColumnType("datetime");
             entity.Property(x => x.Remark).HasMaxLength(500);
+            entity.Property(x => x.SalePrice).HasColumnType("decimal(18,2)");
             entity.Property(x => x.CreatedAt).HasColumnType("datetime");
         });
 
