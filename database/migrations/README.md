@@ -62,3 +62,12 @@
 - `003-admin-permission-seed.sql` 会初始化按钮权限点，并将全部权限点授权给 `super_admin`
 - `005-coupon-template-product-scope.sql` 会新增 `CouponTemplateProductScope` 表，用于指定商品券的适用商品范围校验
 - 执行生产脚本前，建议先在测试库完整验证登录、创建订单、模拟支付、发券、核销主链路
+
+## 迁移与实体时间字段约定（2026-04-20 起）
+
+详见 `Docs/specs/2026-04-20-迁移与实体时间字段约定.md`。要点：
+
+- 新迁移 DDL 时间列统一使用 `datetime2(3)`，不再使用 `datetime`（范围 1753-9999、3.3ms 精度不足）
+- 新实体默认携带 `CreatedAt` + `UpdatedAt` 两个时间列，由 EF `SaveChangesInterceptor` 统一维护
+- 历史表的 `datetime` 列暂不统一迁移，避免锁表；如需收口，单独起子计划（对应审核项 #22）
+- 迁移文件命名规则保持：`NNN-<topic>.sql`，NNN 全局单调递增

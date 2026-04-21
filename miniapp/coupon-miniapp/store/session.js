@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import { VALID_THEME_CODES, DEFAULT_THEME_CODE } from '@/constants/theme'
 
 const SESSION_STORAGE_KEY = 'coupon-miniapp:session'
 const API_BASE_URL_STORAGE_KEY = 'coupon-miniapp:api-base-url'
@@ -6,8 +7,6 @@ const THEME_STORAGE_KEY = 'coupon-miniapp:theme-code'
 const ONBOARDING_STORAGE_KEY = 'coupon-miniapp:onboarding'
 // 仅开发环境使用 LAN 默认值；生产构建要求显式配置 HTTPS 域名，避免误连
 const DEFAULT_API_BASE_URL = process.env.NODE_ENV === 'production' ? '' : 'http://10.168.1.106:5265'
-const DEFAULT_THEME_CODE = 'green'
-const VALID_THEME_CODES = new Set(['green', 'light', 'candy', 'orange', 'red'])
 
 const state = reactive({
   hydrated: false,
@@ -31,7 +30,7 @@ function trimText(value) {
 
 function normalizeThemeCode(themeCode) {
   const normalized = trimText(themeCode).toLowerCase()
-  return VALID_THEME_CODES.has(normalized) ? normalized : ''
+  return VALID_THEME_CODES.includes(normalized) ? normalized : ''
 }
 
 function persistSession() {

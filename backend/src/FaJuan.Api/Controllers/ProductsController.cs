@@ -34,7 +34,9 @@ public class ProductsController(AppDbContext dbContext) : ApiControllerBase
                 x.ErpProductCode,
                 x.MainImageAssetId,
                 x.DetailImageAssetIds,
+                x.ErpOriginalPrice,
                 x.SalePrice,
+                x.StockQuantity,
                 x.IsEnabled,
                 x.CreatedAt,
             })
@@ -64,7 +66,9 @@ public class ProductsController(AppDbContext dbContext) : ApiControllerBase
                 MainImageUrl = x.MainImageAssetId.HasValue && assetMap.TryGetValue(x.MainImageAssetId.Value, out var mainImageUrl) ? mainImageUrl : null,
                 DetailImageAssetIds = detailAssetIds,
                 DetailImageUrls = detailAssetIds.Where(assetMap.ContainsKey).Select(assetId => assetMap[assetId]).ToArray(),
+                ErpOriginalPrice = x.ErpOriginalPrice,
                 SalePrice = x.SalePrice,
+                StockQuantity = x.StockQuantity,
                 IsEnabled = x.IsEnabled,
                 CreatedAt = x.CreatedAt,
             };
@@ -103,7 +107,9 @@ public class ProductsController(AppDbContext dbContext) : ApiControllerBase
             ErpProductCode = normalizedCode,
             MainImageAssetId = request.MainImageAssetId,
             DetailImageAssetIds = SerializeDetailImageAssetIds(request.DetailImageAssetIds),
+            ErpOriginalPrice = request.ErpOriginalPrice,
             SalePrice = request.SalePrice,
+            StockQuantity = request.StockQuantity,
             IsEnabled = request.IsEnabled,
         };
 
@@ -139,7 +145,9 @@ public class ProductsController(AppDbContext dbContext) : ApiControllerBase
         entity.ErpProductCode = normalizedCode;
         entity.MainImageAssetId = request.MainImageAssetId;
         entity.DetailImageAssetIds = SerializeDetailImageAssetIds(request.DetailImageAssetIds);
+        entity.ErpOriginalPrice = request.ErpOriginalPrice;
         entity.SalePrice = request.SalePrice;
+        entity.StockQuantity = request.StockQuantity;
         entity.IsEnabled = request.IsEnabled;
 
         await dbContext.SaveChangesAsync();
@@ -171,6 +179,21 @@ public class ProductsController(AppDbContext dbContext) : ApiControllerBase
         if (request.MainImageAssetId.HasValue && request.MainImageAssetId.Value <= 0)
         {
             return "商品主图素材无效";
+        }
+
+        if (request.ErpOriginalPrice.HasValue && request.ErpOriginalPrice.Value < 0)
+        {
+            return "ERP 原价不能小于 0";
+        }
+
+        if (request.SalePrice.HasValue && request.SalePrice.Value < 0)
+        {
+            return "销售价格不能小于 0";
+        }
+
+        if (request.StockQuantity.HasValue && request.StockQuantity.Value < 0)
+        {
+            return "库存不能小于 0";
         }
 
         return null;

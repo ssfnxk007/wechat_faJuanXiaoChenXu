@@ -25,6 +25,10 @@
             <text class="price-value">{{ detail.price || '--' }}</text>
             <view class="hero-tag" v-if="detail.tag">{{ detail.tag }}</view>
           </view>
+          <view class="price-compare-row" v-if="showPriceCompare">
+            <text class="origin-price">ERP 原价 ¥{{ detail.erpOriginalPrice }}</text>
+            <text class="discount-price">省 ¥{{ discountAmount }}</text>
+          </view>
         </view>
       </view>
 
@@ -93,11 +97,11 @@
       <view class="buy-bar cm-card">
         <view class="buy-left">
           <text class="buy-title">{{ detail.title }}</text>
-          <text class="buy-summary">领券后下单或到店核销更优惠</text>
+          <text class="buy-summary">{{ buySummaryText }}</text>
         </view>
         <view class="buy-right">
           <text class="buy-price">¥{{ detail.price || '--' }}</text>
-          <view class="buy-button" @click="goCouponCenter">去领券</view>
+          <view class="buy-button" @click="handleBuyCoupon">{{ buyButtonText }}</view>
         </view>
       </view>
     </view>
@@ -117,6 +121,7 @@ const detail = ref({
   id: 0,
   title: '商品详情',
   desc: '',
+  erpOriginalPrice: '',
   price: '',
   tag: '',
   imageUrl: '',
@@ -124,6 +129,32 @@ const detail = ref({
   detailImages: [],
   availableCoupons: [],
   recommendedCoupons: [],
+})
+
+const purchasableCoupon = computed(() => {
+  const merged = [
+    ...(Array.isArray(detail.value.availableCoupons) ? detail.value.availableCoupons : []),
+    ...(Array.isArray(detail.value.recommendedCoupons) ? detail.value.recommendedCoupons : []),
+  ]
+  return merged.find((item) => Number(item?.distributionMode) === 1) || null
+})
+
+const buyButtonText = computed(() => purchasableCoupon.value ? '去购买券' : '去领券')
+const buySummaryText = computed(() => purchasableCoupon.value
+  ? '本商品有关联售卖券，支付成功后自动发券并生成可用码。'
+  : '领券后下单或到店核销更优惠')
+const showPriceCompare = computed(() => {
+  const origin = Number(detail.value.erpOriginalPrice || 0)
+  const price = Number(detail.value.price || 0)
+  return origin > 0 && price > 0 && origin > price
+})
+const discountAmount = computed(() => {
+  const origin = Number(detail.value.erpOriginalPrice || 0)
+  const price = Number(detail.value.price || 0)
+  if (origin > price) {
+    return (origin - price).toFixed(2)
+  }
+  return '0.00'
 })
 
 const galleryImages = computed(() => {
@@ -153,6 +184,7 @@ onLoad(async (options = {}) => {
     id: result.id,
     title: result.title,
     desc: result.desc,
+    erpOriginalPrice: result.erpOriginalPrice,
     price: result.price,
     tag: result.tag,
     imageUrl: result.imageUrl,
@@ -177,7 +209,19 @@ function openCoupon(coupon) {
     goCouponCenter()
     return
   }
+  if (Number(coupon?.distributionMode) === 1) {
+    uni.navigateTo({ url: `/pages/sale-coupon/detail?id=${templateId}` })
+    return
+  }
   uni.navigateTo({ url: `/pages/coupon/detail?templateId=${templateId}` })
+}
+
+function handleBuyCoupon() {
+  if (purchasableCoupon.value) {
+    openCoupon(purchasableCoupon.value)
+    return
+  }
+  goCouponCenter()
 }
 
 function formatThreshold(value, fallback) {
@@ -265,6 +309,11 @@ function formatThreshold(value, fallback) {
   gap: 8rpx;
   flex-wrap: wrap;
 }
+.price-compare-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
 
 .price-unit,
 .price-value,
@@ -279,6 +328,16 @@ function formatThreshold(value, fallback) {
 
 .price-value {
   font-size: 46rpx;
+}
+.origin-price {
+  color: $cm-text-tertiary;
+  font-size: 22rpx;
+  text-decoration: line-through;
+}
+.discount-price {
+  color: $cm-warning;
+  font-size: 22rpx;
+  font-weight: 700;
 }
 
 .coupon-type {

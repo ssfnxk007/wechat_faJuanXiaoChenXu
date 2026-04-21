@@ -1,0 +1,245 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - generic [ref=e6]:
+      - link [ref=e7] [cursor=pointer]:
+        - /url: /doc/
+      - generic [ref=e11] [cursor=pointer]: 小程序
+  - list [ref=e13]:
+    - listitem [ref=e14]:
+      - link "指南" [ref=e16] [cursor=pointer]:
+        - /url: /miniprogram/dev/framework/
+  - generic:
+    - link "开发" [ref=e18] [cursor=pointer]:
+      - /url: javascript:;
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]: 中文
+        - generic [ref=e22]: EN
+      - generic [ref=e24]: 取消
+  - link [ref=e25] [cursor=pointer]:
+    - /url: javascript:;
+  - generic [ref=e27]:
+    - listitem [ref=e29]:
+      - link "指南" [ref=e30] [cursor=pointer]:
+        - /url: javascript:;
+    - main [ref=e32]:
+      - generic [ref=e34]:
+        - generic [ref=e35]:
+          - generic [ref=e36]: 开放能力 /
+          - generic [ref=e37]: 用户信息 /
+          - generic [ref=e38]: 手机号快速验证组件
+        - generic [ref=e39]:
+          - heading "手机号快速验证组件" [level=1] [ref=e40]
+          - paragraph [ref=e41]:
+            - text: 该能力旨在帮助开发者向用户发起手机号申请，并且
+            - strong [ref=e42]: 必须经过用户同意后
+            - text: ，开发者才可获得由平台验证后的手机号，进而为用户提供相应服务。
+          - paragraph [ref=e43]:
+            - text: 该能力与
+            - link "手机号实时验证组件" [ref=e44] [cursor=pointer]:
+              - /url: getRealtimePhoneNumber
+            - text: 的区别为：
+          - list [ref=e45]:
+            - listitem [ref=e46]:
+              - text: 手机号快速验证组件，平台会对号码进行验证，但
+              - strong [ref=e47]: 不保证是实时验证
+              - text: ；
+            - listitem [ref=e48]:
+              - text: 手机号实时验证组件，
+              - strong [ref=e49]: 在每次请求时，平台均会对用户选择的手机号进行实时验证
+              - text: 。
+          - paragraph [ref=e50]:
+            - strong [ref=e51]: 请注意：
+          - list [ref=e52]:
+            - listitem [ref=e53]:
+              - text: 目前该接口针对
+              - strong [ref=e54]:
+                - text: 非个人主体，且完成了认证的小程序开放（境外主体目前仅限部分国家地区开放，
+                - link "详见文档" [ref=e55] [cursor=pointer]:
+                  - /url: https://docs.qq.com/doc/DZWpqblRwU3labktJ
+                  - text: 详见文档
+                - text: ）
+              - text: ；
+            - listitem [ref=e56]:
+              - text: 该能力使用时，用户可选择绑定号码，或自主添加号码。平台会基于中国三大运营商提供的短信等底层能力对号码进行验证，但
+              - strong [ref=e57]: 不保证是实时验证
+              - text: ；
+            - listitem [ref=e58]: 请开发者根据业务场景需要自行判断并选择是否使用，必要时可考虑增加其他安全验证手段。
+            - listitem [ref=e59]:
+              - text: 开发者需合理使用，若被发现或用户举报开发者
+              - strong [ref=e60]: 不合理地
+              - text: 要求用户提供手机号等个人信息，中断了正常的使用流程，影响了用户的使用体验，
+              - strong [ref=e61]:
+                - text: 微信有权依据
+                - link "《微信小程序平台运营管理规范》" [ref=e62] [cursor=pointer]:
+                  - /url: https://developers.weixin.qq.com/miniprogram/product/#_15-%E7%94%A8%E6%88%B7%E9%9A%90%E7%A7%81%E5%92%8C%E6%95%B0%E6%8D%AE%E8%A7%84%E8%8C%83
+                  - text: 《微信小程序平台运营管理规范》
+                - text: 对该小程序进行处理
+              - text: 。
+              - link "常见违规事例和具体解析" [ref=e63] [cursor=pointer]:
+                - /url: https://mp.weixin.qq.com/s/0c3WUmL_tV77Ue0XwsR-Vg
+                - text: 常见违规事例和具体解析
+              - text: ；
+          - heading "收费说明" [level=2] [ref=e64]
+          - paragraph [ref=e65]:
+            - text: 自2023年8月28日起，手机号快速验证组件将需要付费使用。标准单价为：每次组件调用成功，收费0.03元。更多套餐价格请见
+            - link "微信公众平台-付费管理" [ref=e66] [cursor=pointer]:
+              - /url: https://mp.weixin.qq.com/cgi-bin/loginpage?redirect_url=/wxamp/wxacharge
+              - text: 微信公众平台-付费管理
+            - text: 。
+          - paragraph [ref=e67]:
+            - link "购买操作指引" [ref=e68] [cursor=pointer]:
+              - /url: https://developers.weixin.qq.com/miniprogram/dev/platform-capabilities/charge/
+              - text: 购买操作指引
+          - paragraph [ref=e69]:
+            - link "常见问题解答" [ref=e70] [cursor=pointer]:
+              - /url: https://docs.qq.com/doc/DZXFIVVRYb2JXaVVn
+              - text: 常见问题解答
+          - paragraph [ref=e71]:
+            - strong [ref=e72]: 请注意：
+          - list [ref=e73]:
+            - listitem [ref=e74]: 体验额度：每个小程序账号将有1000次体验额度，用于开发、调试和体验。该1000次的体验额度为正式版、体验版和开发版小程序共用，超额后，体验版和开发版小程序调用同正式版小程序一样，均收费；
+            - listitem [ref=e75]: 资源包有效期：在2023年8月28日前购买的订单，资源包将于2023年8月28日生效；在2023年8月28日后购买的订单，资源包将于支付成功后即刻生效；各资源包将按购买时所选择的有效期，计算相应的到期失效时间；
+            - listitem [ref=e76]: 资源使用顺序：默认先从体验额度中划扣，划扣完毕后再从付费资源包中划扣；若有多个付费资源包，将按资源包到期时间顺序，先从最近到期的资源包开始划扣，如此类推；
+            - listitem [ref=e77]: 退款规则：若购买有误，且未正式开始使用资源包前，可以在支付成功后的7天内申请退款。款项将在3-5个工作日内从原支付路径返回；若资源包已经开始使用（使用1次及以上），则不能申请退款；若支付成功后超过7天，未发起退款申请，亦不能再申请退款。
+            - listitem [ref=e78]:
+              - text: 异常排查：若对调用量有疑问，可参考
+              - link "《手机号计费误差问题排查指南》" [ref=e79] [cursor=pointer]:
+                - /url: ./PhoneNumberGuide.html
+              - text: 进行排查。
+          - heading "免费规则" [level=4] [ref=e80]
+          - paragraph [ref=e81]: 符合以下情况之一的小程序，使用此能力不收费，具体如下：
+          - list [ref=e82]:
+            - listitem [ref=e83]:
+              - text: 账号
+              - link "微信认证主体类型" [ref=e84] [cursor=pointer]:
+                - /url: https://kf.qq.com/faq/120911VrYVrA141021aUZJzY.html
+                - text: 微信认证主体类型
+              - text: 为政府、非营利组织的小程序；
+            - listitem [ref=e85]:
+              - text: 账号
+              - link "微信认证主体类型" [ref=e86] [cursor=pointer]:
+                - /url: https://kf.qq.com/faq/120911VrYVrA141021aUZJzY.html
+                - text: 微信认证主体类型
+              - text: 为事业单位，且类目为政务民生的小程序;
+            - listitem [ref=e87]: 账号类目为公立医疗机构、学历教育（学校）的小程序
+          - paragraph [ref=e88]: 开发者可通过以下两种方式查询小程序的微信认证主体类型：
+          - list [ref=e89]:
+            - listitem [ref=e90]:
+              - text: 进入「
+              - link "微信公众平台" [ref=e91] [cursor=pointer]:
+                - /url: mp.weixin.qq.com
+              - text: "->点击小程序信息->查看基本信息->微信认证主体类型」"
+            - listitem [ref=e92]:
+              - text: 进入「
+              - link "微信公众平台" [ref=e93] [cursor=pointer]:
+                - /url: mp.weixin.qq.com
+              - text: "->点击右上角账号头像->可查看基本信息->微信认证主体类型」"
+          - heading "集采模式" [level=4] [ref=e94]
+          - paragraph [ref=e95]:
+            - text: 旨在提供更高效的落地工具，支持批量采购资源包后，可以灵活地分配给多个小程序使用。集采模式
+            - link "接入指引" [ref=e96] [cursor=pointer]:
+              - /url: https://developers.weixin.qq.com/doc/oplatform/service_market/charge/guide/intro.html
+              - text: 接入指引
+            - text: 。
+          - heading "查询和扣费节点说明" [level=3] [ref=e97]
+          - list [ref=e98]:
+            - listitem [ref=e99]:
+              - text: 查询节点：用户点击button时，进行资源包额度查询。若查询额度不足，开发者将收到错误码
+              - code [ref=e100]: e.detail.errno===1400001
+              - text: ，同时用户侧将收到平台默认半屏提示“该功能使用次数已达当前小程序上限，暂时无法使用”。若开发者想自行兼容欠费逻辑，可将
+              - link "button" [ref=e101] [cursor=pointer]:
+                - /url: ../../component/button.html
+              - text: 组件中
+              - code [ref=e102]: phone-number-no-quota-toast
+              - text: 的值设置为
+              - code [ref=e103]: "false"
+              - text: ，此时平台将不在用户侧进行提示；
+            - listitem [ref=e104]:
+              - text: 扣费节点：开发者获得
+              - code [ref=e105]: bindgetphonenumber
+              - text: 事件的 success 回调信息时，进行扣费。
+          - heading "使用方法" [level=2] [ref=e106]
+          - paragraph [ref=e107]:
+            - strong [ref=e108]: 步骤1
+            - text: ：需要将
+            - link "button" [ref=e109] [cursor=pointer]:
+              - /url: ../../component/button.html
+            - text: 组件
+            - code [ref=e110]: open-type
+            - text: 的值设置为
+            - code [ref=e111]: getPhoneNumber
+            - text: ，当用户点击并同意之后，通过
+            - code [ref=e112]: bindgetphonenumber
+            - text: 事件获取回调信息；
+          - paragraph [ref=e113]:
+            - strong [ref=e114]: 步骤2
+            - text: ：将
+            - code [ref=e115]: bindgetphonenumber
+            - text: 事件回调中的动态令牌
+            - code [ref=e116]: code
+            - text: 传到开发者后台，并在开发者后台调用微信后台提供的
+            - link "phonenumber.getPhoneNumber" [ref=e117] [cursor=pointer]:
+              - /url: https://developers.weixin.qq.com/miniprogram/dev/api-backend/open-api/phonenumber/phonenumber.getPhoneNumber.html
+              - text: phonenumber.getPhoneNumber
+            - text: 接口，消费
+            - code [ref=e118]: code
+            - text: 来换取用户手机号。每个
+            - code [ref=e119]: code
+            - text: 有效期为5分钟，且只能消费一次。
+          - paragraph [ref=e120]:
+            - text: 注：
+            - code [ref=e121]: getPhoneNumber
+            - text: 返回的
+            - code [ref=e122]: code
+            - text: 与
+            - code [ref=e123]: wx.login
+            - text: 返回的
+            - code [ref=e124]: code
+            - text: 作用是不一样的，不能混用。
+          - paragraph [ref=e125]:
+            - strong [ref=e126]: 注意
+          - paragraph [ref=e127]:
+            - text: 从基础库2.21.2开始，对步骤2中换取手机号信息的方式进行了安全升级，上述为新方式使用指南。（
+            - link "旧方式" [ref=e128] [cursor=pointer]:
+              - /url: deprecatedGetPhoneNumber.html
+            - text: 目前可以继续使用，但
+            - strong [ref=e129]: 建议开发者使用新方式，以增强小程序安全性
+            - text: ）另外，新方式
+            - strong [ref=e130]: 不再
+            - text: 需要提前调用
+            - code [ref=e131]: wx.login
+            - text: 进行登录。
+          - heading "代码示例" [level=2] [ref=e132]
+          - code [ref=e135]:
+            - generic [ref=e136]:
+              - generic [ref=e137]: <button
+              - text: open-type
+              - generic [ref=e138]: ="getPhoneNumber"
+              - text: bindgetphonenumber
+              - generic [ref=e139]: ="getPhoneNumber"
+              - text: ">"
+            - generic [ref=e140]:
+              - generic [ref=e141]: </button
+              - text: ">"
+          - code [ref=e144]: "Page({ getPhoneNumber (e) { console.log(e.detail.code) // 动态令牌 console.log(e.detail.errMsg) // 回调信息（成功失败都会返回） console.log(e.detail.errno) // 错误码（失败时返回） } })"
+          - heading "返回参数说明" [level=2] [ref=e145]
+          - table [ref=e147]:
+            - rowgroup [ref=e148]:
+              - row "参数 类型 说明 最低版本" [ref=e149]:
+                - columnheader "参数" [ref=e150]
+                - columnheader "类型" [ref=e151]
+                - columnheader "说明" [ref=e152]
+                - columnheader "最低版本" [ref=e153]
+            - rowgroup [ref=e154]:
+              - row "code String 动态令牌。可通过动态令牌换取用户手机号。使用方法详情 phonenumber.getPhoneNumber 接口" [ref=e155]:
+                - cell "code" [ref=e156]
+                - cell "String" [ref=e157]
+                - cell "动态令牌。可通过动态令牌换取用户手机号。使用方法详情 phonenumber.getPhoneNumber 接口" [ref=e158]:
+                  - text: 动态令牌。可通过动态令牌换取用户手机号。使用方法详情
+                  - link "phonenumber.getPhoneNumber" [ref=e159] [cursor=pointer]:
+                    - /url: https://developers.weixin.qq.com/miniprogram/dev/api-backend/open-api/phonenumber/phonenumber.getPhoneNumber.html
+                    - text: phonenumber.getPhoneNumber
+                  - text: 接口
+                - cell [ref=e160]
+    - generic: ·

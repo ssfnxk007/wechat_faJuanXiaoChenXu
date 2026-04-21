@@ -222,7 +222,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { createAdminMenu, deleteAdminMenu, getAdminMenuList, updateAdminMenu } from '@/api/admin-permission'
 import type { AdminMenuListItemDto, SaveAdminMenuRequest } from '@/types/admin-permission'
 import { getErrorMessage } from '@/utils/http-error'
-import { authStorage } from '@/utils.auth'
+import { authStorage } from '@/utils/auth'
 import { notify } from '@/utils/notify'
 
 interface FlatMenuItem extends AdminMenuListItemDto {

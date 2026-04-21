@@ -110,6 +110,34 @@ function resolveStatus(status, fulfillment) {
 function mapOrder(item, fallback = {}) {
   const fulfillment = String(firstValue(item, ['fulfillment', 'fulfillmentText', 'grantStatusText'], fallback.fulfillment || '待使用'))
   const statusInfo = resolveStatus(firstValue(item, ['status', 'statusCode', 'statusText'], fallback.status || 'paid'), fulfillment)
+  const packName = String(firstValue(item, ['couponPackName'], ''))
+  const templateName = String(firstValue(item, ['couponTemplateName'], ''))
+  const isProductCoupon = Boolean(firstValue(item, ['isProductCoupon'], false))
+  const title = String(firstValue(item, ['title'], packName || templateName || fallback.title || '订单'))
+
+  let desc = String(firstValue(item, ['desc', 'description', 'remark'], fallback.desc || ''))
+  if (!desc) {
+    if (packName) {
+      desc = '券包支付成功后会自动拆分并发券到我的券包。'
+    } else if (isProductCoupon) {
+      desc = '商品券支付成功后已发券，当前阶段显示待履约 / 待 ERP 处理。'
+    } else {
+      desc = '单张售卖券支付成功后会自动发券到我的券包。'
+    }
+  }
+
+  const tags = Array.isArray(item?.tags) && item.tags.length
+    ? item.tags
+    : packName
+      ? ['券包权益']
+      : [isProductCoupon ? '商品券' : '单张售卖券']
+
+  let note = String(firstValue(item, ['note', 'remark'], fallback.note || '请以后端订单状态为准'))
+  if (!item?.note && !item?.remark) {
+    note = isProductCoupon
+      ? '商品券已发放，后续履约状态会在订单详情中持续更新。'
+      : (packName ? '券包权益已发放后可在卡包中查看并使用。' : '单张售卖券支付成功后即可在卡包中查看。')
+  }
 
   return {
     id: firstValue(item, ['id', 'orderId'], fallback.id || Date.now()),
@@ -117,14 +145,14 @@ function mapOrder(item, fallback = {}) {
     time: formatTime(firstValue(item, ['time', 'createdAt', 'paidAt'], fallback.time || '')),
     status: statusInfo.value,
     statusText: String(firstValue(item, ['statusText'], statusInfo.text)),
-    title: String(firstValue(item, ['title', 'couponPackName', 'name'], fallback.title || '券包订单')),
-    desc: String(firstValue(item, ['desc', 'description', 'remark'], fallback.desc || '')),
-    tags: Array.isArray(item?.tags) && item.tags.length ? item.tags : (fallback.tags || []),
+    title,
+    desc,
+    tags,
     payment: String(firstValue(item, ['payment', 'paymentText'], fallback.payment || '微信支付')),
     amount: String(firstValue(item, ['amount', 'orderAmount'], fallback.amount || '0')),
     fulfillment,
     store: String(firstValue(item, ['store', 'storeName', 'storeScopeText'], fallback.store || '请以后端适用门店为准')),
-    note: String(firstValue(item, ['note', 'remark'], fallback.note || '请以后端订单状态为准')),
+    note,
     actionText: String(firstValue(item, ['actionText'], fallback.actionText || '查看详情'))
   }
 }

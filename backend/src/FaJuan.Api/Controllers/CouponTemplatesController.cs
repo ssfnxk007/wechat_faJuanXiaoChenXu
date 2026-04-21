@@ -43,6 +43,8 @@ public class CouponTemplatesController(AppDbContext dbContext) : ApiControllerBa
                 IsAllStores = x.IsAllStores,
                 PerUserLimit = x.PerUserLimit,
                 IsEnabled = x.IsEnabled,
+                DistributionMode = x.DistributionMode,
+                SalePrice = x.SalePrice,
                 Remark = x.Remark,
                 CreatedAt = x.CreatedAt,
             })
@@ -91,6 +93,8 @@ public class CouponTemplatesController(AppDbContext dbContext) : ApiControllerBa
             IsAllStores = x.IsAllStores,
             PerUserLimit = x.PerUserLimit,
             IsEnabled = x.IsEnabled,
+            DistributionMode = x.DistributionMode,
+            SalePrice = x.SalePrice,
             Remark = x.Remark,
             ProductIds = scopes.TryGetValue(x.Id, out var productIds) ? productIds : [],
             StoreIds = storeScopes.TryGetValue(x.Id, out var storeIds) ? storeIds : [],
@@ -132,6 +136,8 @@ public class CouponTemplatesController(AppDbContext dbContext) : ApiControllerBa
             IsAllStores = request.IsAllStores,
             PerUserLimit = request.PerUserLimit,
             IsEnabled = request.IsEnabled,
+            DistributionMode = request.DistributionMode,
+            SalePrice = request.DistributionMode == CouponDistributionMode.PaidStandalone ? request.SalePrice : null,
             Remark = request.Remark?.Trim(),
         };
 
@@ -171,6 +177,8 @@ public class CouponTemplatesController(AppDbContext dbContext) : ApiControllerBa
         entity.IsAllStores = request.IsAllStores;
         entity.PerUserLimit = request.PerUserLimit;
         entity.IsEnabled = request.IsEnabled;
+        entity.DistributionMode = request.DistributionMode;
+        entity.SalePrice = request.DistributionMode == CouponDistributionMode.PaidStandalone ? request.SalePrice : null;
         entity.Remark = request.Remark?.Trim();
 
         await dbContext.SaveChangesAsync();
@@ -279,6 +287,12 @@ public class CouponTemplatesController(AppDbContext dbContext) : ApiControllerBa
         if (request.ValidPeriodType == CouponValidPeriodType.AfterReceiveDays && (!request.ValidDays.HasValue || request.ValidDays <= 0))
         {
             return "按领取后天数生效的券必须设置有效天数";
+        }
+
+        if (request.DistributionMode == CouponDistributionMode.PaidStandalone
+            && (!request.SalePrice.HasValue || request.SalePrice.Value <= 0m))
+        {
+            return "单张售卖券必须填写售价，且大于 0";
         }
 
         return null;

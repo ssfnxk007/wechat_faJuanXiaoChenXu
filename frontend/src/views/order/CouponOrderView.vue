@@ -125,7 +125,7 @@ import type { CouponPackListItemDto } from '@/types/coupon-pack'
 import { getUserList } from '@/api/user'
 import type { UserListItemDto } from '@/types/user'
 import { getErrorMessage } from '@/utils/http-error'
-import { authStorage } from '@/utils.auth'
+import { authStorage } from '@/utils/auth'
 import { notify } from '@/utils/notify'
 
 const statusMap: Record<number, string> = { 1: '待支付', 2: '已支付', 3: '已退款', 4: '已关闭' }

@@ -11,6 +11,7 @@ public class UserCoupon
     public long? CouponOrderId { get; set; }
     public string CouponCode { get; set; } = string.Empty;
     public UserCouponStatus Status { get; set; } = UserCouponStatus.Unused;
+    public CouponFulfillmentStatus FulfillmentStatus { get; set; } = CouponFulfillmentStatus.None;
     public DateTime ReceivedAt { get; set; } = DateTime.Now;
     public DateTime EffectiveAt { get; set; }
     public DateTime ExpireAt { get; set; }

@@ -21,12 +21,6 @@ public class OrderPaymentService(AppDbContext dbContext)
             return (false, "订单不存在");
         }
 
-        var packItems = await dbContext.CouponPackItems.AsNoTracking().Where(x => x.CouponPackId == order.CouponPackId).ToListAsync();
-        if (packItems.Count == 0)
-        {
-            return (false, "券包未配置明细，无法发券");
-        }
-
         transaction.Status = PaymentStatus.Success;
         transaction.ChannelTradeNo = channelTradeNo;
         transaction.RawCallback = rawCallback;
@@ -36,33 +30,72 @@ public class OrderPaymentService(AppDbContext dbContext)
         order.PaidAt = DateTime.Now;
         order.PaymentNo = transaction.PaymentNo;
 
-        foreach (var item in packItems)
+        if (order.CouponPackId.HasValue)
         {
-            var template = await dbContext.CouponTemplates.AsNoTracking().FirstOrDefaultAsync(x => x.Id == item.CouponTemplateId);
-            if (template is null)
+            var packItems = await dbContext.CouponPackItems.AsNoTracking()
+                .Where(x => x.CouponPackId == order.CouponPackId.Value)
+                .ToListAsync();
+            if (packItems.Count == 0)
             {
-                continue;
+                return (false, "券包未配置明细，无法发券");
             }
 
-            for (var index = 0; index < item.Quantity; index++)
+            foreach (var item in packItems)
             {
-                var now = DateTime.Now;
-                var expireAt = template.ValidPeriodType == CouponValidPeriodType.FixedDateRange ? (template.ValidTo ?? now) : now.AddDays(template.ValidDays ?? 0);
-                dbContext.UserCoupons.Add(new UserCoupon
+                var template = await dbContext.CouponTemplates.AsNoTracking().FirstOrDefaultAsync(x => x.Id == item.CouponTemplateId);
+                if (template is null)
                 {
-                    AppUserId = order.AppUserId,
-                    CouponTemplateId = template.Id,
-                    CouponOrderId = order.Id,
-                    CouponCode = $"{OrderNoGenerator.Create("CPN")}{index:D2}",
-                    Status = UserCouponStatus.Unused,
-                    ReceivedAt = now,
-                    EffectiveAt = template.ValidPeriodType == CouponValidPeriodType.FixedDateRange ? (template.ValidFrom ?? now) : now,
-                    ExpireAt = expireAt,
-                });
+                    continue;
+                }
+
+                for (var index = 0; index < item.Quantity; index++)
+                {
+                    AddGrantedCoupon(order, template, index, CouponFulfillmentStatus.None);
+                }
             }
+        }
+        else if (order.CouponTemplateId.HasValue)
+        {
+            var template = await dbContext.CouponTemplates.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == order.CouponTemplateId.Value);
+            if (template is null)
+            {
+                return (false, "单张券模板不存在，无法发券");
+            }
+
+            var fulfillmentStatus = template.TemplateType == CouponTemplateType.Product
+                ? CouponFulfillmentStatus.PendingFulfillment
+                : CouponFulfillmentStatus.None;
+
+            AddGrantedCoupon(order, template, 0, fulfillmentStatus);
+        }
+        else
+        {
+            return (false, "订单缺少来源，无法发券");
         }
 
         await dbContext.SaveChangesAsync();
         return (true, "支付成功并已发券");
+    }
+
+    private void AddGrantedCoupon(CouponOrder order, CouponTemplate template, int index, CouponFulfillmentStatus fulfillmentStatus)
+    {
+        var now = DateTime.Now;
+        var expireAt = template.ValidPeriodType == CouponValidPeriodType.FixedDateRange
+            ? (template.ValidTo ?? now)
+            : now.AddDays(template.ValidDays ?? 0);
+
+        dbContext.UserCoupons.Add(new UserCoupon
+        {
+            AppUserId = order.AppUserId,
+            CouponTemplateId = template.Id,
+            CouponOrderId = order.Id,
+            CouponCode = $"{OrderNoGenerator.Create("CPN")}{index:D2}",
+            Status = UserCouponStatus.Unused,
+            FulfillmentStatus = fulfillmentStatus,
+            ReceivedAt = now,
+            EffectiveAt = template.ValidPeriodType == CouponValidPeriodType.FixedDateRange ? (template.ValidFrom ?? now) : now,
+            ExpireAt = expireAt,
+        });
     }
 }

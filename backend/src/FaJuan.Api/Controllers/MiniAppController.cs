@@ -104,7 +104,7 @@ public class MiniAppController(
         await FillProductImageUrlsAsync(recommendedProducts, cancellationToken);
 
         var directCoupons = await dbContext.CouponTemplates.AsNoTracking()
-            .Where(x => x.IsEnabled)
+            .Where(x => x.IsEnabled && x.DistributionMode == CouponDistributionMode.FreeClaim)
             .OrderByDescending(x => x.IsNewUserOnly)
             .ThenByDescending(x => x.CreatedAt)
             .Take(8)
@@ -202,6 +202,99 @@ public class MiniAppController(
         }));
     }
 
+    [HttpGet("mall")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ApiResponse<MiniAppMallDto>>> GetMall(CancellationToken cancellationToken)
+    {
+        var packs = await dbContext.CouponPacks.AsNoTracking()
+            .Where(x => x.Status == CouponPackStatus.Enabled)
+            .OrderByDescending(x => x.CreatedAt)
+            .Take(4)
+            .Select(x => new MiniAppCouponPackCardDto
+            {
+                Id = x.Id,
+                Name = x.Name,
+                ImageUrl = string.Empty,
+                SalePrice = x.SalePrice,
+                PerUserLimit = x.PerUserLimit,
+                Remark = x.Remark,
+                SaleStartTime = x.SaleStartTime,
+                SaleEndTime = x.SaleEndTime,
+            })
+            .ToListAsync(cancellationToken);
+        await FillCouponPackImageUrlsAsync(packs, cancellationToken);
+
+        var saleCoupons = await dbContext.CouponTemplates.AsNoTracking()
+            .Where(x => x.IsEnabled
+                && x.DistributionMode == CouponDistributionMode.PaidStandalone
+                && x.SalePrice.HasValue
+                && x.SalePrice.Value > 0)
+            .OrderByDescending(x => x.CreatedAt)
+            .Take(12)
+            .Select(x => new MiniAppSaleCouponCardDto
+            {
+                Id = x.Id,
+                Name = x.Name,
+                ImageUrl = string.Empty,
+                TemplateType = (int)x.TemplateType,
+                SalePrice = x.SalePrice ?? 0m,
+                DiscountAmount = x.DiscountAmount,
+                ThresholdAmount = x.ThresholdAmount,
+                IsAllStores = x.IsAllStores,
+                IsNewUserOnly = x.IsNewUserOnly,
+                Remark = x.Remark,
+                FulfillmentHint = x.TemplateType == CouponTemplateType.Product ? "支付成功后待 ERP 处理" : null,
+            })
+            .ToListAsync(cancellationToken);
+
+        var saleCouponIds = saleCoupons.Select(x => x.Id).ToArray();
+        var productSummaryMap = saleCouponIds.Length == 0
+            ? new Dictionary<long, string>()
+            : await dbContext.CouponTemplateProductScopes.AsNoTracking()
+                .Where(x => saleCouponIds.Contains(x.CouponTemplateId))
+                .Join(dbContext.Products.AsNoTracking(), scope => scope.ProductId, product => product.Id,
+                    (scope, product) => new { scope.CouponTemplateId, product.Name })
+                .GroupBy(x => x.CouponTemplateId)
+                .Select(x => new { CouponTemplateId = x.Key, ProductSummary = string.Join(" / ", x.Select(y => y.Name).Distinct().Take(2)) })
+                .ToDictionaryAsync(x => x.CouponTemplateId, x => x.ProductSummary, cancellationToken);
+
+        await FillSaleCouponImageUrlsAsync(saleCoupons, cancellationToken);
+        foreach (var item in saleCoupons)
+        {
+            if (productSummaryMap.TryGetValue(item.Id, out var summary))
+            {
+                item.ProductSummary = summary;
+            }
+        }
+
+        var standaloneCoupons = saleCoupons.Where(x => x.TemplateType != (int)CouponTemplateType.Product).ToList();
+        var productCoupons = saleCoupons.Where(x => x.TemplateType == (int)CouponTemplateType.Product).ToList();
+
+        var products = await dbContext.Products.AsNoTracking()
+            .Where(x => x.IsEnabled)
+            .OrderByDescending(x => x.CreatedAt)
+            .Take(4)
+            .Select(x => new MiniAppProductCardDto
+            {
+                Id = x.Id,
+                Name = x.Name,
+                ErpProductCode = x.ErpProductCode,
+                MainImageUrl = string.Empty,
+                ErpOriginalPrice = x.ErpOriginalPrice,
+                SalePrice = x.SalePrice,
+            })
+            .ToListAsync(cancellationToken);
+        await FillProductImageUrlsAsync(products, cancellationToken);
+
+        return Ok(Success(new MiniAppMallDto
+        {
+            Packs = packs,
+            StandaloneCoupons = standaloneCoupons,
+            ProductCoupons = productCoupons,
+            Products = products,
+        }));
+    }
+
     [HttpGet("products")]
     [AllowAnonymous]
     public async Task<ActionResult<ApiResponse<PagedResult<MiniAppProductCardDto>>>> GetProducts([FromQuery] string? keyword, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
@@ -222,6 +315,7 @@ public class MiniAppController(
                 Name = x.Name,
                 ErpProductCode = x.ErpProductCode,
                 MainImageUrl = string.Empty,
+                ErpOriginalPrice = x.ErpOriginalPrice,
                 SalePrice = x.SalePrice,
             })
             .ToListAsync(cancellationToken);
@@ -251,6 +345,7 @@ public class MiniAppController(
                 x.ErpProductCode,
                 x.MainImageAssetId,
                 x.DetailImageAssetIds,
+                x.ErpOriginalPrice,
                 x.SalePrice,
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -275,7 +370,9 @@ public class MiniAppController(
         var relatedCoupons = await dbContext.CouponTemplateProductScopes.AsNoTracking()
             .Where(x => x.ProductId == id)
             .Join(
-                dbContext.CouponTemplates.AsNoTracking().Where(x => x.IsEnabled),
+                dbContext.CouponTemplates.AsNoTracking().Where(x => x.IsEnabled
+                    && (x.DistributionMode == CouponDistributionMode.FreeClaim
+                        || (x.DistributionMode == CouponDistributionMode.PaidStandalone && x.SalePrice.HasValue && x.SalePrice.Value > 0))),
                 scope => scope.CouponTemplateId,
                 template => template.Id,
                 (_, template) => new MiniAppCouponTemplateCardDto
@@ -283,6 +380,8 @@ public class MiniAppController(
                     Id = template.Id,
                     Name = template.Name,
                     ImageUrl = string.Empty,
+                    DistributionMode = (int)template.DistributionMode,
+                    SalePrice = template.SalePrice,
                     TemplateType = (int)template.TemplateType,
                     DiscountAmount = template.DiscountAmount,
                     ThresholdAmount = template.ThresholdAmount,
@@ -301,16 +400,21 @@ public class MiniAppController(
         var relatedCouponIds = relatedCoupons.Select(x => x.Id).ToArray();
         var recommendedCoupons = await dbContext.CouponTemplates.AsNoTracking()
             .Where(x => x.IsEnabled
+                && (x.DistributionMode == CouponDistributionMode.FreeClaim
+                    || (x.DistributionMode == CouponDistributionMode.PaidStandalone && x.SalePrice.HasValue && x.SalePrice.Value > 0))
                 && !x.IsNewUserOnly
-                && (int)x.TemplateType != 3
                 && !relatedCouponIds.Contains(x.Id))
-            .OrderByDescending(x => x.CreatedAt)
+            .OrderByDescending(x => x.DistributionMode == CouponDistributionMode.PaidStandalone)
+            .ThenByDescending(x => x.TemplateType == CouponTemplateType.Product)
+            .ThenByDescending(x => x.CreatedAt)
             .Take(4)
             .Select(template => new MiniAppCouponTemplateCardDto
             {
                 Id = template.Id,
                 Name = template.Name,
                 ImageUrl = string.Empty,
+                DistributionMode = (int)template.DistributionMode,
+                SalePrice = template.SalePrice,
                 TemplateType = (int)template.TemplateType,
                 DiscountAmount = template.DiscountAmount,
                 ThresholdAmount = template.ThresholdAmount,
@@ -338,6 +442,7 @@ public class MiniAppController(
                 .Where(assetMap.ContainsKey)
                 .Select(assetId => ToAbsoluteAssetUrl(assetMap[assetId]))
                 .ToArray(),
+            ErpOriginalPrice = product.ErpOriginalPrice,
             SalePrice = product.SalePrice,
             IsEnabled = true,
             Remark = null,
@@ -346,6 +451,56 @@ public class MiniAppController(
         };
 
         return Ok(Success(detail));
+    }
+
+    [HttpGet("sale-coupons/{id:long}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ApiResponse<MiniAppSaleCouponDetailDto>>> GetSaleCouponDetail(long id, CancellationToken cancellationToken)
+    {
+        var coupon = await dbContext.CouponTemplates.AsNoTracking()
+            .Where(x => x.Id == id
+                && x.IsEnabled
+                && x.DistributionMode == CouponDistributionMode.PaidStandalone
+                && x.SalePrice.HasValue
+                && x.SalePrice.Value > 0)
+            .Select(x => new MiniAppSaleCouponDetailDto
+            {
+                Id = x.Id,
+                Name = x.Name,
+                ImageUrl = string.Empty,
+                TemplateType = (int)x.TemplateType,
+                DistributionMode = (int)x.DistributionMode,
+                SalePrice = x.SalePrice ?? 0m,
+                ValidPeriodType = (int)x.ValidPeriodType,
+                DiscountAmount = x.DiscountAmount,
+                ThresholdAmount = x.ThresholdAmount,
+                ValidDays = x.ValidDays,
+                ValidFrom = x.ValidFrom,
+                ValidTo = x.ValidTo,
+                IsNewUserOnly = x.IsNewUserOnly,
+                IsAllStores = x.IsAllStores,
+                PerUserLimit = x.PerUserLimit,
+                TemplateRemark = x.Remark,
+                FulfillmentHint = x.TemplateType == CouponTemplateType.Product ? "支付成功后待 ERP 处理" : null,
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (coupon is null)
+        {
+            return NotFound(Failure<MiniAppSaleCouponDetailDto>("售卖券不存在或已下架", 404));
+        }
+
+        await FillSaleCouponImageUrlsAsync([coupon], cancellationToken);
+        if (coupon.TemplateType == (int)CouponTemplateType.Product)
+        {
+            coupon.ProductSummary = await dbContext.CouponTemplateProductScopes.AsNoTracking()
+                .Where(x => x.CouponTemplateId == coupon.Id)
+                .Join(dbContext.Products.AsNoTracking(), scope => scope.ProductId, product => product.Id,
+                    (_, product) => product.Name)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
+        return Ok(Success(coupon));
     }
 
         [HttpGet("coupon-packs/{id:long}")]
@@ -674,19 +829,32 @@ public class MiniAppController(
         var query = dbContext.CouponOrders.AsNoTracking().Where(x => x.AppUserId == userId.Value);
         var totalCount = await query.CountAsync(cancellationToken);
         var items = await query.OrderByDescending(x => x.CreatedAt).ApplyLegacyPaging(pageIndex, pageSize, x => x.Id)
-            .Join(dbContext.CouponPacks.AsNoTracking(), order => order.CouponPackId, pack => pack.Id,
-                (order, pack) => new MiniAppOrderCardDto
-                {
-                    Id = order.Id,
-                    OrderNo = order.OrderNo,
-                    CouponPackId = order.CouponPackId,
-                    CouponPackName = pack.Name,
-                    OrderAmount = order.OrderAmount,
-                    Status = (int)order.Status,
-                    PaidAt = order.PaidAt,
-                    PaymentNo = order.PaymentNo,
-                    CreatedAt = order.CreatedAt,
-                })
+            .Select(order => new MiniAppOrderCardDto
+            {
+                Id = order.Id,
+                OrderNo = order.OrderNo,
+                CouponPackId = order.CouponPackId,
+                CouponPackName = dbContext.CouponPacks.AsNoTracking()
+                    .Where(pack => order.CouponPackId.HasValue && pack.Id == order.CouponPackId.Value)
+                    .Select(pack => pack.Name)
+                    .FirstOrDefault(),
+                CouponTemplateId = order.CouponTemplateId,
+                CouponTemplateName = dbContext.CouponTemplates.AsNoTracking()
+                    .Where(template => order.CouponTemplateId.HasValue && template.Id == order.CouponTemplateId.Value)
+                    .Select(template => template.Name)
+                    .FirstOrDefault(),
+                IsProductCoupon = dbContext.CouponTemplates.AsNoTracking()
+                    .Where(template => order.CouponTemplateId.HasValue && template.Id == order.CouponTemplateId.Value)
+                    .Any(template => template.TemplateType == CouponTemplateType.Product),
+                FulfillmentStatusText = dbContext.UserCoupons.AsNoTracking()
+                    .Where(coupon => coupon.CouponOrderId == order.Id && coupon.FulfillmentStatus == CouponFulfillmentStatus.PendingFulfillment)
+                    .Any() ? "待履约 / 待 ERP 处理" : "待使用",
+                OrderAmount = order.OrderAmount,
+                Status = (int)order.Status,
+                PaidAt = order.PaidAt,
+                PaymentNo = order.PaymentNo,
+                CreatedAt = order.CreatedAt,
+            })
             .ToListAsync(cancellationToken);
 
         return Ok(Success(new PagedResult<MiniAppOrderCardDto>
@@ -718,20 +886,33 @@ public class MiniAppController(
 
         var order = await dbContext.CouponOrders.AsNoTracking()
             .Where(x => x.Id == id && x.AppUserId == userId.Value)
-            .Join(dbContext.CouponPacks.AsNoTracking(), couponOrder => couponOrder.CouponPackId, couponPack => couponPack.Id,
-                (couponOrder, couponPack) => new MiniAppOrderDetailDto
-                {
-                    Id = couponOrder.Id,
-                    OrderNo = couponOrder.OrderNo,
-                    AppUserId = couponOrder.AppUserId,
-                    CouponPackId = couponOrder.CouponPackId,
-                    CouponPackName = couponPack.Name,
-                    OrderAmount = couponOrder.OrderAmount,
-                    Status = (int)couponOrder.Status,
-                    PaidAt = couponOrder.PaidAt,
-                    PaymentNo = couponOrder.PaymentNo,
-                    CreatedAt = couponOrder.CreatedAt,
-                })
+            .Select(couponOrder => new MiniAppOrderDetailDto
+            {
+                Id = couponOrder.Id,
+                OrderNo = couponOrder.OrderNo,
+                AppUserId = couponOrder.AppUserId,
+                CouponPackId = couponOrder.CouponPackId,
+                CouponPackName = dbContext.CouponPacks.AsNoTracking()
+                    .Where(pack => couponOrder.CouponPackId.HasValue && pack.Id == couponOrder.CouponPackId.Value)
+                    .Select(pack => pack.Name)
+                    .FirstOrDefault(),
+                CouponTemplateId = couponOrder.CouponTemplateId,
+                CouponTemplateName = dbContext.CouponTemplates.AsNoTracking()
+                    .Where(template => couponOrder.CouponTemplateId.HasValue && template.Id == couponOrder.CouponTemplateId.Value)
+                    .Select(template => template.Name)
+                    .FirstOrDefault(),
+                IsProductCoupon = dbContext.CouponTemplates.AsNoTracking()
+                    .Where(template => couponOrder.CouponTemplateId.HasValue && template.Id == couponOrder.CouponTemplateId.Value)
+                    .Any(template => template.TemplateType == CouponTemplateType.Product),
+                FulfillmentStatusText = dbContext.UserCoupons.AsNoTracking()
+                    .Where(coupon => coupon.CouponOrderId == couponOrder.Id && coupon.FulfillmentStatus == CouponFulfillmentStatus.PendingFulfillment)
+                    .Any() ? "待履约 / 待 ERP 处理" : "待使用",
+                OrderAmount = couponOrder.OrderAmount,
+                Status = (int)couponOrder.Status,
+                PaidAt = couponOrder.PaidAt,
+                PaymentNo = couponOrder.PaymentNo,
+                CreatedAt = couponOrder.CreatedAt,
+            })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (order is null)
@@ -770,6 +951,10 @@ public class MiniAppController(
             AppUserId = order.AppUserId,
             CouponPackId = order.CouponPackId,
             CouponPackName = order.CouponPackName,
+            CouponTemplateId = order.CouponTemplateId,
+            CouponTemplateName = order.CouponTemplateName,
+            IsProductCoupon = order.IsProductCoupon,
+            FulfillmentStatusText = order.FulfillmentStatusText,
             OrderAmount = order.OrderAmount,
             Status = order.Status,
             PaidAt = order.PaidAt,
@@ -791,9 +976,9 @@ public class MiniAppController(
     public async Task<ActionResult<ApiResponse<MiniAppCreateOrderResultDto>>> CreateOrder([FromBody] MiniAppCreateOrderRequest request, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        if (!userId.HasValue || userId.Value <= 0 || request.CouponPackId <= 0)
+        if (!userId.HasValue || userId.Value <= 0)
         {
-            return BadRequest(Failure<MiniAppCreateOrderResultDto>("用户与券包不能为空"));
+            return BadRequest(Failure<MiniAppCreateOrderResultDto>("用户不能为空"));
         }
 
         var user = await dbContext.AppUsers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == userId.Value, cancellationToken);
@@ -802,58 +987,127 @@ public class MiniAppController(
             return NotFound(Failure<MiniAppCreateOrderResultDto>("用户不存在", 404));
         }
 
-        var pack = await dbContext.CouponPacks.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == request.CouponPackId && x.Status == CouponPackStatus.Enabled, cancellationToken);
-        if (pack is null)
+        if (request.CouponPackId.HasValue == request.CouponTemplateId.HasValue)
         {
-            return BadRequest(Failure<MiniAppCreateOrderResultDto>("券包不存在或已下架"));
+            return BadRequest(Failure<MiniAppCreateOrderResultDto>("券包与单张券必须二选一"));
         }
 
         var now = DateTime.Now;
-        if (pack.SaleStartTime.HasValue && pack.SaleStartTime.Value > now)
+        if (request.CouponPackId.HasValue)
         {
-            return BadRequest(Failure<MiniAppCreateOrderResultDto>("券包未到开售时间"));
+            var pack = await dbContext.CouponPacks.AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == request.CouponPackId.Value && x.Status == CouponPackStatus.Enabled, cancellationToken);
+            if (pack is null)
+            {
+                return BadRequest(Failure<MiniAppCreateOrderResultDto>("券包不存在或已下架"));
+            }
+
+            if (pack.SaleStartTime.HasValue && pack.SaleStartTime.Value > now)
+            {
+                return BadRequest(Failure<MiniAppCreateOrderResultDto>("券包未到开售时间"));
+            }
+
+            if (pack.SaleEndTime.HasValue && pack.SaleEndTime.Value < now)
+            {
+                return BadRequest(Failure<MiniAppCreateOrderResultDto>("券包已结束售卖"));
+            }
+
+            if (pack.PerUserLimit > 0)
+            {
+                var orderCount = await dbContext.CouponOrders.AsNoTracking()
+                    .CountAsync(x => x.AppUserId == userId.Value
+                        && x.CouponPackId == request.CouponPackId.Value
+                        && x.Status != CouponOrderStatus.Closed,
+                        cancellationToken);
+                if (orderCount >= pack.PerUserLimit)
+                {
+                    return BadRequest(Failure<MiniAppCreateOrderResultDto>($"该券包每位用户限购 {pack.PerUserLimit} 份"));
+                }
+            }
+
+            var entity = new CouponOrder
+            {
+                OrderNo = OrderNoGenerator.Create("CP"),
+                AppUserId = userId.Value,
+                CouponPackId = request.CouponPackId.Value,
+                CouponTemplateId = null,
+                OrderAmount = pack.SalePrice,
+                Status = CouponOrderStatus.PendingPayment,
+            };
+
+            dbContext.CouponOrders.Add(entity);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            return Ok(Success(new MiniAppCreateOrderResultDto
+            {
+                OrderId = entity.Id,
+                OrderNo = entity.OrderNo,
+                CouponPackId = entity.CouponPackId,
+                CouponPackName = pack.Name,
+                CouponTemplateId = null,
+                CouponTemplateName = null,
+                IsProductCoupon = false,
+                OrderAmount = entity.OrderAmount,
+                Status = (int)entity.Status,
+                CreatedAt = entity.CreatedAt,
+            }, "下单成功"));
         }
 
-        if (pack.SaleEndTime.HasValue && pack.SaleEndTime.Value < now)
+        var couponTemplateId = request.CouponTemplateId;
+        if (!couponTemplateId.HasValue)
         {
-            return BadRequest(Failure<MiniAppCreateOrderResultDto>("券包已结束售卖"));
+            return BadRequest(Failure<MiniAppCreateOrderResultDto>("售卖券参数不能为空"));
         }
 
-        if (pack.PerUserLimit > 0)
+        var template = await dbContext.CouponTemplates.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == couponTemplateId.Value
+                && x.IsEnabled
+                && x.DistributionMode == CouponDistributionMode.PaidStandalone
+                && x.SalePrice.HasValue
+                && x.SalePrice.Value > 0, cancellationToken);
+        if (template is null)
+        {
+            return BadRequest(Failure<MiniAppCreateOrderResultDto>("售卖券不存在、未启用或不可购买"));
+        }
+
+        if (template.PerUserLimit > 0)
         {
             var orderCount = await dbContext.CouponOrders.AsNoTracking()
                 .CountAsync(x => x.AppUserId == userId.Value
-                    && x.CouponPackId == request.CouponPackId
+                    && x.CouponTemplateId == couponTemplateId.Value
                     && x.Status != CouponOrderStatus.Closed,
                     cancellationToken);
-            if (orderCount >= pack.PerUserLimit)
+            if (orderCount >= template.PerUserLimit)
             {
-                return BadRequest(Failure<MiniAppCreateOrderResultDto>($"该券包每位用户限购 {pack.PerUserLimit} 份"));
+                return BadRequest(Failure<MiniAppCreateOrderResultDto>($"该券每位用户限购 {template.PerUserLimit} 份"));
             }
         }
 
-        var entity = new CouponOrder
+        var standaloneEntity = new CouponOrder
         {
             OrderNo = OrderNoGenerator.Create("CP"),
             AppUserId = userId.Value,
-            CouponPackId = request.CouponPackId,
-            OrderAmount = pack.SalePrice,
+            CouponPackId = null,
+            CouponTemplateId = couponTemplateId.Value,
+            OrderAmount = template.SalePrice!.Value,
             Status = CouponOrderStatus.PendingPayment,
         };
 
-        dbContext.CouponOrders.Add(entity);
+        dbContext.CouponOrders.Add(standaloneEntity);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return Ok(Success(new MiniAppCreateOrderResultDto
         {
-            OrderId = entity.Id,
-            OrderNo = entity.OrderNo,
-            CouponPackId = entity.CouponPackId,
-            CouponPackName = pack.Name,
-            OrderAmount = entity.OrderAmount,
-            Status = (int)entity.Status,
-            CreatedAt = entity.CreatedAt,
+            OrderId = standaloneEntity.Id,
+            OrderNo = standaloneEntity.OrderNo,
+            CouponPackId = null,
+            CouponPackName = null,
+            CouponTemplateId = standaloneEntity.CouponTemplateId,
+            CouponTemplateName = template.Name,
+            IsProductCoupon = template.TemplateType == CouponTemplateType.Product,
+            OrderAmount = standaloneEntity.OrderAmount,
+            Status = (int)standaloneEntity.Status,
+            CreatedAt = standaloneEntity.CreatedAt,
         }, "下单成功"));
     }
 
@@ -873,10 +1127,9 @@ public class MiniAppController(
             return NotFound(Failure<MiniAppCreateOrderPaymentResultDto>("订单不存在", 404));
         }
 
-        var packName = await dbContext.CouponPacks.AsNoTracking()
-            .Where(x => x.Id == order.CouponPackId)
-            .Select(x => x.Name)
-            .FirstOrDefaultAsync(cancellationToken) ?? string.Empty;
+        var payDescription = order.CouponPackId.HasValue
+            ? $"券包订单-{order.OrderNo}"
+            : $"单张券订单-{order.OrderNo}";
 
         if (order.Status == CouponOrderStatus.Paid)
         {
@@ -957,7 +1210,7 @@ public class MiniAppController(
 
         var payResult = await weChatPayService.CreateJsapiOrderAsync(
             transaction.PaymentNo,
-            $"券包订单-{order.OrderNo}",
+            payDescription,
             transaction.Amount,
             user.MiniOpenId,
             cancellationToken);
@@ -1087,6 +1340,50 @@ public class MiniAppController(
             if (imageMap.TryGetValue(item.Id, out var imageUrl))
             {
                 item.MainImageUrl = ToAbsoluteAssetUrl(imageUrl);
+            }
+        }
+    }
+
+    private async Task FillSaleCouponImageUrlsAsync(IReadOnlyCollection<MiniAppSaleCouponCardDto> items, CancellationToken cancellationToken)
+    {
+        var couponIds = items.Select(x => x.Id).ToArray();
+        if (couponIds.Length == 0)
+        {
+            return;
+        }
+
+        var imageMap = await dbContext.CouponTemplates.AsNoTracking()
+            .Where(x => couponIds.Contains(x.Id) && x.ImageAssetId.HasValue)
+            .Join(dbContext.MediaAssets.AsNoTracking(), coupon => coupon.ImageAssetId!.Value, asset => asset.Id, (coupon, asset) => new { coupon.Id, asset.FileUrl })
+            .ToDictionaryAsync(x => x.Id, x => x.FileUrl, cancellationToken);
+
+        foreach (var item in items)
+        {
+            if (imageMap.TryGetValue(item.Id, out var imageUrl))
+            {
+                item.ImageUrl = ToAbsoluteAssetUrl(imageUrl);
+            }
+        }
+    }
+
+    private async Task FillSaleCouponImageUrlsAsync(IReadOnlyCollection<MiniAppSaleCouponDetailDto> items, CancellationToken cancellationToken)
+    {
+        var couponIds = items.Select(x => x.Id).ToArray();
+        if (couponIds.Length == 0)
+        {
+            return;
+        }
+
+        var imageMap = await dbContext.CouponTemplates.AsNoTracking()
+            .Where(x => couponIds.Contains(x.Id) && x.ImageAssetId.HasValue)
+            .Join(dbContext.MediaAssets.AsNoTracking(), coupon => coupon.ImageAssetId!.Value, asset => asset.Id, (coupon, asset) => new { coupon.Id, asset.FileUrl })
+            .ToDictionaryAsync(x => x.Id, x => x.FileUrl, cancellationToken);
+
+        foreach (var item in items)
+        {
+            if (imageMap.TryGetValue(item.Id, out var imageUrl))
+            {
+                item.ImageUrl = ToAbsoluteAssetUrl(imageUrl);
             }
         }
     }

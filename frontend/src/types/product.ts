@@ -6,7 +6,9 @@ export interface ProductListItemDto {
   mainImageUrl?: string
   detailImageAssetIds: number[]
   detailImageUrls: string[]
+  erpOriginalPrice?: number
   salePrice?: number
+  stockQuantity?: number
   isEnabled: boolean
   createdAt: string
 }
@@ -16,6 +18,8 @@ export interface SaveProductRequest {
   erpProductCode: string
   mainImageAssetId?: number
   detailImageAssetIds: number[]
+  erpOriginalPrice?: number
   salePrice?: number
+  stockQuantity?: number
   isEnabled: boolean
 }

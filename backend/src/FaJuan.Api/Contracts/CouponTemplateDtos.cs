@@ -19,6 +19,8 @@ public class CouponTemplateListItemDto
     public bool IsAllStores { get; init; }
     public int PerUserLimit { get; init; }
     public bool IsEnabled { get; init; }
+    public CouponDistributionMode DistributionMode { get; init; }
+    public decimal? SalePrice { get; init; }
     public string? Remark { get; init; }
     public IReadOnlyCollection<long> ProductIds { get; init; } = [];
     public IReadOnlyCollection<long> StoreIds { get; init; } = [];
@@ -40,6 +42,8 @@ public class SaveCouponTemplateRequest
     public bool IsAllStores { get; init; } = true;
     public int PerUserLimit { get; init; } = 1;
     public bool IsEnabled { get; init; } = true;
+    public CouponDistributionMode DistributionMode { get; init; } = CouponDistributionMode.FreeClaim;
+    public decimal? SalePrice { get; init; }
     public string? Remark { get; init; }
     public IReadOnlyCollection<long> ProductIds { get; init; } = [];
     public IReadOnlyCollection<long> StoreIds { get; init; } = [];

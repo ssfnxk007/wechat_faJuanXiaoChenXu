@@ -56,15 +56,14 @@ public class CouponOrdersController(AppDbContext dbContext) : ApiControllerBase
     {
         var order = await dbContext.CouponOrders.AsNoTracking()
             .Where(x => x.Id == id)
-            .Join(
-                dbContext.CouponPacks.AsNoTracking(),
-                couponOrder => couponOrder.CouponPackId,
-                couponPack => couponPack.Id,
-                (couponOrder, couponPack) => new
-                {
-                    Order = couponOrder,
-                    CouponPackName = couponPack.Name,
-                })
+            .Select(couponOrder => new
+            {
+                Order = couponOrder,
+                CouponPackName = dbContext.CouponPacks.AsNoTracking()
+                    .Where(pack => couponOrder.CouponPackId.HasValue && pack.Id == couponOrder.CouponPackId.Value)
+                    .Select(pack => pack.Name)
+                    .FirstOrDefault(),
+            })
             .FirstOrDefaultAsync();
 
         if (order is null)
@@ -168,6 +167,7 @@ public class CouponOrdersController(AppDbContext dbContext) : ApiControllerBase
             OrderNo = OrderNoGenerator.Create("CP"),
             AppUserId = request.UserId,
             CouponPackId = request.CouponPackId,
+            CouponTemplateId = null,
             OrderAmount = pack.SalePrice,
             Status = CouponOrderStatus.PendingPayment,
         };

@@ -68,6 +68,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(x => x.Name).HasMaxLength(100).IsRequired();
             entity.Property(x => x.ErpProductCode).HasMaxLength(64).IsRequired();
             entity.Property(x => x.DetailImageAssetIds).HasColumnType("nvarchar(max)");
+            entity.Property(x => x.ErpOriginalPrice).HasColumnType("decimal(18,2)");
             entity.Property(x => x.SalePrice).HasColumnType("decimal(18,2)");
             entity.Property(x => x.CreatedAt).HasColumnType("datetime");
             entity.HasIndex(x => x.ErpProductCode).IsUnique();
@@ -163,6 +164,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.ToTable("UserCoupon");
             entity.HasKey(x => x.Id);
             entity.Property(x => x.CouponCode).HasMaxLength(50).IsRequired();
+            entity.Property(x => x.RowVersion).IsRowVersion();
             entity.Property(x => x.ReceivedAt).HasColumnType("datetime");
             entity.Property(x => x.EffectiveAt).HasColumnType("datetime");
             entity.Property(x => x.ExpireAt).HasColumnType("datetime");

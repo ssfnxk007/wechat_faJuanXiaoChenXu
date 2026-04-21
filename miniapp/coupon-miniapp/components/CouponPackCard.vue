@@ -32,41 +32,42 @@ defineProps({
 }
 .pack-cover {
   display: grid;
-  gap: 10rpx;
-  min-height: 240rpx;
-  padding: 28rpx;
+  align-content: start;
+  gap: 8rpx;
+  min-height: 160rpx;
+  padding: 18rpx 20rpx;
   background: var(--cm-pack-cover-bg, linear-gradient(135deg, rgba(44, 74, 58, 0.92) 0%, rgba(95, 116, 83, 0.88) 54%, rgba(191, 167, 117, 0.72) 100%));
   color: #fffaf3;
 }
 .pack-badge {
   width: fit-content;
-  padding: 8rpx 18rpx;
+  padding: 4rpx 14rpx;
   border-radius: 999rpx;
   background: rgba(255, 255, 255, 0.12);
-  font-size: 20rpx;
+  font-size: 18rpx;
 }
 .pack-cover-title {
-  font-size: 38rpx;
+  font-size: 30rpx;
   font-weight: 700;
 }
 .pack-cover-subtitle {
-  font-size: 24rpx;
+  font-size: 20rpx;
   opacity: 0.88;
 }
 .pack-body {
   display: grid;
-  gap: 14rpx;
-  padding: 24rpx 28rpx 28rpx;
+  gap: 10rpx;
+  padding: 18rpx 20rpx 20rpx;
 }
 .pack-price {
   color: var(--cm-theme-primary-strong, $cm-primary-strong);
-  font-size: 44rpx;
+  font-size: 36rpx;
   font-weight: 700;
 }
 .pack-desc,
 .pack-meta {
   color: $cm-text-secondary;
-  font-size: 24rpx;
+  font-size: 20rpx;
 }
 .pack-footer {
   display: flex;
@@ -75,14 +76,14 @@ defineProps({
   gap: 16rpx;
 }
 .pack-action {
-  min-width: 152rpx;
-  padding: 18rpx 24rpx;
+  min-width: 136rpx;
+  padding: 14rpx 18rpx;
   border-radius: 999rpx;
   background: var(--cm-pack-action-bg, linear-gradient(135deg, #325d49 0%, #5f7453 100%));
   box-shadow: var(--cm-pack-action-shadow, none);
   color: var(--cm-pack-action-color, #fffdf8);
   text-align: center;
-  font-size: 24rpx;
+  font-size: 20rpx;
   font-weight: 600;
 }
 </style>

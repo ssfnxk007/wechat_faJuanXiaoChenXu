@@ -534,7 +534,7 @@ import type {
   UserCouponListItemDto,
 } from '@/types/user-coupon'
 import { getErrorMessage } from '@/utils/http-error'
-import { authStorage } from '@/utils.auth'
+import { authStorage } from '@/utils/auth'
 import { notify } from '@/utils/notify'
 
 const items = ref<UserCouponListItemDto[]>([])

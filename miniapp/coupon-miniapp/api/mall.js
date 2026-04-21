@@ -5,6 +5,13 @@ const mockMallData = {
     { id: 1, title: '春序礼遇券包', subtitle: '组合权益 · 门店可核销', price: '29.9', desc: '含满减券、门店通用券与精品专区券，可分次使用。', meta: '限购 1 份' },
     { id: 2, title: '雅礼组合券包', subtitle: '门店专享 · 节气精选', price: '79.9', desc: '适合礼赠和高客单商品组合使用', meta: '每人限购 2 份' }
   ],
+  standaloneCoupons: [
+    { id: 101, title: '门店通用立减券', subtitle: '单张售卖券', price: '19.9', amount: '20', threshold: '99', desc: '适合常规到店消费场景，购买后自动入包。', meta: '满 99 元可用', fulfillmentHint: '支付成功后立即发券' },
+    { id: 102, title: '轻享无门槛券', subtitle: '单张售卖券', price: '9.9', amount: '10', threshold: '0', desc: '轻消费场景友好，适合快速转化。', meta: '无门槛使用', fulfillmentHint: '支付成功后立即发券' }
+  ],
+  productCoupons: [
+    { id: 201, title: '云锦礼盒商品券', subtitle: '商品券', price: '39.9', amount: '50', threshold: '0', desc: '购买后发放商品券，后续等待商品履约。', meta: '对应商品：云锦礼盒', productSummary: '云锦礼盒', fulfillmentHint: '支付成功后待 ERP 处理' }
+  ],
   goods: [
     { id: 1, title: '云锦礼盒', desc: '适合搭配指定商品券，适合节日礼赠。', price: '128', tag: '指定商品券' },
     { id: 2, title: '东方香礼', desc: '适合与满减券联动，提升客单价。', price: '168', tag: '满减可用' },
@@ -44,6 +51,44 @@ function mapPack(item, fallback = {}) {
   }
 }
 
+function formatCouponType(templateType) {
+  return ({
+    1: '新人券',
+    2: '无门槛券',
+    3: '商品券',
+    4: '满减券'
+  }[Number(templateType)] || '优惠券')
+}
+
+function buildCouponMeta(item, fallback = {}) {
+  const threshold = firstValue(item, ['threshold', 'thresholdAmount'], fallback.threshold || '')
+  const productSummary = firstValue(item, ['productSummary'], fallback.productSummary || '')
+  if (productSummary) {
+    return `对应商品：${productSummary}`
+  }
+  if (threshold && String(threshold) !== '0') {
+    return `满 ${threshold} 元可用`
+  }
+  return String(firstValue(item, ['meta'], fallback.meta || '无门槛使用'))
+}
+
+function mapSaleCoupon(item, fallback = {}) {
+  return {
+    id: firstValue(item, ['id', 'couponTemplateId'], fallback.id || Date.now()),
+    title: String(firstValue(item, ['title', 'name'], fallback.title || '售卖券')),
+    subtitle: String(firstValue(item, ['subtitle'], fallback.subtitle || formatCouponType(firstValue(item, ['templateType'], 0)))),
+    price: String(firstValue(item, ['price', 'salePrice'], fallback.price || '0')),
+    amount: String(firstValue(item, ['amount', 'discountAmount'], fallback.amount || '')),
+    threshold: String(firstValue(item, ['threshold', 'thresholdAmount'], fallback.threshold || '')),
+    desc: String(firstValue(item, ['desc', 'remark', 'templateRemark'], fallback.desc || '支付后自动发放')),
+    meta: buildCouponMeta(item, fallback),
+    productSummary: String(firstValue(item, ['productSummary'], fallback.productSummary || '')),
+    fulfillmentHint: String(firstValue(item, ['fulfillmentHint'], fallback.fulfillmentHint || '支付成功后立即发券')),
+    imageUrl: String(firstValue(item, ['imageUrl'], fallback.imageUrl || '')),
+    templateType: Number(firstValue(item, ['templateType'], fallback.templateType || 0))
+  }
+}
+
 function mapProduct(item, fallback = {}) {
   return {
     id: firstValue(item, ['id', 'productId'], fallback.id || Date.now()),
@@ -55,25 +100,24 @@ function mapProduct(item, fallback = {}) {
   }
 }
 
-export async function fetchMallPageData(query = {}) {
+export async function fetchMallPageData() {
   const enableFallback = process.env.NODE_ENV !== 'production'
-  const [packResult, productResult] = await Promise.all([
-    requestWithFallback(
-      { url: '/api/miniapp/coupon-packs', query },
-      enableFallback ? () => ({ items: mockMallData.packs }) : undefined
-    ),
-    requestWithFallback(
-      { url: '/api/miniapp/products', query },
-      enableFallback ? () => ({ items: mockMallData.goods }) : undefined
-    )
-  ])
+  const result = await requestWithFallback(
+    { url: '/api/miniapp/mall' },
+    enableFallback ? () => mockMallData : undefined
+  )
 
-  const packs = toItems(packResult.data).map((item, index) => mapPack(item, mockMallData.packs[index] || {}))
-  const goods = toItems(productResult.data).map((item, index) => mapProduct(item, mockMallData.goods[index] || {}))
+  const payload = result.data || {}
+  const packs = toItems(payload.packs).map((item, index) => mapPack(item, mockMallData.packs[index] || {}))
+  const standaloneCoupons = toItems(payload.standaloneCoupons).map((item, index) => mapSaleCoupon(item, mockMallData.standaloneCoupons[index] || {}))
+  const productCoupons = toItems(payload.productCoupons).map((item, index) => mapSaleCoupon(item, mockMallData.productCoupons[index] || {}))
+  const goods = toItems(payload.products).map((item, index) => mapProduct(item, mockMallData.goods[index] || {}))
 
   return {
-    source: packResult.source === 'remote' || productResult.source === 'remote' ? 'mixed' : 'fallback',
+    source: result.source,
     packs: packs.length ? packs : mockMallData.packs,
+    standaloneCoupons: standaloneCoupons.length ? standaloneCoupons : mockMallData.standaloneCoupons,
+    productCoupons: productCoupons.length ? productCoupons : mockMallData.productCoupons,
     goods: goods.length ? goods : mockMallData.goods
   }
 }
@@ -106,6 +150,7 @@ export async function fetchMiniAppProductDetail(productId) {
     id: Number(firstValue(payload, ['id'], targetId)),
     title: String(firstValue(payload, ['title', 'name'], fallbackProduct?.title || '商品详情')),
     desc: String(firstValue(payload, ['desc', 'remark'], fallbackProduct?.desc || '请以后端商品说明为准。')),
+    erpOriginalPrice: String(firstValue(payload, ['erpOriginalPrice'], '')),
     price: String(firstValue(payload, ['price', 'salePrice'], fallbackProduct?.price || '')),
     tag: String(firstValue(payload, ['tag', 'erpProductCode'], fallbackProduct?.tag || '商品')),
     imageUrl: String(firstValue(payload, ['imageUrl', 'mainImageUrl'], fallbackProduct?.imageUrl || '')),
@@ -133,6 +178,8 @@ function normalizeCoupons(value, fallbackProduct, disableFallback = false) {
       type: String(firstValue(item, ['type', 'templateTypeText', 'templateType'], '优惠券')),
       badge: String(firstValue(item, ['badge', 'scopeText'], '去领取')),
       templateId: Number(firstValue(item, ['templateId', 'couponTemplateId', 'id'], 0)),
+      distributionMode: Number(firstValue(item, ['distributionMode'], 0)),
+      salePrice: String(firstValue(item, ['salePrice'], '')),
     }))
   }
   return disableFallback ? [] : buildFallbackCoupons(fallbackProduct)
@@ -150,6 +197,8 @@ function buildFallbackCoupons(product) {
       type: '满减券',
       badge: '去领取',
       templateId: 1,
+      distributionMode: 0,
+      salePrice: '',
     },
     {
       id: product.id * 10 + 2,
@@ -160,6 +209,8 @@ function buildFallbackCoupons(product) {
       type: '无门槛券',
       badge: '看详情',
       templateId: 1,
+      distributionMode: 0,
+      salePrice: '',
     },
   ]
 }

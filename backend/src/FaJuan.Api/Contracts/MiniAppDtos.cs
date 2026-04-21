@@ -1,5 +1,13 @@
 namespace FaJuan.Api.Contracts;
 
+public class MiniAppMallDto
+{
+    public IReadOnlyCollection<MiniAppCouponPackCardDto> Packs { get; init; } = [];
+    public IReadOnlyCollection<MiniAppSaleCouponCardDto> StandaloneCoupons { get; init; } = [];
+    public IReadOnlyCollection<MiniAppSaleCouponCardDto> ProductCoupons { get; init; } = [];
+    public IReadOnlyCollection<MiniAppProductCardDto> Products { get; init; } = [];
+}
+
 public class MiniAppHomeDto
 {
     public MiniAppThemeDto Theme { get; init; } = new();
@@ -52,6 +60,7 @@ public class MiniAppProductCardDto
     public string Name { get; init; } = string.Empty;
     public string ErpProductCode { get; init; } = string.Empty;
     public string? MainImageUrl { get; set; }
+    public decimal? ErpOriginalPrice { get; init; }
     public decimal? SalePrice { get; init; }
 }
 
@@ -62,6 +71,7 @@ public class MiniAppProductDetailDto
     public string ErpProductCode { get; init; } = string.Empty;
     public string? MainImageUrl { get; set; }
     public IReadOnlyCollection<string> DetailImageUrls { get; init; } = [];
+    public decimal? ErpOriginalPrice { get; init; }
     public decimal? SalePrice { get; init; }
     public bool IsEnabled { get; init; }
     public string? Remark { get; init; }
@@ -74,6 +84,8 @@ public class MiniAppCouponTemplateCardDto
     public long Id { get; init; }
     public string Name { get; init; } = string.Empty;
     public string? ImageUrl { get; set; }
+    public int DistributionMode { get; init; }
+    public decimal? SalePrice { get; init; }
     public int TemplateType { get; init; }
     public decimal? DiscountAmount { get; init; }
     public decimal? ThresholdAmount { get; init; }
@@ -84,6 +96,22 @@ public class MiniAppCouponTemplateCardDto
     public DateTime? ValidFrom { get; init; }
     public DateTime? ValidTo { get; init; }
     public string? Remark { get; init; }
+}
+
+public class MiniAppSaleCouponCardDto
+{
+    public long Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string? ImageUrl { get; set; }
+    public int TemplateType { get; init; }
+    public decimal SalePrice { get; init; }
+    public decimal? DiscountAmount { get; init; }
+    public decimal? ThresholdAmount { get; init; }
+    public bool IsAllStores { get; init; }
+    public bool IsNewUserOnly { get; init; }
+    public string? Remark { get; init; }
+    public string? ProductSummary { get; set; }
+    public string? FulfillmentHint { get; set; }
 }
 
 public class MiniAppUserSummaryDto
@@ -184,6 +212,28 @@ public class MiniAppCouponTemplateDetailDto
     public int ClaimedCount { get; init; }
 }
 
+public class MiniAppSaleCouponDetailDto
+{
+    public long Id { get; init; }
+    public string Name { get; init; } = string.Empty;
+    public string? ImageUrl { get; set; }
+    public int TemplateType { get; init; }
+    public int DistributionMode { get; init; }
+    public decimal SalePrice { get; init; }
+    public int ValidPeriodType { get; init; }
+    public decimal? DiscountAmount { get; init; }
+    public decimal? ThresholdAmount { get; init; }
+    public int? ValidDays { get; init; }
+    public DateTime? ValidFrom { get; init; }
+    public DateTime? ValidTo { get; init; }
+    public bool IsNewUserOnly { get; init; }
+    public bool IsAllStores { get; init; }
+    public int PerUserLimit { get; init; }
+    public string? TemplateRemark { get; init; }
+    public string? ProductSummary { get; set; }
+    public string? FulfillmentHint { get; set; }
+}
+
 public class MiniAppClaimCouponResultDto
 {
     public long UserCouponId { get; init; }
@@ -205,16 +255,19 @@ public class MiniAppWriteOffRecordDto
 
 public class MiniAppCreateOrderRequest
 {
-    public long UserId { get; init; }
-    public long CouponPackId { get; init; }
+    public long? CouponPackId { get; init; }
+    public long? CouponTemplateId { get; init; }
 }
 
 public class MiniAppCreateOrderResultDto
 {
     public long OrderId { get; init; }
     public string OrderNo { get; init; } = string.Empty;
-    public long CouponPackId { get; init; }
-    public string CouponPackName { get; init; } = string.Empty;
+    public long? CouponPackId { get; init; }
+    public string? CouponPackName { get; init; }
+    public long? CouponTemplateId { get; init; }
+    public string? CouponTemplateName { get; init; }
+    public bool IsProductCoupon { get; init; }
     public decimal OrderAmount { get; init; }
     public int Status { get; init; }
     public DateTime CreatedAt { get; init; }
@@ -224,8 +277,12 @@ public class MiniAppOrderCardDto
 {
     public long Id { get; init; }
     public string OrderNo { get; init; } = string.Empty;
-    public long CouponPackId { get; init; }
-    public string CouponPackName { get; init; } = string.Empty;
+    public long? CouponPackId { get; init; }
+    public string? CouponPackName { get; init; }
+    public long? CouponTemplateId { get; init; }
+    public string? CouponTemplateName { get; init; }
+    public bool IsProductCoupon { get; init; }
+    public string FulfillmentStatusText { get; init; } = string.Empty;
     public decimal OrderAmount { get; init; }
     public int Status { get; init; }
     public DateTime? PaidAt { get; init; }
@@ -238,8 +295,12 @@ public class MiniAppOrderDetailDto
     public long Id { get; init; }
     public string OrderNo { get; init; } = string.Empty;
     public long AppUserId { get; init; }
-    public long CouponPackId { get; init; }
-    public string CouponPackName { get; init; } = string.Empty;
+    public long? CouponPackId { get; init; }
+    public string? CouponPackName { get; init; }
+    public long? CouponTemplateId { get; init; }
+    public string? CouponTemplateName { get; init; }
+    public bool IsProductCoupon { get; init; }
+    public string FulfillmentStatusText { get; init; } = string.Empty;
     public decimal OrderAmount { get; init; }
     public int Status { get; init; }
     public DateTime? PaidAt { get; init; }

@@ -1,0 +1,764 @@
+- generic [ref=e4]:
+  - banner [ref=e5]:
+    - generic [ref=e6]:
+      - link [ref=e7] [cursor=pointer]:
+        - /url: /doc/
+      - generic [ref=e11] [cursor=pointer]: 小程序
+  - list [ref=e13]:
+    - listitem [ref=e14]:
+      - link "组件" [ref=e16] [cursor=pointer]:
+        - /url: /miniprogram/dev/component/
+  - generic:
+    - link "开发" [ref=e18] [cursor=pointer]:
+      - /url: javascript:;
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]: 中文
+        - generic [ref=e22]: EN
+      - generic [ref=e24]: 取消
+  - link [ref=e25] [cursor=pointer]:
+    - /url: javascript:;
+  - generic [ref=e27]:
+    - listitem [ref=e29]:
+      - link "组件" [ref=e30] [cursor=pointer]:
+        - /url: javascript:;
+    - main [ref=e32]:
+      - generic [ref=e33]:
+        - generic [ref=e34]:
+          - generic [ref=e35]:
+            - generic [ref=e36]: 表单组件 /
+            - generic [ref=e37]: button
+          - generic [ref=e38]:
+            - heading "button" [level=1] [ref=e39]
+            - blockquote [ref=e40]:
+              - paragraph [ref=e41]:
+                - text: 基础库 1.0.0 开始支持，低版本需做
+                - link "兼容处理" [ref=e42] [cursor=pointer]:
+                  - /url: ../framework/compatibility.html
+                - text: 。
+            - blockquote [ref=e43]:
+              - paragraph [ref=e44]:
+                - strong [ref=e45]: 微信 Windows 版
+                - text: ：支持
+              - paragraph [ref=e46]:
+                - strong [ref=e47]: 微信 Mac 版
+                - text: ：支持
+              - paragraph [ref=e48]:
+                - strong [ref=e49]: 微信 鸿蒙 OS 版
+                - text: ：支持
+            - blockquote [ref=e50]:
+              - paragraph [ref=e51]:
+                - text: "相关文档:"
+                - link "聊天工具模式" [ref=e52] [cursor=pointer]:
+                  - /url: ../framework/open-ability/chatTool.html
+            - paragraph [ref=e53]:
+              - text: 渲染框架支持情况：Skyline （使用最新
+              - link "Nightly" [ref=e54] [cursor=pointer]:
+                - /url: /miniprogram/dev/devtools/nightly.html
+              - text: 工具调试）、WebView
+            - heading "功能描述" [level=2] [ref=e55]
+            - paragraph [ref=e56]: 按钮。
+            - heading "通用属性" [level=2] [ref=e57]
+            - table [ref=e59]:
+              - rowgroup [ref=e60]:
+                - row "属性 类型 默认值 必填 说明 最低版本" [ref=e61]:
+                  - columnheader [ref=e62]
+                  - columnheader "属性" [ref=e63]
+                  - columnheader "类型" [ref=e64]
+                  - columnheader "默认值" [ref=e65]
+                  - columnheader "必填" [ref=e66]
+                  - columnheader "说明" [ref=e67]
+                  - columnheader "最低版本" [ref=e68]
+              - rowgroup [ref=e69]:
+                - row "size string default 否 按钮的大小 1.0.0" [ref=e70]:
+                  - cell [ref=e71]
+                  - cell "size" [ref=e73]
+                  - cell "string" [ref=e74]
+                  - cell "default" [ref=e75]
+                  - cell "否" [ref=e76]
+                  - cell "按钮的大小" [ref=e77]
+                  - cell "1.0.0" [ref=e78]:
+                    - link "1.0.0" [ref=e79] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "合法值 说明 default 默认大小 mini 小尺寸" [ref=e80]:
+                  - cell [ref=e81]
+                  - cell "合法值 说明 default 默认大小 mini 小尺寸" [ref=e82]:
+                    - table [ref=e83]:
+                      - rowgroup [ref=e84]:
+                        - row "合法值 说明" [ref=e85]:
+                          - columnheader "合法值" [ref=e86]
+                          - columnheader "说明" [ref=e87]
+                      - rowgroup [ref=e88]:
+                        - row "default 默认大小" [ref=e89]:
+                          - cell "default" [ref=e90]
+                          - cell "默认大小" [ref=e91]
+                        - row "mini 小尺寸" [ref=e92]:
+                          - cell "mini" [ref=e93]
+                          - cell "小尺寸" [ref=e94]
+                - row "type string default 否 按钮的样式类型 1.0.0" [ref=e95]:
+                  - cell [ref=e96]
+                  - cell "type" [ref=e98]
+                  - cell "string" [ref=e99]
+                  - cell "default" [ref=e100]
+                  - cell "否" [ref=e101]
+                  - cell "按钮的样式类型" [ref=e102]
+                  - cell "1.0.0" [ref=e103]:
+                    - link "1.0.0" [ref=e104] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "合法值 说明 primary 绿色 default 白色 warn 红色" [ref=e105]:
+                  - cell [ref=e106]
+                  - cell "合法值 说明 primary 绿色 default 白色 warn 红色" [ref=e107]:
+                    - table [ref=e108]:
+                      - rowgroup [ref=e109]:
+                        - row "合法值 说明" [ref=e110]:
+                          - columnheader "合法值" [ref=e111]
+                          - columnheader "说明" [ref=e112]
+                      - rowgroup [ref=e113]:
+                        - row "primary 绿色" [ref=e114]:
+                          - cell "primary" [ref=e115]
+                          - cell "绿色" [ref=e116]
+                        - row "default 白色" [ref=e117]:
+                          - cell "default" [ref=e118]
+                          - cell "白色" [ref=e119]
+                        - row "warn 红色" [ref=e120]:
+                          - cell "warn" [ref=e121]
+                          - cell "红色" [ref=e122]
+                - row "plain boolean false 否 按钮是否镂空，背景色透明 1.0.0" [ref=e123]:
+                  - cell [ref=e124]
+                  - cell "plain" [ref=e125]
+                  - cell "boolean" [ref=e126]
+                  - cell "false" [ref=e127]
+                  - cell "否" [ref=e128]
+                  - cell "按钮是否镂空，背景色透明" [ref=e129]
+                  - cell "1.0.0" [ref=e130]:
+                    - link "1.0.0" [ref=e131] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "disabled boolean false 否 是否禁用 1.0.0" [ref=e132]:
+                  - cell [ref=e133]
+                  - cell "disabled" [ref=e134]
+                  - cell "boolean" [ref=e135]
+                  - cell "false" [ref=e136]
+                  - cell "否" [ref=e137]
+                  - cell "是否禁用" [ref=e138]
+                  - cell "1.0.0" [ref=e139]:
+                    - link "1.0.0" [ref=e140] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "loading boolean false 否 名称前是否带 loading 图标 1.0.0" [ref=e141]:
+                  - cell [ref=e142]
+                  - cell "loading" [ref=e143]
+                  - cell "boolean" [ref=e144]
+                  - cell "false" [ref=e145]
+                  - cell "否" [ref=e146]
+                  - cell "名称前是否带 loading 图标" [ref=e147]
+                  - cell "1.0.0" [ref=e148]:
+                    - link "1.0.0" [ref=e149] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "form-type string 否 用于 form 组件，点击分别会触发 form 组件的 submit/reset 事件 1.0.0" [ref=e150]:
+                  - cell [ref=e151]
+                  - cell "form-type" [ref=e153]
+                  - cell "string" [ref=e154]
+                  - cell [ref=e155]
+                  - cell "否" [ref=e156]
+                  - cell "用于 form 组件，点击分别会触发 form 组件的 submit/reset 事件" [ref=e157]:
+                    - text: 用于
+                    - link "form" [ref=e158] [cursor=pointer]:
+                      - /url: form.html
+                    - text: 组件，点击分别会触发
+                    - link "form" [ref=e159] [cursor=pointer]:
+                      - /url: form.html
+                    - text: 组件的 submit/reset 事件
+                  - cell "1.0.0" [ref=e160]:
+                    - link "1.0.0" [ref=e161] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "合法值 说明 最低版本 submit 提交表单 reset 重置表单 submitToGroup 转发文本到聊天 3.7.8" [ref=e162]:
+                  - cell [ref=e163]
+                  - cell "合法值 说明 最低版本 submit 提交表单 reset 重置表单 submitToGroup 转发文本到聊天 3.7.8" [ref=e164]:
+                    - table [ref=e165]:
+                      - rowgroup [ref=e166]:
+                        - row "合法值 说明 最低版本" [ref=e167]:
+                          - columnheader "合法值" [ref=e168]
+                          - columnheader "说明" [ref=e169]
+                          - columnheader "最低版本" [ref=e170]
+                      - rowgroup [ref=e171]:
+                        - row "submit 提交表单" [ref=e172]:
+                          - cell "submit" [ref=e173]
+                          - cell "提交表单" [ref=e174]
+                          - cell [ref=e175]
+                        - row "reset 重置表单" [ref=e176]:
+                          - cell "reset" [ref=e177]
+                          - cell "重置表单" [ref=e178]
+                          - cell [ref=e179]
+                        - row "submitToGroup 转发文本到聊天 3.7.8" [ref=e180]:
+                          - cell "submitToGroup" [ref=e181]
+                          - cell "转发文本到聊天" [ref=e182]
+                          - cell "3.7.8" [ref=e183]:
+                            - link "3.7.8" [ref=e184] [cursor=pointer]:
+                              - /url: ../framework/compatibility.html
+                - row "open-type string 否 微信开放能力 1.1.0" [ref=e185]:
+                  - cell [ref=e186]
+                  - cell "open-type" [ref=e188]
+                  - cell "string" [ref=e189]
+                  - cell [ref=e190]
+                  - cell "否" [ref=e191]
+                  - cell "微信开放能力" [ref=e192]
+                  - cell "1.1.0" [ref=e193]:
+                    - link "1.1.0" [ref=e194] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "合法值 说明 最低版本 contact 打开客服会话，如果用户在会话中点击消息卡片后返回小程序，可以从 bindcontact 回调中获得具体信息，具体说明。鸿蒙 OS 暂不支持 1.1.0 liveActivity 通过前端获取新的一次性订阅消息下发机制使用的 code 2.26.2 share 触发用户转发，使用前建议先阅读使用指引 1.2.0 getPhoneNumber 手机号快速验证，向用户申请，并在用户同意后，快速填写和验证手机，具体说明 （*小程序插件中不能使用*） 1.2.0 getRealtimePhoneNumber 手机号实时验证，向用户申请，并在用户同意后，快速填写和实时验证手机号。具体说明 （*小程序插件中不能使用*） 2.24.4 getUserInfo 获取用户信息，可以从bindgetuserinfo回调中获取到用户信息 （*小程序插件中不能使用*） 1.3.0 launchApp 打开APP，可以通过app-parameter属性设定向APP传的参数具体说明 1.9.5 openSetting 打开授权设置页 2.0.7 feedback 打开“意见反馈”页面，用户可提交反馈内容并上传日志，开发者可以登录小程序管理后台后进入左侧菜单“客服反馈”页面获取到反馈内容 2.1.0 chooseAvatar 获取用户头像，可以从bindchooseavatar回调中获取到头像信息 2.21.2 agreePrivacyAuthorization 用户同意隐私协议按钮。用户点击一次此按钮后，所有已声明过的隐私接口可以正常调用。可通过 bindagreeprivacyauthorization 监听用户同意隐私协议事件。隐私合规开发指南详情可见《小程序隐私协议开发指南》 2.32.3" [ref=e195]:
+                  - cell [ref=e196]
+                  - cell "合法值 说明 最低版本 contact 打开客服会话，如果用户在会话中点击消息卡片后返回小程序，可以从 bindcontact 回调中获得具体信息，具体说明。鸿蒙 OS 暂不支持 1.1.0 liveActivity 通过前端获取新的一次性订阅消息下发机制使用的 code 2.26.2 share 触发用户转发，使用前建议先阅读使用指引 1.2.0 getPhoneNumber 手机号快速验证，向用户申请，并在用户同意后，快速填写和验证手机，具体说明 （*小程序插件中不能使用*） 1.2.0 getRealtimePhoneNumber 手机号实时验证，向用户申请，并在用户同意后，快速填写和实时验证手机号。具体说明 （*小程序插件中不能使用*） 2.24.4 getUserInfo 获取用户信息，可以从bindgetuserinfo回调中获取到用户信息 （*小程序插件中不能使用*） 1.3.0 launchApp 打开APP，可以通过app-parameter属性设定向APP传的参数具体说明 1.9.5 openSetting 打开授权设置页 2.0.7 feedback 打开“意见反馈”页面，用户可提交反馈内容并上传日志，开发者可以登录小程序管理后台后进入左侧菜单“客服反馈”页面获取到反馈内容 2.1.0 chooseAvatar 获取用户头像，可以从bindchooseavatar回调中获取到头像信息 2.21.2 agreePrivacyAuthorization 用户同意隐私协议按钮。用户点击一次此按钮后，所有已声明过的隐私接口可以正常调用。可通过 bindagreeprivacyauthorization 监听用户同意隐私协议事件。隐私合规开发指南详情可见《小程序隐私协议开发指南》 2.32.3" [ref=e197]:
+                    - table [ref=e198]:
+                      - rowgroup [ref=e199]:
+                        - row "合法值 说明 最低版本" [ref=e200]:
+                          - columnheader "合法值" [ref=e201]
+                          - columnheader "说明" [ref=e202]
+                          - columnheader "最低版本" [ref=e203]
+                      - rowgroup [ref=e204]:
+                        - row "contact 打开客服会话，如果用户在会话中点击消息卡片后返回小程序，可以从 bindcontact 回调中获得具体信息，具体说明。鸿蒙 OS 暂不支持 1.1.0" [ref=e205]:
+                          - cell "contact" [ref=e206]
+                          - cell "打开客服会话，如果用户在会话中点击消息卡片后返回小程序，可以从 bindcontact 回调中获得具体信息，具体说明。鸿蒙 OS 暂不支持" [ref=e207]:
+                            - text: 打开客服会话，如果用户在会话中点击消息卡片后返回小程序，可以从 bindcontact 回调中获得具体信息，
+                            - link "具体说明" [ref=e208] [cursor=pointer]:
+                              - /url: ../framework/open-ability/customer-message/customer-message.html
+                            - text: 。鸿蒙 OS 暂不支持
+                          - cell "1.1.0" [ref=e209]:
+                            - link "1.1.0" [ref=e210] [cursor=pointer]:
+                              - /url: ../framework/compatibility.html
+                        - row "liveActivity 通过前端获取新的一次性订阅消息下发机制使用的 code 2.26.2" [ref=e211]:
+                          - cell "liveActivity" [ref=e212]
+                          - cell "通过前端获取新的一次性订阅消息下发机制使用的 code" [ref=e213]:
+                            - text: 通过前端获取
+                            - link "新的一次性订阅消息下发机制" [ref=e214] [cursor=pointer]:
+                              - /url: https://developers.weixin.qq.com/miniprogram/dev/framework/open-ability/subscribe-message-2.html
+                            - text: 使用的 code
+                          - cell "2.26.2" [ref=e215]:
+                            - link "2.26.2" [ref=e216] [cursor=pointer]:
+                              - /url: ../framework/compatibility.html
+                        - row "share 触发用户转发，使用前建议先阅读使用指引 1.2.0" [ref=e217]:
+                          - cell "share" [ref=e218]
+                          - cell "触发用户转发，使用前建议先阅读使用指引" [ref=e219]:
+                            - text: 触发用户转发，使用前建议先阅读
+                            - link "使用指引" [ref=e220] [cursor=pointer]:
+                              - /url: ../framework/open-ability/share.html#使用指引
+                          - cell "1.2.0" [ref=e221]:
+                            - link "1.2.0" [ref=e222] [cursor=pointer]:
+                              - /url: ../framework/compatibility.html
+                        - row "getPhoneNumber 手机号快速验证，向用户申请，并在用户同意后，快速填写和验证手机，具体说明 （*小程序插件中不能使用*） 1.2.0" [ref=e223]:
+                          - cell "getPhoneNumber" [ref=e224]
+                          - cell "手机号快速验证，向用户申请，并在用户同意后，快速填写和验证手机，具体说明 （*小程序插件中不能使用*）" [ref=e225]:
+                            - text: 手机号快速验证，向用户申请，并在用户同意后，快速填写和验证手机，
+                            - link "具体说明" [ref=e226] [cursor=pointer]:
+                              - /url: ../framework/open-ability/getPhoneNumber.html
+                            - text: （*小程序插件中不能使用*）
+                          - cell "1.2.0" [ref=e227]:
+                            - link "1.2.0" [ref=e228] [cursor=pointer]:
+                              - /url: ../framework/compatibility.html
+                        - row "getRealtimePhoneNumber 手机号实时验证，向用户申请，并在用户同意后，快速填写和实时验证手机号。具体说明 （*小程序插件中不能使用*） 2.24.4" [ref=e229]:
+                          - cell "getRealtimePhoneNumber" [ref=e230]
+                          - cell "手机号实时验证，向用户申请，并在用户同意后，快速填写和实时验证手机号。具体说明 （*小程序插件中不能使用*）" [ref=e231]:
+                            - text: 手机号实时验证，向用户申请，并在用户同意后，快速填写和实时验证手机号。
+                            - link "具体说明" [ref=e232] [cursor=pointer]:
+                              - /url: ../framework/open-ability/getRealtimePhoneNumber.html
+                            - text: （*小程序插件中不能使用*）
+                          - cell "2.24.4" [ref=e233]:
+                            - link "2.24.4" [ref=e234] [cursor=pointer]:
+                              - /url: ../framework/compatibility.html
+                        - row "getUserInfo 获取用户信息，可以从bindgetuserinfo回调中获取到用户信息 （*小程序插件中不能使用*） 1.3.0" [ref=e235]:
+                          - cell "getUserInfo" [ref=e236]
+                          - cell "获取用户信息，可以从bindgetuserinfo回调中获取到用户信息 （*小程序插件中不能使用*）" [ref=e237]
+                          - cell "1.3.0" [ref=e238]:
+                            - link "1.3.0" [ref=e239] [cursor=pointer]:
+                              - /url: ../framework/compatibility.html
+                        - row "launchApp 打开APP，可以通过app-parameter属性设定向APP传的参数具体说明 1.9.5" [ref=e240]:
+                          - cell "launchApp" [ref=e241]
+                          - cell "打开APP，可以通过app-parameter属性设定向APP传的参数具体说明" [ref=e242]:
+                            - text: 打开APP，可以通过app-parameter属性设定向APP传的参数
+                            - link "具体说明" [ref=e243] [cursor=pointer]:
+                              - /url: ../framework/open-ability/launchApp.html
+                          - cell "1.9.5" [ref=e244]:
+                            - link "1.9.5" [ref=e245] [cursor=pointer]:
+                              - /url: ../framework/compatibility.html
+                        - row "openSetting 打开授权设置页 2.0.7" [ref=e246]:
+                          - cell "openSetting" [ref=e247]
+                          - cell "打开授权设置页" [ref=e248]
+                          - cell "2.0.7" [ref=e249]:
+                            - link "2.0.7" [ref=e250] [cursor=pointer]:
+                              - /url: ../framework/compatibility.html
+                        - row "feedback 打开“意见反馈”页面，用户可提交反馈内容并上传日志，开发者可以登录小程序管理后台后进入左侧菜单“客服反馈”页面获取到反馈内容 2.1.0" [ref=e251]:
+                          - cell "feedback" [ref=e252]
+                          - cell "打开“意见反馈”页面，用户可提交反馈内容并上传日志，开发者可以登录小程序管理后台后进入左侧菜单“客服反馈”页面获取到反馈内容" [ref=e253]:
+                            - text: 打开“意见反馈”页面，用户可提交反馈内容并上传
+                            - link "日志" [ref=e254] [cursor=pointer]:
+                              - /url: ../api/base/debug/wx.getLogManager.html
+                            - text: ，开发者可以登录
+                            - link "小程序管理后台" [ref=e255] [cursor=pointer]:
+                              - /url: https://mp.weixin.qq.com/
+                            - text: 后进入左侧菜单“客服反馈”页面获取到反馈内容
+                          - cell "2.1.0" [ref=e256]:
+                            - link "2.1.0" [ref=e257] [cursor=pointer]:
+                              - /url: ../framework/compatibility.html
+                        - row "chooseAvatar 获取用户头像，可以从bindchooseavatar回调中获取到头像信息 2.21.2" [ref=e258]:
+                          - cell "chooseAvatar" [ref=e259]
+                          - cell "获取用户头像，可以从bindchooseavatar回调中获取到头像信息" [ref=e260]
+                          - cell "2.21.2" [ref=e261]:
+                            - link "2.21.2" [ref=e262] [cursor=pointer]:
+                              - /url: ../framework/compatibility.html
+                        - row "agreePrivacyAuthorization 用户同意隐私协议按钮。用户点击一次此按钮后，所有已声明过的隐私接口可以正常调用。可通过 bindagreeprivacyauthorization 监听用户同意隐私协议事件。隐私合规开发指南详情可见《小程序隐私协议开发指南》 2.32.3" [ref=e263]:
+                          - cell "agreePrivacyAuthorization" [ref=e264]
+                          - cell "用户同意隐私协议按钮。用户点击一次此按钮后，所有已声明过的隐私接口可以正常调用。可通过 bindagreeprivacyauthorization 监听用户同意隐私协议事件。隐私合规开发指南详情可见《小程序隐私协议开发指南》" [ref=e265]:
+                            - text: 用户同意隐私协议按钮。用户点击一次此按钮后，所有已声明过的隐私接口可以正常调用。可通过 bindagreeprivacyauthorization 监听用户同意隐私协议事件。隐私合规开发指南详情可见
+                            - link "《小程序隐私协议开发指南》" [ref=e266] [cursor=pointer]:
+                              - /url: https://developers.weixin.qq.com/miniprogram/dev/framework/user-privacy/PrivacyAuthorize.html
+                          - cell "2.32.3" [ref=e267]:
+                            - link "2.32.3" [ref=e268] [cursor=pointer]:
+                              - /url: ../framework/compatibility.html
+                - row "hover-class string button-hover 否 指定按钮按下去的样式类。当 hover-class=\"none\" 时，没有点击态效果 1.0.0" [ref=e269]:
+                  - cell [ref=e270]
+                  - cell "hover-class" [ref=e271]
+                  - cell "string" [ref=e272]
+                  - cell "button-hover" [ref=e273]
+                  - cell "否" [ref=e274]
+                  - cell "指定按钮按下去的样式类。当 hover-class=\"none\" 时，没有点击态效果" [ref=e275]:
+                    - text: 指定按钮按下去的样式类。当
+                    - code [ref=e276]: hover-class="none"
+                    - text: 时，没有点击态效果
+                  - cell "1.0.0" [ref=e277]:
+                    - link "1.0.0" [ref=e278] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "hover-stop-propagation boolean false 否 指定是否阻止本节点的祖先节点出现点击态 1.5.0" [ref=e279]:
+                  - cell [ref=e280]
+                  - cell "hover-stop-propagation" [ref=e281]
+                  - cell "boolean" [ref=e282]
+                  - cell "false" [ref=e283]
+                  - cell "否" [ref=e284]
+                  - cell "指定是否阻止本节点的祖先节点出现点击态" [ref=e285]
+                  - cell "1.5.0" [ref=e286]:
+                    - link "1.5.0" [ref=e287] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "hover-start-time number 20 否 按住后多久出现点击态，单位毫秒 1.0.0" [ref=e288]:
+                  - cell [ref=e289]
+                  - cell "hover-start-time" [ref=e290]
+                  - cell "number" [ref=e291]
+                  - cell "20" [ref=e292]
+                  - cell "否" [ref=e293]
+                  - cell "按住后多久出现点击态，单位毫秒" [ref=e294]
+                  - cell "1.0.0" [ref=e295]:
+                    - link "1.0.0" [ref=e296] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "hover-stay-time number 70 否 手指松开后点击态保留时间，单位毫秒 1.0.0" [ref=e297]:
+                  - cell [ref=e298]
+                  - cell "hover-stay-time" [ref=e299]
+                  - cell "number" [ref=e300]
+                  - cell "70" [ref=e301]
+                  - cell "否" [ref=e302]
+                  - cell "手指松开后点击态保留时间，单位毫秒" [ref=e303]
+                  - cell "1.0.0" [ref=e304]:
+                    - link "1.0.0" [ref=e305] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "lang string en 否 指定返回用户信息的语言，zh_CN 简体中文，zh_TW 繁体中文，en 英文。 1.3.0" [ref=e306]:
+                  - cell [ref=e307]
+                  - cell "lang" [ref=e309]
+                  - cell "string" [ref=e310]
+                  - cell "en" [ref=e311]
+                  - cell "否" [ref=e312]
+                  - cell "指定返回用户信息的语言，zh_CN 简体中文，zh_TW 繁体中文，en 英文。" [ref=e313]
+                  - cell "1.3.0" [ref=e314]:
+                    - link "1.3.0" [ref=e315] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "合法值 说明 en 英文 zh_CN 简体中文 zh_TW 繁体中文" [ref=e316]:
+                  - cell [ref=e317]
+                  - cell "合法值 说明 en 英文 zh_CN 简体中文 zh_TW 繁体中文" [ref=e318]:
+                    - table [ref=e319]:
+                      - rowgroup [ref=e320]:
+                        - row "合法值 说明" [ref=e321]:
+                          - columnheader "合法值" [ref=e322]
+                          - columnheader "说明" [ref=e323]
+                      - rowgroup [ref=e324]:
+                        - row "en 英文" [ref=e325]:
+                          - cell "en" [ref=e326]
+                          - cell "英文" [ref=e327]
+                        - row "zh_CN 简体中文" [ref=e328]:
+                          - cell "zh_CN" [ref=e329]
+                          - cell "简体中文" [ref=e330]
+                        - row "zh_TW 繁体中文" [ref=e331]:
+                          - cell "zh_TW" [ref=e332]
+                          - cell "繁体中文" [ref=e333]
+                - row "session-from string 否 会话来源，open-type=\"contact\"时有效，长度不超过 1024 个字符 1.4.0" [ref=e334]:
+                  - cell [ref=e335]
+                  - cell "session-from" [ref=e336]
+                  - cell "string" [ref=e337]
+                  - cell [ref=e338]
+                  - cell "否" [ref=e339]
+                  - cell "会话来源，open-type=\"contact\"时有效，长度不超过 1024 个字符" [ref=e340]
+                  - cell "1.4.0" [ref=e341]:
+                    - link "1.4.0" [ref=e342] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "send-message-title string 当前标题 否 会话内消息卡片标题，open-type=\"contact\"时有效 1.5.0" [ref=e343]:
+                  - cell [ref=e344]
+                  - cell "send-message-title" [ref=e345]
+                  - cell "string" [ref=e346]
+                  - cell "当前标题" [ref=e347]
+                  - cell "否" [ref=e348]
+                  - cell "会话内消息卡片标题，open-type=\"contact\"时有效" [ref=e349]
+                  - cell "1.5.0" [ref=e350]:
+                    - link "1.5.0" [ref=e351] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "send-message-path string 当前分享路径 否 会话内消息卡片点击跳转小程序路径，open-type=\"contact\"时有效 1.5.0" [ref=e352]:
+                  - cell [ref=e353]
+                  - cell "send-message-path" [ref=e354]
+                  - cell "string" [ref=e355]
+                  - cell "当前分享路径" [ref=e356]
+                  - cell "否" [ref=e357]
+                  - cell "会话内消息卡片点击跳转小程序路径，open-type=\"contact\"时有效" [ref=e358]
+                  - cell "1.5.0" [ref=e359]:
+                    - link "1.5.0" [ref=e360] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "send-message-img string 截图 否 会话内消息卡片图片，open-type=\"contact\"时有效 1.5.0" [ref=e361]:
+                  - cell [ref=e362]
+                  - cell "send-message-img" [ref=e363]
+                  - cell "string" [ref=e364]
+                  - cell "截图" [ref=e365]
+                  - cell "否" [ref=e366]
+                  - cell "会话内消息卡片图片，open-type=\"contact\"时有效" [ref=e367]
+                  - cell "1.5.0" [ref=e368]:
+                    - link "1.5.0" [ref=e369] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "app-parameter string 否 打开 APP 时，向 APP 传递的参数，open-type=launchApp时有效 1.9.5" [ref=e370]:
+                  - cell [ref=e371]
+                  - cell "app-parameter" [ref=e372]
+                  - cell "string" [ref=e373]
+                  - cell [ref=e374]
+                  - cell "否" [ref=e375]
+                  - cell "打开 APP 时，向 APP 传递的参数，open-type=launchApp时有效" [ref=e376]
+                  - cell "1.9.5" [ref=e377]:
+                    - link "1.9.5" [ref=e378] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "show-message-card boolean false 否 是否显示会话内消息卡片，设置此参数为 true，用户进入客服会话会在右下角显示\"可能要发送的小程序\"提示，用户点击后可以快速发送小程序消息，open-type=\"contact\"时有效 1.5.0" [ref=e379]:
+                  - cell [ref=e380]
+                  - cell "show-message-card" [ref=e381]
+                  - cell "boolean" [ref=e382]
+                  - cell "false" [ref=e383]
+                  - cell "否" [ref=e384]
+                  - cell "是否显示会话内消息卡片，设置此参数为 true，用户进入客服会话会在右下角显示\"可能要发送的小程序\"提示，用户点击后可以快速发送小程序消息，open-type=\"contact\"时有效" [ref=e385]
+                  - cell "1.5.0" [ref=e386]:
+                    - link "1.5.0" [ref=e387] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "phone-number-no-quota-toast boolean true 否 当手机号快速验证或手机号实时验证额度用尽时，是否对用户展示“申请获取你的手机号，但该功能使用次数已达当前小程序上限，暂时无法使用”的提示，默认展示，open-type=\"getPhoneNumber\" 或 open-type=\"getRealtimePhoneNumber\" 时有效 3.0.1" [ref=e388]:
+                  - cell [ref=e389]
+                  - cell "phone-number-no-quota-toast" [ref=e390]
+                  - cell "boolean" [ref=e391]
+                  - cell "true" [ref=e392]
+                  - cell "否" [ref=e393]
+                  - cell "当手机号快速验证或手机号实时验证额度用尽时，是否对用户展示“申请获取你的手机号，但该功能使用次数已达当前小程序上限，暂时无法使用”的提示，默认展示，open-type=\"getPhoneNumber\" 或 open-type=\"getRealtimePhoneNumber\" 时有效" [ref=e394]
+                  - cell "3.0.1" [ref=e395]:
+                    - link "3.0.1" [ref=e396] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "need-show-entrance boolean true 否 转发的文本消息是否要带小程序入口 3.7.8" [ref=e397]:
+                  - cell [ref=e398]
+                  - cell "need-show-entrance" [ref=e399]
+                  - cell "boolean" [ref=e400]
+                  - cell "true" [ref=e401]
+                  - cell "否" [ref=e402]
+                  - cell "转发的文本消息是否要带小程序入口" [ref=e403]
+                  - cell "3.7.8" [ref=e404]:
+                    - link "3.7.8" [ref=e405] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "entrance-path string '' 否 从消息小程序入口打开小程序的路径，默认为聊天工具启动路径 3.7.8" [ref=e406]:
+                  - cell [ref=e407]
+                  - cell "entrance-path" [ref=e408]
+                  - cell "string" [ref=e409]
+                  - cell "''" [ref=e410]
+                  - cell "否" [ref=e411]
+                  - cell "从消息小程序入口打开小程序的路径，默认为聊天工具启动路径" [ref=e412]
+                  - cell "3.7.8" [ref=e413]:
+                    - link "3.7.8" [ref=e414] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "bindgetuserinfo eventhandle 否 用户点击该按钮时，会返回获取到的用户信息，回调的detail数据与wx.getUserInfo返回的一致，open-type=\"getUserInfo\"时有效 1.3.0" [ref=e415]:
+                  - cell [ref=e416]
+                  - cell "bindgetuserinfo" [ref=e417]
+                  - cell "eventhandle" [ref=e418]
+                  - cell [ref=e419]
+                  - cell "否" [ref=e420]
+                  - cell "用户点击该按钮时，会返回获取到的用户信息，回调的detail数据与wx.getUserInfo返回的一致，open-type=\"getUserInfo\"时有效" [ref=e421]:
+                    - text: 用户点击该按钮时，会返回获取到的用户信息，回调的detail数据与
+                    - link "wx.getUserInfo" [ref=e422] [cursor=pointer]:
+                      - /url: ../api/open-api/user-info/wx.getUserInfo.html
+                    - text: 返回的一致，open-type="getUserInfo"时有效
+                  - cell "1.3.0" [ref=e423]:
+                    - link "1.3.0" [ref=e424] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "bindcontact eventhandle 否 客服消息回调，open-type=\"contact\"时有效。 1.5.0" [ref=e425]:
+                  - cell [ref=e426]
+                  - cell "bindcontact" [ref=e427]
+                  - cell "eventhandle" [ref=e428]
+                  - cell [ref=e429]
+                  - cell "否" [ref=e430]
+                  - cell "客服消息回调，open-type=\"contact\"时有效。" [ref=e431]
+                  - cell "1.5.0" [ref=e432]:
+                    - link "1.5.0" [ref=e433] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "createliveactivity eventhandle 否 新的一次性订阅消息下发机制回调，open-type=liveActivity时有效 2.26.2" [ref=e434]:
+                  - cell [ref=e435]
+                  - cell "createliveactivity" [ref=e436]
+                  - cell "eventhandle" [ref=e437]
+                  - cell [ref=e438]
+                  - cell "否" [ref=e439]
+                  - cell "新的一次性订阅消息下发机制回调，open-type=liveActivity时有效" [ref=e440]:
+                    - link "新的一次性订阅消息下发机制" [ref=e441] [cursor=pointer]:
+                      - /url: https://developers.weixin.qq.com/miniprogram/dev/framework/open-ability/subscribe-message-2.html
+                    - text: 回调，open-type=liveActivity时有效
+                  - cell "2.26.2" [ref=e442]:
+                    - link "2.26.2" [ref=e443] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "bindgetphonenumber eventhandle 否 手机号快速验证回调，open-type=getPhoneNumber时有效。Tips：在触发 bindgetphonenumber 回调后应立即隐藏手机号按钮组件，或置为 disabled 状态，避免用户重复授权手机号产生额外费用。 1.2.0" [ref=e444]:
+                  - cell [ref=e445]
+                  - cell "bindgetphonenumber" [ref=e446]
+                  - cell "eventhandle" [ref=e447]
+                  - cell [ref=e448]
+                  - cell "否" [ref=e449]
+                  - cell "手机号快速验证回调，open-type=getPhoneNumber时有效。Tips：在触发 bindgetphonenumber 回调后应立即隐藏手机号按钮组件，或置为 disabled 状态，避免用户重复授权手机号产生额外费用。" [ref=e450]
+                  - cell "1.2.0" [ref=e451]:
+                    - link "1.2.0" [ref=e452] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "bindgetrealtimephonenumber eventhandle 否 手机号实时验证回调，open-type=getRealtimePhoneNumber 时有效。Tips：在触发 bindgetrealtimephonenumber 回调后应立即隐藏手机号按钮组件，或置为 disabled 状态，避免用户重复授权手机号产生额外费用。 2.24.4" [ref=e453]:
+                  - cell [ref=e454]
+                  - cell "bindgetrealtimephonenumber" [ref=e455]
+                  - cell "eventhandle" [ref=e456]
+                  - cell [ref=e457]
+                  - cell "否" [ref=e458]
+                  - cell "手机号实时验证回调，open-type=getRealtimePhoneNumber 时有效。Tips：在触发 bindgetrealtimephonenumber 回调后应立即隐藏手机号按钮组件，或置为 disabled 状态，避免用户重复授权手机号产生额外费用。" [ref=e459]
+                  - cell "2.24.4" [ref=e460]:
+                    - link "2.24.4" [ref=e461] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "binderror eventhandle 否 当使用开放能力时，发生错误的回调，open-type=launchApp时有效 1.9.5" [ref=e462]:
+                  - cell [ref=e463]
+                  - cell "binderror" [ref=e464]
+                  - cell "eventhandle" [ref=e465]
+                  - cell [ref=e466]
+                  - cell "否" [ref=e467]
+                  - cell "当使用开放能力时，发生错误的回调，open-type=launchApp时有效" [ref=e468]
+                  - cell "1.9.5" [ref=e469]:
+                    - link "1.9.5" [ref=e470] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "bindopensetting eventhandle 否 在打开授权设置页后回调，open-type=openSetting时有效 2.0.7" [ref=e471]:
+                  - cell [ref=e472]
+                  - cell "bindopensetting" [ref=e473]
+                  - cell "eventhandle" [ref=e474]
+                  - cell [ref=e475]
+                  - cell "否" [ref=e476]
+                  - cell "在打开授权设置页后回调，open-type=openSetting时有效" [ref=e477]
+                  - cell "2.0.7" [ref=e478]:
+                    - link "2.0.7" [ref=e479] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "bindlaunchapp eventhandle 否 打开 APP 成功的回调，open-type=launchApp时有效 2.4.4" [ref=e480]:
+                  - cell [ref=e481]
+                  - cell "bindlaunchapp" [ref=e482]
+                  - cell "eventhandle" [ref=e483]
+                  - cell [ref=e484]
+                  - cell "否" [ref=e485]
+                  - cell "打开 APP 成功的回调，open-type=launchApp时有效" [ref=e486]
+                  - cell "2.4.4" [ref=e487]:
+                    - link "2.4.4" [ref=e488] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - row "bindchooseavatar eventhandle 否 获取用户头像回调，open-type=chooseAvatar时有效 2.21.2" [ref=e489]:
+                  - cell [ref=e490]
+                  - cell "bindchooseavatar" [ref=e491]
+                  - cell "eventhandle" [ref=e492]
+                  - cell [ref=e493]
+                  - cell "否" [ref=e494]
+                  - cell "获取用户头像回调，open-type=chooseAvatar时有效" [ref=e495]
+                  - cell "2.21.2" [ref=e496]:
+                    - link "2.21.2" [ref=e497] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+                - 'row "bindagreeprivacyauthorization eventhandle 否 用户同意隐私协议事件回调，open-type=agreePrivacyAuthorization时有效 （Tips: 如果使用 onNeedPrivacyAuthorization 接口，需要在 bindagreeprivacyauthorization 触发后再调用 resolve({ event: \"agree\", buttonId }) ） 2.32.3" [ref=e498]':
+                  - cell [ref=e499]
+                  - cell "bindagreeprivacyauthorization" [ref=e500]
+                  - cell "eventhandle" [ref=e501]
+                  - cell [ref=e502]
+                  - cell "否" [ref=e503]
+                  - 'cell "用户同意隐私协议事件回调，open-type=agreePrivacyAuthorization时有效 （Tips: 如果使用 onNeedPrivacyAuthorization 接口，需要在 bindagreeprivacyauthorization 触发后再调用 resolve({ event: \"agree\", buttonId }) ）" [ref=e504]':
+                    - text: "用户同意隐私协议事件回调，open-type=agreePrivacyAuthorization时有效 （Tips: 如果使用 onNeedPrivacyAuthorization 接口，需要在 bindagreeprivacyauthorization 触发后再调用"
+                    - code [ref=e505]: "resolve({ event: \"agree\", buttonId })"
+                    - text: ）
+                  - cell "2.32.3" [ref=e506]:
+                    - link "2.32.3" [ref=e507] [cursor=pointer]:
+                      - /url: ../framework/compatibility.html
+            - heading "Bug & Tip" [level=2] [ref=e508]
+            - list [ref=e509]:
+              - listitem [ref=e510]:
+                - code [ref=e511]: tip
+                - text: ":"
+                - code [ref=e512]: button-hover
+                - text: 默认为
+                - code [ref=e513]: "{background-color: rgba(0, 0, 0, 0.1); opacity: 0.7;}"
+              - listitem [ref=e514]:
+                - code [ref=e515]: tip
+                - text: ":"
+                - code [ref=e516]: bindgetphonenumber
+                - text: 从1.2.0 开始支持，但是在1.5.3以下版本中无法使用
+                - link "wx.canIUse" [ref=e517] [cursor=pointer]:
+                  - /url: ../api/base/wx.canIUse.html
+                - text: 进行检测，建议使用基础库版本进行判断。
+              - listitem [ref=e518]:
+                - code [ref=e519]: tip
+                - text: ": 在"
+                - code [ref=e520]: bindgetphonenumber
+                - text: 等返回加密信息的回调中调用
+                - link "wx.login" [ref=e521] [cursor=pointer]:
+                  - /url: ../api/open-api/login/wx.login.html
+                - text: 登录，可能会刷新登录态。此时服务器使用 code 换取的 sessionKey 不是加密时使用的 sessionKey，导致解密失败。建议开发者提前进行
+                - code [ref=e522]: login
+                - text: ；或者在回调中先使用
+                - code [ref=e523]: checkSession
+                - text: 进行登录态检查，避免
+                - code [ref=e524]: login
+                - text: 刷新登录态。
+              - listitem [ref=e525]:
+                - code [ref=e526]: tip
+                - text: ": 从 2.21.2 起，对"
+                - code [ref=e527]: getPhoneNumber
+                - text: 接口进行了安全升级，
+                - code [ref=e528]: bindgetphonenumber
+                - text: 返回的信息中增加
+                - code [ref=e529]: code
+                - text: 参数，
+                - code [ref=e530]: code
+                - text: 是一个动态的令牌，开发者拿到
+                - code [ref=e531]: code
+                - text: 后需调用微信后台接口换取手机号。详情
+                - link "新版接口使用指南" [ref=e532] [cursor=pointer]:
+                  - /url: ../framework/open-ability/getPhoneNumber.html
+              - listitem [ref=e533]:
+                - code [ref=e534]: tip
+                - text: ": 从 2.1.0 起，button 可作为原生组件的子节点嵌入，以便在原生组件上使用"
+                - code [ref=e535]: open-type
+                - text: 的能力。
+              - listitem [ref=e536]:
+                - code [ref=e537]: tip
+                - text: ": 目前设置了"
+                - code [ref=e538]: form-type
+                - text: 的
+                - code [ref=e539]: button
+                - text: 只会对当前组件中的
+                - code [ref=e540]: form
+                - text: 有效。因而，将
+                - code [ref=e541]: button
+                - text: 封装在自定义组件中，而
+                - code [ref=e542]: form
+                - text: 在自定义组件外，将会使这个
+                - code [ref=e543]: button
+                - text: 的
+                - code [ref=e544]: form-type
+                - text: 失效。
+            - heading "发送文本到群示例代码" [level=2] [ref=e545]
+            - paragraph [ref=e546]:
+              - text: 需结合
+              - link "form" [ref=e547] [cursor=pointer]:
+                - /url: form.html
+              - text: 和
+              - link "textarea" [ref=e548] [cursor=pointer]:
+                - /url: textarea.html
+              - text: 组件使用。
+              - link "button" [ref=e549] [cursor=pointer]:
+                - /url: button.html
+              - text: 需要设置
+              - code [ref=e550]: form-type="submitToGroup"
+              - text: ，此时点击按钮将会发送
+              - link "textarea" [ref=e551] [cursor=pointer]:
+                - /url: textarea.html
+              - text: 的内容到聊天。
+            - code [ref=e554]:
+              - generic [ref=e555]:
+                - generic [ref=e556]: <form
+                - generic [ref=e557]: bind:submitToGroup
+                - generic [ref=e558]: ="onSubmitToGroup"
+                - text: ">"
+              - generic [ref=e559]:
+                - generic [ref=e560]: <textarea
+                - text: value
+                - generic [ref=e561]: "=\"{{shareText}}\""
+                - text: />
+              - generic [ref=e562]:
+                - generic [ref=e563]: <button
+                - text: form-type
+                - generic [ref=e564]: ="submitToGroup"
+                - text: need-show-entrance
+                - generic [ref=e565]: "=\"{{true}}\""
+                - text: entrance-path
+                - generic [ref=e566]: =""
+                - text: ">"
+              - generic [ref=e567]:
+                - generic [ref=e568]: </button
+                - text: ">"
+              - generic [ref=e569]:
+                - generic [ref=e570]: </form
+                - text: ">"
+            - heading "示例代码" [level=2] [ref=e571]
+            - paragraph [ref=e572]:
+              - link "在开发者工具中预览效果" [ref=e573] [cursor=pointer]:
+                - /url: https://developers.weixin.qq.com/s/3pZlJRmr7mJS
+                - text: 在开发者工具中预览效果
+            - iframe [ref=e575]:
+              - generic [ref=f1e4]:
+                - iframe [ref=f1e6]:
+                  - generic [ref=f2e3]:
+                    - generic [ref=f2e4]:
+                      - generic [ref=f2e5]: WeChat
+                      - paragraph [ref=f2e11]: 08:59
+                      - generic [ref=f2e13]: 100%
+                    - generic:
+                      - generic:
+                        - heading [level=3]
+                    - iframe [ref=f2e27]:
+                      - generic [ref=f4e3]:
+                        - button "页面主操作 Normal" [ref=f4e4]
+                        - button "页面主操作 Loading" [ref=f4e5]
+                        - button "页面主操作 Disabled" [disabled] [ref=f4e6]
+                        - button "页面次要操作 Normal" [ref=f4e7]
+                        - button "页面次要操作 Disabled" [disabled] [ref=f4e8]
+                        - button "警告类操作 Normal" [ref=f4e9]
+                        - button "警告类操作 Disabled" [disabled] [ref=f4e10]
+                        - generic [ref=f4e11]:
+                          - button "按钮" [ref=f4e12]
+                          - button "不可点击的按钮" [disabled] [ref=f4e13]
+                          - button "按钮" [ref=f4e14]
+                          - button "按钮" [disabled] [ref=f4e15]
+                          - button "按钮" [ref=f4e16]
+                          - button "按钮" [ref=f4e17]
+                          - button "按钮" [ref=f4e18]
+                - generic [ref=f1e7]:
+                  - navigation [ref=f1e8]:
+                    - link "JAVASCRIPT" [ref=f1e10] [cursor=pointer]:
+                      - /url: javascript:;
+                    - link "WXML" [ref=f1e12] [cursor=pointer]:
+                      - /url: javascript:;
+                    - link "WXSS" [ref=f1e14] [cursor=pointer]:
+                      - /url: javascript:;
+                  - code [ref=f1e17]: "const types = ['default', 'primary', 'warn'] const pageObject = { data: { defaultSize: 'default', primarySize: 'default', warnSize: 'default', disabled: false, plain: false, loading: false }, onShareAppMessage() { return { title: 'button', path: 'page/component/pages/button/button' } }, setDisabled() { this.setData({ disabled: !this.data.disabled }) }, setPlain() { this.setData({ plain: !this.data.plain }) }, setLoading() { this.setData({ loading: !this.data.loading }) }, handleContact(e) { console.log(e.detail) }, handleGetPhoneNumber(e) { console.log(e.detail) }, handleGetUserInfo(e) { console.log(e.detail) }, handleOpenSetting(e) { console.log(e.detail.authSetting) }, handleGetUserInfo(e) { console.log(e.detail.userInfo) } } for (let i = 0; i < types.length; ++i) { (function (type) { pageObject[type] = function () { const key = type + 'Size' const changedData = {} changedData[key] = this.data[key] === 'default' ? 'mini' : 'default' this.setData(changedData) } }(types[i])) } Page(pageObject)"
+        - generic [ref=e577]:
+          - heading "相关回答" [level=2] [ref=e578]
+          - list [ref=e579]:
+            - listitem [ref=e580]:
+              - link "【讨论】关于收回getUserProfile，使用button的开放能力chooseAvatar替换获取头像的思考" [ref=e581] [cursor=pointer]:
+                - /url: /community/develop/doc/000c069af88688731b0e6f40f59c13
+            - listitem [ref=e582]:
+              - link "button组件开放能力type= launchApp，在鸿蒙手机上不能返回APP？" [ref=e583] [cursor=pointer]:
+                - /url: /community/develop/doc/0008c85ad68270c440244ad3066c00
+            - listitem [ref=e584]:
+              - link "使用button组件获取用户手机号，在小程序后台已经勾选了手机号，但是还是提示没有权限？" [ref=e585] [cursor=pointer]:
+                - /url: /community/develop/doc/000064fea2cae8f502e30dce06b800
+            - listitem [ref=e586]:
+              - link "鸿蒙系统_微信小程序button getPhoneNumber 会触发页面onshow生命周期" [ref=e587] [cursor=pointer]:
+                - /url: /community/develop/doc/000e40169f46b8fc8474dd38a66400
+            - listitem [ref=e588]:
+              - link "请问下为什么组件文档描述不全面，比如button文档里面没提及bintap，哪里能找到全面描述呢？" [ref=e589] [cursor=pointer]:
+                - /url: /community/develop/doc/0004ee8509cff8625dd38fb7161000
+          - button "查看全部 6107 条相关回答" [ref=e590] [cursor=pointer]:
+            - link "查看全部 6107 条相关回答" [ref=e591]:
+              - /url: https://developers.weixin.qq.com/community/search?page=1&block=1&type=1&query=button
+              - text: 查看全部 6107 条相关回答
+          - button "到微信开放社区提问" [ref=e593] [cursor=pointer]:
+            - link "到微信开放社区提问" [ref=e594]:
+              - /url: https://developers.weixin.qq.com/community/blog/create/1?blocktype=1&questionCategory=2
+              - img [ref=e595]
+              - text: 到微信开放社区提问

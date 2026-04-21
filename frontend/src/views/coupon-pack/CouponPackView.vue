@@ -262,7 +262,7 @@ import type { CouponTemplateListItemDto } from '@/types/coupon'
 import type { CouponPackListItemDto, SaveCouponPackRequest } from '@/types/coupon-pack'
 import type { CouponPackItemDto } from '@/types/coupon-pack-item'
 import { getErrorMessage } from '@/utils/http-error'
-import { authStorage } from '@/utils.auth'
+import { authStorage } from '@/utils/auth'
 import { notify } from '@/utils/notify'
 
 const items = ref<CouponPackListItemDto[]>([])

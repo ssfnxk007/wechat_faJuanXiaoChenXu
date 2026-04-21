@@ -266,7 +266,7 @@ import type { CouponTemplateListItemDto } from '@/types/coupon'
 import type { CouponPackListItemDto } from '@/types/coupon-pack'
 import type { MediaAssetListItemDto } from '@/types/media-asset'
 import type { ProductListItemDto } from '@/types/product'
-import { authStorage } from '@/utils.auth'
+import { authStorage } from '@/utils/auth'
 import { getErrorMessage } from '@/utils/http-error'
 import { notify } from '@/utils/notify'
 

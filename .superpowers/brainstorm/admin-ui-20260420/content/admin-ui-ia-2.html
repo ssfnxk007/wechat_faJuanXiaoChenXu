@@ -1,0 +1,48 @@
+<h2>后台信息架构重排</h2>
+<p class="subtitle">这一步只决定左侧导航怎么重新分组和排序，不改任何路由、不改任何功能入口，只改变“人看到后台之后怎么理解它”。</p>
+
+<div class="split">
+  <div class="mockup" data-choice="a" onclick="toggleSelect(this)">
+    <div class="mockup-header">A. 按业务链路组织</div>
+    <div class="mockup-body">
+      <div class="label">建议顺序</div>
+      <div class="options">
+        <div class="option"><div class="content"><h3>1. 首页总览</h3><p>仪表盘</p></div></div>
+        <div class="option"><div class="content"><h3>2. 发券配置</h3><p>券模板、券包、券包明细、轮播图、小程序主题</p></div></div>
+        <div class="option"><div class="content"><h3>3. 用户与资产</h3><p>用户管理、用户券</p></div></div>
+        <div class="option"><div class="content"><h3>4. 交易与履约</h3><p>订单管理、核销中心</p></div></div>
+        <div class="option"><div class="content"><h3>5. 内容与流量</h3><p>分享追踪</p></div></div>
+        <div class="option"><div class="content"><h3>6. 基础资料</h3><p>门店管理、商品管理</p></div></div>
+        <div class="option"><div class="content"><h3>7. 系统权限</h3><p>后台账号、角色、菜单</p></div></div>
+      </div>
+      <p style="margin-top:12px; color:#667085;">优点：最符合“运营后台”的工作顺序，从配置到投放到领取到核销，链路最清楚。</p>
+    </div>
+  </div>
+
+  <div class="mockup" data-choice="b" onclick="toggleSelect(this)">
+    <div class="mockup-header">B. 按对象类型组织</div>
+    <div class="mockup-body">
+      <div class="label">建议顺序</div>
+      <div class="options">
+        <div class="option"><div class="content"><h3>1. 首页总览</h3><p>仪表盘</p></div></div>
+        <div class="option"><div class="content"><h3>2. 用户域</h3><p>用户管理、用户券</p></div></div>
+        <div class="option"><div class="content"><h3>3. 商品门店域</h3><p>商品管理、门店管理</p></div></div>
+        <div class="option"><div class="content"><h3>4. 券资产域</h3><p>券模板、券包、券包明细</p></div></div>
+        <div class="option"><div class="content"><h3>5. 交易域</h3><p>订单管理、核销中心</p></div></div>
+        <div class="option"><div class="content"><h3>6. 增长域</h3><p>轮播图、分享追踪、小程序主题</p></div></div>
+        <div class="option"><div class="content"><h3>7. 系统权限</h3><p>后台账号、角色、菜单</p></div></div>
+      </div>
+      <p style="margin-top:12px; color:#667085;">优点：分类稳定，越做越大也不乱。缺点：业务链路感没有 A 强。</p>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:20px;">
+  <div class="mockup">
+    <div class="mockup-header">我当前的建议</div>
+    <div class="mockup-body">
+      <p style="margin-bottom:10px;">推荐 <strong>A. 按业务链路组织</strong>。</p>
+      <p>因为这个项目不是通用 ERP，它是“发卷业务后台”。把“发券配置 → 用户与资产 → 交易与履约 → 内容与流量”串起来，使用者更容易理解系统主线。</p>
+    </div>
+  </div>
+</div>

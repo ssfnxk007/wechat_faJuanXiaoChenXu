@@ -92,6 +92,7 @@
               <th>模板名称</th>
               <th>有效期</th>
               <th>优惠规则</th>
+              <th>分发模式</th>
               <th>商品范围</th>
               <th>状态</th>
               <th>创建时间</th>
@@ -120,12 +121,21 @@
               </td>
               <td><div class="table-primary-cell"><strong>{{ formatValidity(item) }}</strong><span>{{ validPeriodTypeMap[item.validPeriodType] || '-' }}</span></div></td>
               <td><div class="table-primary-cell"><strong>{{ formatDiscount(item) }}</strong><span>每用户限领 {{ item.perUserLimit }} 张</span></div></td>
+              <td>
+                <div class="table-primary-cell">
+                  <strong>
+                    <span class="badge" :class="`tag-mode-${item.distributionMode}`">{{ distributionModeLabel(item.distributionMode) }}</span>
+                  </strong>
+                  <span v-if="item.distributionMode === 1 && item.salePrice != null" class="price-badge">售价 ¥{{ item.salePrice.toFixed(2) }}</span>
+                  <span v-else>按分发模式决定入口</span>
+                </div>
+              </td>
               <td><div class="table-primary-cell"><strong>{{ formatProductIds(item.productIds) }}</strong><span>{{ item.remark || '未设置补充说明' }}</span></div></td>
               <td><span :class="['status-badge', item.isEnabled ? 'success' : 'danger']">{{ item.isEnabled ? '启用' : '停用' }}</span></td>
               <td>{{ formatDate(item.createdAt) }}</td>
               <td><div class="table-actions"><button v-if="canEdit" type="button" class="action-button" @click="openEditDialog(item)">编辑</button><button v-if="canDelete" type="button" class="action-button danger" @click="removeItem(item)">删除</button></div></td>
             </tr>
-            <tr v-if="items.length === 0"><td colspan="9" class="empty-text">当前没有符合条件的券模板</td></tr>
+            <tr v-if="items.length === 0"><td colspan="10" class="empty-text">当前没有符合条件的券模板</td></tr>
           </tbody>
         </table>
       </div>
@@ -141,6 +151,16 @@
           <label><span>模板名称</span><input v-model.trim="form.name" type="text" placeholder="例如：新人欢迎礼券" /></label>
           <label><span>模板类型</span><select v-model.number="form.templateType"><option :value="1">新人券</option><option :value="2">无门槛券</option><option :value="3">指定商品券</option><option :value="4">满减券</option></select></label>
           <label><span>有效期类型</span><select v-model.number="form.validPeriodType"><option :value="1">固定日期范围</option><option :value="2">领取后 N 天有效</option></select></label>
+          <label class="field-card">
+            <span class="field-label">分发模式</span>
+            <select v-model.number="form.distributionMode" @change="onDistributionModeChange">
+              <option v-for="option in DISTRIBUTION_MODE_OPTIONS" :key="option.value" :value="option.value">{{ option.label }}</option>
+            </select>
+          </label>
+          <label v-if="form.distributionMode === 1" class="field-card">
+            <span class="field-label">售价（元）<span class="required-hint">*</span></span>
+            <input v-model.number="form.salePrice" type="number" min="0.01" step="0.01" placeholder="仅单张售卖模式填写" />
+          </label>
           <label><span>优惠金额</span><input v-model.number="form.discountAmount" type="number" min="0" step="0.01" placeholder="例如：5" /></label>
           <label><span>门槛金额</span><input v-model.number="form.thresholdAmount" type="number" min="0" step="0.01" placeholder="满减券可填写门槛" /></label>
           <label><span>每用户限领</span><input v-model.number="form.perUserLimit" type="number" min="1" step="1" /></label>
@@ -285,7 +305,7 @@ import type { MediaAssetListItemDto } from '@/types/media-asset'
 import type { ProductListItemDto } from '@/types/product'
 import type { StoreListItemDto } from '@/types/store'
 import { getErrorMessage } from '@/utils/http-error'
-import { authStorage } from '@/utils.auth'
+import { authStorage } from '@/utils/auth'
 import { notify } from '@/utils/notify'
 
 type CouponTemplateForm = SaveCouponTemplateRequest & { imageUrl?: string }
@@ -318,6 +338,16 @@ const storeQuery = reactive({ keyword: '' })
 
 const typeMap: Record<number, string> = { 1: '新人券', 2: '无门槛券', 3: '指定商品券', 4: '满减券' }
 const validPeriodTypeMap: Record<number, string> = { 1: '固定日期范围', 2: '领取后 N 天有效' }
+const DISTRIBUTION_MODE_OPTIONS = [
+  { value: 0, label: '免费领取' },
+  { value: 1, label: '单张售卖' },
+  { value: 2, label: '仅组包' },
+] as const
+
+const distributionModeLabel = (mode: number | null | undefined): string => {
+  const found = DISTRIBUTION_MODE_OPTIONS.find((item) => item.value === mode)
+  return found ? found.label : '未知'
+}
 
 const createEmptyForm = (): CouponTemplateForm => ({
   name: '',
@@ -334,6 +364,8 @@ const createEmptyForm = (): CouponTemplateForm => ({
   isAllStores: true,
   perUserLimit: 1,
   isEnabled: true,
+  distributionMode: 0,
+  salePrice: undefined,
   remark: '',
   productIds: [],
   storeIds: [],
@@ -352,6 +384,12 @@ watch(validFromLocal, (value) => { form.validFrom = toServerDateTime(value) })
 watch(validToLocal, (value) => { form.validTo = toServerDateTime(value) })
 watch(selectedProducts, (value) => { form.productIds = value.map((item) => item.id) }, { deep: true })
 watch(selectedStores, (value) => { form.storeIds = value.map((item) => item.id) }, { deep: true })
+
+const onDistributionModeChange = () => {
+  if (form.distributionMode !== 1) {
+    form.salePrice = undefined
+  }
+}
 
 const resetForm = () => {
   Object.assign(form, createEmptyForm())
@@ -453,6 +491,8 @@ const openEditDialog = (item: CouponTemplateListItemDto) => {
     isAllStores: item.isAllStores,
     perUserLimit: item.perUserLimit,
     isEnabled: item.isEnabled,
+    distributionMode: item.distributionMode ?? 0,
+    salePrice: item.salePrice,
     remark: item.remark,
     productIds: item.productIds || [],
     storeIds: item.storeIds || [],
@@ -563,6 +603,8 @@ const buildPayload = (): SaveCouponTemplateRequest => ({
   isAllStores: form.isAllStores,
   perUserLimit: form.perUserLimit,
   isEnabled: form.isEnabled,
+  distributionMode: form.distributionMode,
+  salePrice: form.distributionMode === 1 ? form.salePrice : undefined,
   remark: form.remark?.trim() || undefined,
   productIds: form.templateType === 3 ? selectedProducts.value.map((item) => item.id) : [],
   storeIds: form.isAllStores ? [] : selectedStores.value.map((item) => item.id),
@@ -576,6 +618,7 @@ const submit = async () => {
   if (form.validPeriodType === 2 && (form.validDays ?? 0) <= 0) return notify.info('领取后有效天数必须大于 0')
   if (form.templateType === 3 && selectedProducts.value.length === 0) return notify.info('指定商品券必须至少选择一个商品')
   if (!form.isAllStores && selectedStores.value.length === 0) return notify.info('指定门店可用时必须至少选择一个门店')
+  if (form.distributionMode === 1 && (!form.salePrice || form.salePrice <= 0)) return notify.error('单张售卖券必须填写大于 0 的售价')
 
   if (submitting.value) return
   submitting.value = true
@@ -631,6 +674,11 @@ onMounted(loadData)
 .selected-product-list { display: flex; flex-wrap: wrap; gap: 10px; }
 .selected-product-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 12px; border-radius: 999px; background: rgba(37,99,235,.08); color: var(--primary); }
 .selected-product-chip button { height: 24px; min-width: auto; padding: 0 10px; border-radius: 999px; border: 1px solid rgba(37,99,235,.16); background: #fff; color: var(--primary); }
+.price-badge { color: #b45309; font-weight: 600; }
+.tag-mode-0 { background: rgba(22, 163, 74, 0.12); color: #166534; }
+.tag-mode-1 { background: rgba(37, 99, 235, 0.12); color: #1d4ed8; }
+.tag-mode-2 { background: rgba(217, 119, 6, 0.12); color: #b45309; }
+.required-hint { color: #dc2626; margin-left: 4px; }
 .media-selector-card { gap: 12px; }
 .selected-media-card { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 16px; border: 1px solid rgba(226,232,240,.96); background: linear-gradient(180deg, #fff 0%, #fbfdff 100%); }
 .selected-media-image,.media-card-image { width: 120px; height: 120px; object-fit: cover; border-radius: 16px; border: 1px solid var(--line); background: #fff; }

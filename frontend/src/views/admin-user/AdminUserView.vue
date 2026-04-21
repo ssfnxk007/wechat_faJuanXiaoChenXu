@@ -220,7 +220,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { createAdminUser, deleteAdminUser, getAdminRoleList, getAdminUserList, resetAdminUserPassword, updateAdminUser } from '@/api/admin-permission'
 import type { AdminRoleListItemDto, AdminUserListItemDto, SaveAdminUserRequest } from '@/types/admin-permission'
 import { getErrorMessage } from '@/utils/http-error'
-import { authStorage } from '@/utils.auth'
+import { authStorage } from '@/utils/auth'
 import { notify } from '@/utils/notify'
 
 const items = ref<AdminUserListItemDto[]>([])

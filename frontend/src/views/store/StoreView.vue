@@ -221,7 +221,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { createStore, deleteStore, getStoreList, updateStore } from '@/api/store'
 import type { SaveStoreRequest, StoreListItemDto } from '@/types/store'
 import { getErrorMessage } from '@/utils/http-error'
-import { authStorage } from '@/utils.auth'
+import { authStorage } from '@/utils/auth'
 import { notify } from '@/utils/notify'
 
 const items = ref<StoreListItemDto[]>([])

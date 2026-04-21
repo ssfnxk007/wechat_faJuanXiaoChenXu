@@ -1,0 +1,36 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]: 发券系统后台
+      - heading "零售发券后台管理系统" [level=1] [ref=e8]
+      - paragraph [ref=e9]: 面向小程序发券、券包售卖、支付回调、用户券管理与 ERP 核销的一体化后台入口。
+      - list [ref=e10]:
+        - listitem [ref=e11]: 支持微信获取 OpenId 后自动生成用户
+        - listitem [ref=e12]: 支持新人券、无门槛券、指定商品券和满减券
+        - listitem [ref=e13]: 支持公开领取、指定发放、券包售卖与支付发券
+        - listitem [ref=e14]: 支持生成券码二维码供 ERP 扫码核销
+    - generic [ref=e15]:
+      - generic [ref=e16]:
+        - text: 券类型
+        - strong [ref=e17]: 4 类
+      - generic [ref=e18]:
+        - text: 发放方式
+        - strong [ref=e19]: 3 种
+      - generic [ref=e20]:
+        - text: 核销模式
+        - strong [ref=e21]: ERP 扫码
+  - generic [ref=e22]:
+    - generic [ref=e23]:
+      - generic [ref=e24]: 欢迎登录
+      - heading "进入后台" [level=1] [ref=e25]
+      - paragraph [ref=e26]: 当前已接通后台 JWT 登录，可先使用开发管理员账号进入系统。
+    - generic [ref=e27]:
+      - textbox "请输入账号" [ref=e28]: admin
+      - textbox "请输入密码" [ref=e29]: "123456"
+      - button "进入后台" [ref=e30] [cursor=pointer]
+    - generic [ref=e31]:
+      - text: 默认开发账号：
+      - code [ref=e32]: admin
+      - text: /
+      - code [ref=e33]: "123456"
+      - text: 。后续可继续切换到数据库权限体系与动态菜单。

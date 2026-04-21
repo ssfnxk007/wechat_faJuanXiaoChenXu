@@ -191,7 +191,7 @@ import { getMiniAppPaySettings, updateMiniAppPaySettings } from '@/api/miniapp-p
 import type { SaveAdminWeChatPaySettingsRequest } from '@/types/miniapp-pay-setting'
 import { notify } from '@/utils/notify'
 import { getErrorMessage } from '@/utils/http-error'
-import { authStorage } from '@/utils.auth'
+import { authStorage } from '@/utils/auth'
 
 type ThemeCode = 'green' | 'light' | 'candy' | 'orange' | 'red'
 type TabKey = 'theme' | 'pay'

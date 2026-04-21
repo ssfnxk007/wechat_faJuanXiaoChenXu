@@ -14,6 +14,8 @@ export interface CouponTemplateListItemDto {
   isAllStores: boolean
   perUserLimit: number
   isEnabled: boolean
+  distributionMode: number
+  salePrice?: number
   remark?: string
   productIds?: number[]
   storeIds?: number[]
@@ -34,6 +36,8 @@ export interface SaveCouponTemplateRequest {
   isAllStores: boolean
   perUserLimit: number
   isEnabled: boolean
+  distributionMode: number
+  salePrice?: number
   remark?: string
   productIds?: number[]
   storeIds?: number[]

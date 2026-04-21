@@ -89,22 +89,30 @@
     </section>
 
     <section class="card card-v2 data-card">
-      <div class="section-head"><div class="section-head-main"><span class="section-kicker">商品档案</span><h3>商品列表</h3><p class="section-tip">展示主图、ERP 编码、售价与状态，便于券模板和核销模块复用。</p></div><div class="inline-metrics"><span class="badge info">总数 {{ totalCount }}</span><span class="badge warning">每页 {{ pageSize }}</span></div></div>
+      <div class="section-head"><div class="section-head-main"><span class="section-kicker">商品档案</span><h3>商品列表</h3><p class="section-tip">展示主图、ERP 编码、ERP 原价、售价、库存与状态，便于券模板和核销模块复用。</p></div><div class="inline-metrics"><span class="badge info">总数 {{ totalCount }}</span><span class="badge warning">每页 {{ pageSize }}</span></div></div>
       <div class="table-wrap table-wrap-v2">
         <table class="table">
-          <thead><tr><th>ID</th><th>商品</th><th>ERP 编码</th><th>售价</th><th>图片</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
+          <thead><tr><th>ID</th><th>商品</th><th>ERP 编码</th><th>ERP 原价</th><th>售价</th><th>库存</th><th>图片</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
           <tbody>
             <tr v-for="item in items" :key="item.id">
               <td class="cell-strong">{{ item.id }}</td>
               <td><div class="table-primary-cell"><strong>{{ item.name }}</strong><span>{{ item.detailImageAssetIds.length > 0 ? `详情图 ${item.detailImageAssetIds.length} 张` : '未配置详情图' }}</span></div></td>
               <td class="cell-mono">{{ item.erpProductCode }}</td>
-              <td>{{ formatPrice(item.salePrice) }}</td>
+              <td>{{ formatPrice(item.erpOriginalPrice) }}</td>
+              <td>
+                <div class="price-compare-cell">
+                  <strong class="sale-price-value">{{ formatPrice(item.salePrice) }}</strong>
+                  <span v-if="showPriceCompare(item)" class="origin-price-strike">{{ formatPrice(item.erpOriginalPrice) }}</span>
+                  <span v-if="showPriceCompare(item)" class="discount-value">省 {{ formatDiscount(item.erpOriginalPrice, item.salePrice) }}</span>
+                </div>
+              </td>
+              <td>{{ formatStock(item.stockQuantity) }}</td>
               <td><div class="product-thumb-cell"><img v-if="item.mainImageUrl" :src="item.mainImageUrl" alt="商品主图" class="product-thumb" /><span v-else class="muted-text">未配置主图</span></div></td>
               <td><span :class="['status-badge', item.isEnabled ? 'success' : 'danger']">{{ item.isEnabled ? '启用' : '停用' }}</span></td>
               <td>{{ formatDate(item.createdAt) }}</td>
               <td><div class="table-actions"><button v-if="canEdit" type="button" class="action-button" @click="openEditDialog(item)">编辑</button><button v-if="canDelete" type="button" class="action-button danger" @click="removeItem(item)">删除</button></div></td>
             </tr>
-            <tr v-if="items.length === 0"><td colspan="8" class="empty-text">当前没有商品数据</td></tr>
+            <tr v-if="items.length === 0"><td colspan="10" class="empty-text">当前没有商品数据</td></tr>
           </tbody>
         </table>
       </div>
@@ -117,7 +125,9 @@
         <div class="grid-form dialog-form product-form-grid">
           <label><span>商品名称</span><input v-model.trim="form.name" type="text" placeholder="请输入商品名称" /></label>
           <label><span>ERP 商品编码</span><input v-model.trim="form.erpProductCode" type="text" placeholder="请输入 ERP 商品编码" /></label>
+          <label><span>ERP 原价</span><input v-model.number="form.erpOriginalPrice" type="number" min="0" step="0.01" placeholder="例如：39.90" /></label>
           <label><span>销售价格</span><input v-model.number="form.salePrice" type="number" min="0" step="0.01" placeholder="例如：19.90" /></label>
+          <label><span>库存</span><input v-model.number="form.stockQuantity" type="number" min="0" step="1" placeholder="例如：100" /></label>
           <label class="checkbox-field checkbox-card"><input v-model="form.isEnabled" type="checkbox" /><span>启用商品</span></label>
 
           <div class="field-span-2 selector-field-card">
@@ -167,7 +177,7 @@ import { createMediaAsset, getMediaAssetList, uploadMediaAssetFile } from '@/api
 import type { MediaAssetListItemDto } from '@/types/media-asset'
 import type { ProductListItemDto, SaveProductRequest } from '@/types/product'
 import { getErrorMessage } from '@/utils/http-error'
-import { authStorage } from '@/utils.auth'
+import { authStorage } from '@/utils/auth'
 import { notify } from '@/utils/notify'
 
 const items = ref<ProductListItemDto[]>([])
@@ -192,7 +202,9 @@ const createEmptyForm = (): SaveProductRequest => ({
   erpProductCode: '',
   mainImageAssetId: undefined,
   detailImageAssetIds: [],
+  erpOriginalPrice: undefined,
   salePrice: undefined,
+  stockQuantity: undefined,
   isEnabled: true,
 })
 
@@ -246,7 +258,16 @@ const goNextPage = async () => { if (pageIndex.value >= totalPages.value) return
 const openCreateDialog = () => { editingId.value = null; resetForm(); dialogVisible.value = true }
 const openEditDialog = (item: ProductListItemDto) => {
   editingId.value = item.id
-  Object.assign(form, { name: item.name, erpProductCode: item.erpProductCode, mainImageAssetId: item.mainImageAssetId, detailImageAssetIds: item.detailImageAssetIds || [], salePrice: item.salePrice, isEnabled: item.isEnabled })
+  Object.assign(form, {
+    name: item.name,
+    erpProductCode: item.erpProductCode,
+    mainImageAssetId: item.mainImageAssetId,
+    detailImageAssetIds: item.detailImageAssetIds || [],
+    erpOriginalPrice: item.erpOriginalPrice,
+    salePrice: item.salePrice,
+    stockQuantity: item.stockQuantity,
+    isEnabled: item.isEnabled
+  })
   selectedMainAsset.value = item.mainImageAssetId ? { id: item.mainImageAssetId, name: item.name, fileUrl: item.mainImageUrl || '', mediaType: 'image', bucketType: 'product', tags: [], sort: 0, isEnabled: true, createdAt: item.createdAt } : null
   selectedDetailAssets.value = (item.detailImageAssetIds || []).map((id, index) => ({ id, name: `详情图 ${index + 1}`, fileUrl: item.detailImageUrls[index] || '', mediaType: 'image', bucketType: 'product', tags: [], sort: index, isEnabled: true, createdAt: item.createdAt }))
   dialogVisible.value = true
@@ -358,6 +379,16 @@ const removeItem = async (item: ProductListItemDto) => {
 
 const formatDate = (value?: string) => (value ? value.replace('T', ' ').slice(0, 19) : '-')
 const formatPrice = (value?: number) => (value !== undefined ? `¥${value.toFixed(2)}` : '-')
+const formatStock = (value?: number) => (value !== undefined ? `${value}` : '-')
+const showPriceCompare = (item: ProductListItemDto) =>
+  item.erpOriginalPrice !== undefined
+  && item.salePrice !== undefined
+  && item.erpOriginalPrice > item.salePrice
+const formatDiscount = (erpOriginalPrice?: number, salePrice?: number) => {
+  if (erpOriginalPrice === undefined || salePrice === undefined) return '-'
+  const discount = erpOriginalPrice - salePrice
+  return discount > 0 ? `¥${discount.toFixed(2)}` : '-'
+}
 
 onMounted(loadData)
 </script>
@@ -372,6 +403,10 @@ onMounted(loadData)
 .product-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 12px; border: 1px solid var(--line); background: #fff; }
 .product-dialog-card { width: min(980px, calc(100vw - 48px)); }
 .product-form-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+.price-compare-cell { display: grid; gap: 2px; }
+.sale-price-value { color: var(--primary); font-weight: 700; }
+.origin-price-strike { color: var(--muted); text-decoration: line-through; font-size: 12px; }
+.discount-value { color: #f59e0b; font-size: 12px; font-weight: 600; }
 .dialog-form input,.dialog-form select { width: 100%; min-height: 44px; padding: 10px 14px; border: 1px solid var(--line-strong); border-radius: 12px; background: #fff; }
 .selected-main-preview { display: grid; grid-template-columns: 120px minmax(0,1fr) auto; gap: 14px; align-items: center; }
 .selected-main-image,.selected-detail-image,.media-card-image { width: 120px; height: 120px; object-fit: cover; border-radius: 16px; border: 1px solid var(--line); background: #fff; }

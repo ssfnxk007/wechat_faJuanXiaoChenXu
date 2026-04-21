@@ -412,7 +412,10 @@ namespace FaJuan.Api.Infrastructure.Persistence.Migrations
                     b.Property<long>("AppUserId")
                         .HasColumnType("bigint");
 
-                    b.Property<long>("CouponPackId")
+                    b.Property<long?>("CouponPackId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long?>("CouponTemplateId")
                         .HasColumnType("bigint");
 
                     b.Property<DateTime>("CreatedAt")
@@ -528,6 +531,9 @@ namespace FaJuan.Api.Infrastructure.Persistence.Migrations
                     b.Property<decimal?>("DiscountAmount")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("DistributionMode")
+                        .HasColumnType("int");
+
                     b.Property<long?>("ImageAssetId")
                         .HasColumnType("bigint");
 
@@ -551,6 +557,9 @@ namespace FaJuan.Api.Infrastructure.Persistence.Migrations
                     b.Property<string>("Remark")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal?>("SalePrice")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("TemplateType")
                         .HasColumnType("int");
@@ -859,6 +868,9 @@ namespace FaJuan.Api.Infrastructure.Persistence.Migrations
                     b.Property<string>("DetailImageAssetIds")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<decimal?>("ErpOriginalPrice")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("ErpProductCode")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -877,6 +889,9 @@ namespace FaJuan.Api.Infrastructure.Persistence.Migrations
 
                     b.Property<decimal?>("SalePrice")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("StockQuantity")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -957,8 +972,17 @@ namespace FaJuan.Api.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("ExpireAt")
                         .HasColumnType("datetime");
 
+                    b.Property<int>("FulfillmentStatus")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("ReceivedAt")
                         .HasColumnType("datetime");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");

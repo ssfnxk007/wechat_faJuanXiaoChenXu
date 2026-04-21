@@ -44,6 +44,12 @@
       }
     },
     {
+      "path": "pages/sale-coupon/detail",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/activity/detail",
       "style": {
         "navigationStyle": "custom"
