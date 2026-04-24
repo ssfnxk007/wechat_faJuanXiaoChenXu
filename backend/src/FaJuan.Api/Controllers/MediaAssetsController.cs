@@ -155,12 +155,14 @@ public class MediaAssetsController(AppDbContext dbContext, IWebHostEnvironment e
 
     [AdminPermissionAuthorize("product.create")]
     [HttpPost("upload")]
+    [Consumes("multipart/form-data")]
     public async Task<ActionResult<ApiResponse<MediaAssetUploadResultDto>>> Upload(
-        [FromForm] IFormFile file,
-        [FromQuery] string? bucketType,
+        [FromForm] UploadMediaAssetRequest request,
         [FromServices] ImageCompressor imageCompressor,
         [FromServices] IOptions<UploadOptions> uploadOptions)
     {
+        var file = request.File;
+        var bucketType = request.BucketType;
         if (file is null || file.Length == 0)
         {
             return BadRequest(Failure<MediaAssetUploadResultDto>("上传文件不能为空"));

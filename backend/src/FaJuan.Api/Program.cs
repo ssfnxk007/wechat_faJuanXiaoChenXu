@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using FaJuan.Api.Application.Orders;
+using FaJuan.Api.Application.Erp;
 using FaJuan.Api.Application.UserCoupons;
 using FaJuan.Api.Contracts;
 using FaJuan.Api.Infrastructure.Auth;
@@ -44,6 +45,7 @@ builder.Services.AddCors(options =>
 builder.Services.Configure<WeChatMiniProgramOptions>(builder.Configuration.GetSection("WeChatMiniProgram"));
 builder.Services.Configure<MiniAppThemeSettingsOptions>(builder.Configuration.GetSection("MiniAppTheme"));
 builder.Services.Configure<UploadOptions>(builder.Configuration.GetSection("Uploads"));
+builder.Services.Configure<ErpApiOptions>(builder.Configuration.GetSection("ErpApi"));
 
 var uploadMaxBytes = builder.Configuration.GetSection("Uploads").Get<UploadOptions>()?.MaxFileSizeBytes
                      ?? new UploadOptions().MaxFileSizeBytes;
@@ -88,6 +90,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         }));
 
 builder.Services.AddHealthChecks();
+builder.Services.AddScoped<ErpCouponService>();
 builder.Services.AddScoped<OrderPaymentService>();
 builder.Services.AddScoped<UserCouponGrantService>();
 builder.Services.AddSingleton<MiniAppThemeSettingsService>();

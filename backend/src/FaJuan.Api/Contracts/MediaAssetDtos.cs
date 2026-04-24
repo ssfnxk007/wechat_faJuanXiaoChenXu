@@ -29,3 +29,9 @@ public class MediaAssetUploadResultDto
     public string FileName { get; init; } = string.Empty;
     public string FileUrl { get; init; } = string.Empty;
 }
+
+public class UploadMediaAssetRequest
+{
+    public IFormFile? File { get; init; }
+    public string? BucketType { get; init; }
+}

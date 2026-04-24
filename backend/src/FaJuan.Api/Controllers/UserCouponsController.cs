@@ -344,13 +344,24 @@ public class UserCouponsController(AppDbContext dbContext, UserCouponGrantServic
                 (record, stores) => new { record, stores })
             .SelectMany(
                 x => x.stores.DefaultIfEmpty(),
-                (x, store) => new CouponWriteOffRecordDto
+                (x, store) => new { x.record, store })
+            .GroupJoin(
+                dbContext.Products.AsNoTracking(),
+                x => x.record.ProductId,
+                product => product.Id,
+                (x, products) => new { x.record, x.store, products })
+            .SelectMany(
+                x => x.products.DefaultIfEmpty(),
+                (x, product) => new CouponWriteOffRecordDto
                 {
                     Id = x.record.Id,
                     UserCouponId = x.record.UserCouponId,
                     CouponCode = x.record.CouponCode,
                     StoreId = x.record.StoreId,
-                    StoreName = store != null ? store.Name : string.Empty,
+                    StoreName = x.store != null ? x.store.Name : string.Empty,
+                    ProductId = x.record.ProductId,
+                    ProductName = product != null ? product.Name : null,
+                    ProductCode = product != null ? product.ErpProductCode : null,
                     OperatorName = x.record.OperatorName,
                     DeviceCode = x.record.DeviceCode,
                     WriteOffAt = x.record.WriteOffAt,

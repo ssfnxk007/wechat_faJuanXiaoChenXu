@@ -88,11 +88,17 @@ public class WriteOffController(AppDbContext dbContext) : ApiControllerBase
         }
 
         coupon.Status = UserCouponStatus.Used;
+        if (template.TemplateType == CouponTemplateType.Product)
+        {
+            coupon.FulfillmentStatus = CouponFulfillmentStatus.Fulfilled;
+        }
+
         dbContext.Set<CouponWriteOffRecord>().Add(new CouponWriteOffRecord
         {
             UserCouponId = coupon.Id,
             CouponCode = coupon.CouponCode,
             StoreId = request.StoreId,
+            ProductId = request.ProductId,
             OperatorName = request.OperatorName?.Trim(),
             DeviceCode = request.DeviceCode?.Trim(),
             WriteOffAt = now,
