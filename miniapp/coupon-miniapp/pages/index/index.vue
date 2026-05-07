@@ -1,5 +1,6 @@
 <template>
   <view :class="['cm-page', themeClass]">
+    <CmPullRefresh :refreshing="refreshing" @refresh="handleRefresh">
     <view class="home-hero">
       <view class="hero-mask"></view>
       <view class="cm-nav-spacer"></view>
@@ -37,7 +38,7 @@
         <view class="entry-card entry-card--mall" @click="goMall">
           <view class="entry-copy">
             <text class="entry-title">商城购券</text>
-            <text class="entry-subtitle">精选券包 组合优惠</text>
+            <text class="entry-subtitle">精选券包</text>
             <view class="entry-go">
               <text class="entry-go-text">GO ›</text>
             </view>
@@ -49,7 +50,7 @@
         <view class="entry-card entry-card--free" @click="handleFreeCouponEntry">
           <view class="entry-copy">
             <text class="entry-title">免费领券</text>
-            <text class="entry-subtitle">新人专享 到店核销</text>
+            <text class="entry-subtitle">新人专享</text>
             <view class="entry-go">
               <text class="entry-go-text">GO ›</text>
             </view>
@@ -60,8 +61,8 @@
         </view>
       </view>
 
-      <view class="cm-section">
-        <SectionHeader eyebrow="WELCOME GIFT" title="新人专享" subtitle="新人仅可领取一次" action-text="免费领取" @action-click="openCouponPreview(newcomerCoupon)" />
+      <view v-if="newcomerCoupon" class="cm-section">
+        <SectionHeader eyebrow="WELCOME GIFT" title="新人专享" subtitle="限领一次" action-text="免费领取" @action-click="openCouponPreview(newcomerCoupon)" />
         <view class="coupon-stack">
           <view @click="openCouponPreview(newcomerCoupon)">
             <CouponCard
@@ -77,7 +78,7 @@
       </view>
 
       <view class="cm-section free-coupon-section">
-        <SectionHeader eyebrow="FREE COUPONS" title="免费领取" subtitle="领取后进入券包" action-text="查看全部" @action-click="scrollToFreeCoupons" />
+        <SectionHeader eyebrow="FREE COUPONS" title="免费领取" subtitle="领券直达卡包" action-text="查看全部" @action-click="scrollToFreeCoupons" />
         <view class="direct-coupon-grid">
           <view class="direct-coupon-card cm-card" v-for="item in directCoupons" :key="item.id" @click="openCouponPreview(item)">
             <view class="direct-coupon-top">
@@ -95,7 +96,7 @@
       </view>
 
       <view class="cm-section">
-        <SectionHeader eyebrow="FEATURED PACKS" title="主推券包" subtitle="组合权益" action-text="进入商城" @action-click="goMall" />
+        <SectionHeader eyebrow="FEATURED PACKS" title="主推券包" subtitle="精选组合" action-text="进入商城" @action-click="goMall" />
         <view class="pack-stack">
           <view v-for="item in featuredPacks" :key="item.id" @click="goPackDetail(item.id)">
             <CouponPackCard :title="item.title" :subtitle="item.subtitle" :price="item.price" :desc="item.desc" :meta="item.meta" />
@@ -104,22 +105,23 @@
       </view>
 
       <view class="cm-section">
-        <SectionHeader eyebrow="SELECTED GOODS" title="推荐商品" subtitle="适合搭配用券" action-text="查看更多" @action-click="goMall" />
+        <SectionHeader eyebrow="SELECTED GOODS" title="推荐商品" subtitle="搭配购入" action-text="查看更多" @action-click="goMall" />
         <view class="cm-grid-2 product-grid">
           <view class="product-card cm-card" v-for="item in products" :key="item.id" @click="goProductDetail(item.id)">
             <view class="product-image">
               <image v-if="item.imageUrl" class="product-image-img" :src="item.imageUrl" mode="aspectFit" />
             </view>
             <text class="product-title">{{ item.title }}</text>
-            <text class="product-desc">{{ item.desc }}</text>
+            <text v-if="item.desc" class="product-desc">{{ item.desc }}</text>
             <view class="product-footer">
               <text class="product-price">¥{{ item.price }}</text>
-              <text class="product-tag">{{ item.tag }}</text>
+              <text v-if="item.barcodeText" class="product-barcode">{{ item.barcodeText }}</text>
             </view>
           </view>
         </view>
       </view>
     </view>
+    </CmPullRefresh>
   </view>
 </template>
 
@@ -129,40 +131,30 @@ import { onShow } from '@dcloudio/uni-app'
 import SectionHeader from '@/components/SectionHeader.vue'
 import CouponCard from '@/components/CouponCard.vue'
 import CouponPackCard from '@/components/CouponPackCard.vue'
+import CmPullRefresh from '@/components/CmPullRefresh.vue'
 import { useTheme } from '@/composables/use-theme'
 import { fetchHomePageData } from '@/api/home'
 import { setThemeCode } from '@/store/session'
 
 const { themeClass } = useTheme()
 
-const newcomerCoupon = ref({
-  id: 0,
-  tag: '新人专享',
-  title: '新人礼券',
-  desc: '立减 10 元，门店通用。',
-  date: '领取后 7 天内有效',
-  amount: '10',
-  type: '新人券',
-  meta: '待领取后进入券包'
-})
-const banners = ref([
-  {
-    id: 1,
-    title: '购买券包',
-    subtitle: '更优惠',
-    ctaText: '立即抢购',
-    illustrationUrl: '',
-    linkUrl: '/pages/mall/index'
-  },
-  {
-    id: 2,
-    title: '免费领券',
-    subtitle: '新人专享',
-    ctaText: '立即领取',
-    illustrationUrl: '',
-    linkUrl: '/pages/activity/detail?key=free'
+const refreshing = ref(false)
+
+async function handleRefresh() {
+  if (refreshing.value) return
+  refreshing.value = true
+  try {
+    await loadHomeData()
+  } catch (error) {
+    console.warn('[home] refresh failed', error)
+    uni.showToast({ title: error?.message || '加载失败', icon: 'none' })
+  } finally {
+    refreshing.value = false
   }
-])
+}
+
+const newcomerCoupon = ref(null)
+const banners = ref([])
 const directCoupons = ref([])
 const featuredPacks = ref([])
 const products = ref([])
@@ -175,21 +167,22 @@ function onBannerChange(e) {
 async function loadHomeData() {
   const result = await fetchHomePageData()
   setThemeCode(result?.theme?.themeCode)
-  const serverBanners = Array.isArray(result.banners) && result.banners.length ? result.banners : []
-  if (serverBanners.length) {
-    banners.value = serverBanners.map((item, idx) => ({
-      id: item.id,
-      title: item.title || '',
-      subtitle: item.subtitle || '',
-      ctaText: item.ctaText || '立即查看',
-      illustrationUrl: item.illustrationUrl || '',
-      linkUrl: item.linkUrl || ''
-    }))
-  }
-  newcomerCoupon.value = result.newcomerCoupon || newcomerCoupon.value
+  newcomerCoupon.value = result.newcomerCoupon || null
   directCoupons.value = Array.isArray(result.directCoupons) ? result.directCoupons : []
   featuredPacks.value = Array.isArray(result.featuredPacks) ? result.featuredPacks : []
   products.value = Array.isArray(result.products) ? result.products : []
+
+  const serverBanners = Array.isArray(result.banners) ? result.banners : []
+  const mappedBanners = serverBanners.map((item) => ({
+    id: item.id,
+    title: item.title || '',
+    subtitle: item.subtitle || '',
+    ctaText: item.ctaText || '立即查看',
+    illustrationUrl: item.illustrationUrl || '',
+    linkUrl: item.linkUrl || ''
+  }))
+  banners.value = mappedBanners
+  currentBanner.value = 0
 }
 
 function openCouponPreview(item = {}) {
@@ -324,6 +317,11 @@ onShow(() => {
   color: #FFFFFF;
   line-height: 1.15;
   letter-spacing: 1rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 .banner-subtitle {
   margin-top: 8rpx;
@@ -331,6 +329,9 @@ onShow(() => {
   font-weight: 700;
   color: rgba(255, 255, 255, 0.95);
   line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .banner-cta {
   align-self: flex-start;
@@ -574,16 +575,10 @@ onShow(() => {
   font-size: 28rpx;
   font-weight: 700;
 }
-.product-tag {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44rpx;
-  padding: 0 16rpx;
-  border-radius: 999rpx;
-  background: rgba(183, 155, 99, 0.14);
-  color: $cm-accent-gold;
+.product-barcode {
+  color: #f97316;
   font-size: 20rpx;
+  font-weight: 700;
 }
 
 .theme-light .home-hero {
@@ -645,10 +640,13 @@ onShow(() => {
   color: #0f172a;
 }
 
-.theme-light .direct-coupon-badge,
-.theme-light .product-tag {
+.theme-light .direct-coupon-badge {
   background: rgba(15, 23, 42, 0.05);
   color: #475569;
+}
+
+.theme-light .product-barcode {
+  color: #ea580c;
 }
 
 .theme-light .direct-coupon-action {
@@ -726,10 +724,13 @@ onShow(() => {
   opacity: 0.35;
 }
 
-.theme-candy .direct-coupon-badge,
-.theme-candy .product-tag {
+.theme-candy .direct-coupon-badge {
   background: rgba(59, 130, 246, 0.08);
   color: #2563EB;
+}
+
+.theme-candy .product-barcode {
+  color: #f97316;
 }
 
 .theme-candy .direct-coupon-action {
@@ -801,10 +802,13 @@ onShow(() => {
   opacity: 0.38;
 }
 
-.theme-orange .direct-coupon-badge,
-.theme-orange .product-tag {
+.theme-orange .direct-coupon-badge {
   background: rgba(249, 115, 22, 0.10);
   color: #EA580C;
+}
+
+.theme-orange .product-barcode {
+  color: #fb923c;
 }
 
 .theme-orange .direct-coupon-action {
@@ -881,10 +885,13 @@ onShow(() => {
   opacity: 0.38;
 }
 
-.theme-red .direct-coupon-badge,
-.theme-red .product-tag {
+.theme-red .direct-coupon-badge {
   background: rgba(239, 83, 80, 0.10);
   color: #E53935;
+}
+
+.theme-red .product-barcode {
+  color: #fb7185;
 }
 
 .theme-red .direct-coupon-action {

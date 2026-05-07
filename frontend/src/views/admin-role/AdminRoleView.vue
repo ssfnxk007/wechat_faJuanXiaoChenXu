@@ -236,7 +236,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { createAdminRole, deleteAdminRole, getAdminMenuList, getAdminPermissionList, getAdminRoleList, updateAdminRole } from '@/api/admin-permission'
 import type { AdminMenuListItemDto, AdminPermissionListItemDto, AdminRoleListItemDto, SaveAdminRoleRequest } from '@/types/admin-permission'
 import { getErrorMessage } from '@/utils/http-error'
-import { authStorage } from '@/utils.auth'
+import { authStorage } from '@/utils/auth'
 import { notify } from '@/utils/notify'
 
 interface MenuOption {

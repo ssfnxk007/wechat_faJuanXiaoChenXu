@@ -10,6 +10,7 @@ namespace FaJuan.Api.Infrastructure.WeChatPay;
 public class WeChatPayService(HttpClient httpClient, WeChatPaySettingsProvider settingsProvider)
 {
     private readonly Dictionary<string, RSA> _platformCertificates = new();
+    private const string WeChatPayUserAgent = "FaJuan.Api/1.0";
 
     public async Task<bool> IsConfiguredAsync(CancellationToken cancellationToken = default)
     {
@@ -64,6 +65,7 @@ public class WeChatPayService(HttpClient httpClient, WeChatPaySettingsProvider s
         using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.mch.weixin.qq.com/v3/pay/transactions/jsapi");
         request.Headers.TryAddWithoutValidation("Authorization", authorization);
         request.Headers.TryAddWithoutValidation("Accept", "application/json");
+        request.Headers.TryAddWithoutValidation("User-Agent", WeChatPayUserAgent);
         request.Content = new StringContent(body, Encoding.UTF8, "application/json");
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
@@ -139,6 +141,50 @@ public class WeChatPayService(HttpClient httpClient, WeChatPaySettingsProvider s
         });
     }
 
+    public async Task<(bool Success, string Message, WeChatTransactionResource? Result)> QueryTransactionByOutTradeNoAsync(string outTradeNo, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(outTradeNo))
+        {
+            return (false, "商户订单号不能为空", null);
+        }
+
+        var opts = await settingsProvider.GetAsync(cancellationToken);
+        if (!opts.IsConfigured)
+        {
+            return (false, "微信支付配置未完成", null);
+        }
+
+        var normalizedOutTradeNo = Uri.EscapeDataString(outTradeNo.Trim());
+        var canonicalUrl = $"/v3/pay/transactions/out-trade-no/{normalizedOutTradeNo}?mchid={Uri.EscapeDataString(opts.MerchantId)}";
+        var nonce = Guid.NewGuid().ToString("N");
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+        var authorization = BuildAuthorization("GET", canonicalUrl, timestamp, nonce, string.Empty, opts);
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.mch.weixin.qq.com{canonicalUrl}");
+        request.Headers.TryAddWithoutValidation("Authorization", authorization);
+        request.Headers.TryAddWithoutValidation("Accept", "application/json");
+        request.Headers.TryAddWithoutValidation("User-Agent", WeChatPayUserAgent);
+
+        using var response = await httpClient.SendAsync(request, cancellationToken);
+        var payload = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            return (false, $"微信支付查单失败: {payload}", null);
+        }
+
+        var result = JsonSerializer.Deserialize<WeChatTransactionResource>(payload, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+        });
+
+        if (result is null)
+        {
+            return (false, "微信支付查单返回解析失败", null);
+        }
+
+        return (true, "微信支付查单成功", result);
+    }
+
     public async Task<bool> VerifyCallbackSignatureAsync(string serial, string timestamp, string nonce, string signature, string body, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(serial) || string.IsNullOrWhiteSpace(timestamp) || string.IsNullOrWhiteSpace(nonce) || string.IsNullOrWhiteSpace(signature))
@@ -202,6 +248,7 @@ public class WeChatPayService(HttpClient httpClient, WeChatPaySettingsProvider s
         using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.mch.weixin.qq.com/v3/refund/domestic/refunds");
         request.Headers.TryAddWithoutValidation("Authorization", authorization);
         request.Headers.TryAddWithoutValidation("Accept", "application/json");
+        request.Headers.TryAddWithoutValidation("User-Agent", WeChatPayUserAgent);
         request.Content = new StringContent(body, Encoding.UTF8, "application/json");
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
@@ -238,6 +285,7 @@ public class WeChatPayService(HttpClient httpClient, WeChatPaySettingsProvider s
         using var request = new HttpRequestMessage(HttpMethod.Get, "https://api.mch.weixin.qq.com/v3/certificates");
         request.Headers.TryAddWithoutValidation("Authorization", authorization);
         request.Headers.TryAddWithoutValidation("Accept", "application/json");
+        request.Headers.TryAddWithoutValidation("User-Agent", WeChatPayUserAgent);
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
         var payload = await response.Content.ReadAsStringAsync(cancellationToken);

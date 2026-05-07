@@ -1,5 +1,7 @@
 <template>
-  <view :class="['cm-page', 'cm-container', 'profile-page', themeClass]">
+  <view :class="['cm-page', 'profile-page', themeClass]">
+    <CmPullRefresh :refreshing="refreshing" @refresh="handleRefresh">
+    <view class="cm-container">
     <view class="cm-nav-spacer"></view>
 
     <view class="profile-hero cm-card">
@@ -8,7 +10,7 @@
         <text class="profile-name">{{ profileName }}</text>
         <text class="profile-id">{{ profileSubtitle }}</text>
       </view>
-      <view class="profile-badge">已授权</view>
+      <view class="profile-badge">已登录</view>
     </view>
 
     <view class="profile-stats cm-card">
@@ -19,7 +21,7 @@
     </view>
 
     <view class="cm-section">
-      <SectionHeader eyebrow="ACCOUNT" title="个人中心" subtitle="订单与卡券管理" />
+      <SectionHeader eyebrow="ACCOUNT" title="个人中心" subtitle="订单与卡券" />
       <view class="menu-stack">
         <view class="menu-card cm-card" v-for="item in menus" :key="item.title" @click="handleMenuClick(item)">
           <view class="menu-copy">
@@ -30,27 +32,39 @@
         </view>
       </view>
     </view>
+    </view>
+    </CmPullRefresh>
   </view>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import SectionHeader from '@/components/SectionHeader.vue'
+import CmPullRefresh from '@/components/CmPullRefresh.vue'
 import { useTheme } from '@/composables/use-theme'
 import { useSessionStore } from '@/store/session'
 
 const session = useSessionStore()
 const { themeClass } = useTheme()
-const profileName = computed(() => session.nickname || '云锦臻选用户')
+const refreshing = ref(false)
+
+async function handleRefresh() {
+  if (refreshing.value) return
+  refreshing.value = true
+  await new Promise((resolve) => setTimeout(resolve, 700))
+  uni.showToast({ title: '已刷新', icon: 'none' })
+  refreshing.value = false
+}
+const profileName = computed(() => session.nickname || '微信用户')
 const profileSubtitle = computed(() => {
   if (session.userId) {
-    return `用户编号 ${session.userId} · 已完成微信授权`
+    return `用户编号 ${session.userId}`
   }
-  return '首次授权后自动建档'
+  return '登录后自动建档'
 })
 const avatarText = computed(() => {
   const name = String(profileName.value || '').trim()
-  return name ? name.slice(0, 2).toUpperCase() : 'YJ'
+  return name ? name.slice(0, 2).toUpperCase() : '微信'
 })
 
 const handleMenuClick = (item) => {
@@ -67,10 +81,10 @@ const handleMenuClick = (item) => {
 }
 
 const menus = [
-  { title: '我的订单', desc: '查看购买记录', route: '/pages/order/list' },
-  { title: '我的券包', desc: '查看全部卡券', route: '/pages/coupon/index', openType: 'switchTab' },
-  { title: '核销记录', desc: '查看历史核销', route: '/pages/verify-record/index' },
-  { title: '规则说明', desc: '查看使用规则', route: '/pages/rules/index' }
+  { title: '我的订单', desc: '购买记录', route: '/pages/order/list' },
+  { title: '我的券包', desc: '全部卡券', route: '/pages/coupon/index', openType: 'switchTab' },
+  { title: '核销记录', desc: '历史记录', route: '/pages/verify-record/index' },
+  { title: '规则说明', desc: '使用规则', route: '/pages/rules/index' }
 ]
 </script>
 

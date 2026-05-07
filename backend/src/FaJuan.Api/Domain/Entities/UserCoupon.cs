@@ -9,14 +9,18 @@ public class UserCoupon
     public long AppUserId { get; set; }
     public long CouponTemplateId { get; set; }
     public long? CouponOrderId { get; set; }
+    public CouponSourceType SourceType { get; set; } = CouponSourceType.CouponTemplate;
+    public long? BoundProductId { get; set; }
+    public string? BoundProductName { get; set; }
+    public string? BoundErpProductCode { get; set; }
     public string CouponCode { get; set; } = string.Empty;
     public UserCouponStatus Status { get; set; } = UserCouponStatus.Unused;
+    public CouponFulfillmentStatus FulfillmentStatus { get; set; } = CouponFulfillmentStatus.None;
     public DateTime ReceivedAt { get; set; } = DateTime.Now;
     public DateTime EffectiveAt { get; set; }
     public DateTime ExpireAt { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-    // 乐观并发令牌：防止并发核销造成双写
     [Timestamp]
     public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 }

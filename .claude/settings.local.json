@@ -41,7 +41,11 @@
       "Bash(gh api *)",
       "Bash(curl -sL https://raw.githubusercontent.com/forrestchang/andrej-karpathy-skills/main/README.md)",
       "Bash(curl -sL -o ~/.claude/CLAUDE.md https://raw.githubusercontent.com/forrestchang/andrej-karpathy-skills/main/CLAUDE.md)",
-      "PowerShell(Invoke-WebRequest -Uri \"https://raw.githubusercontent.com/forrestchang/andrej-karpathy-skills/main/CLAUDE.md\" -OutFile \"$env:USERPROFILE\\\\.claude\\\\CLAUDE.md\" -UseBasicParsing; Get-Item \"$env:USERPROFILE\\\\.claude\\\\CLAUDE.md\" | Select-Object FullName, Length)"
+      "PowerShell(Invoke-WebRequest -Uri \"https://raw.githubusercontent.com/forrestchang/andrej-karpathy-skills/main/CLAUDE.md\" -OutFile \"$env:USERPROFILE\\\\.claude\\\\CLAUDE.md\" -UseBasicParsing; Get-Item \"$env:USERPROFILE\\\\.claude\\\\CLAUDE.md\" | Select-Object FullName, Length)",
+      "Bash(git fetch *)",
+      "Bash(git rev-list *)",
+      "Bash(git commit *)",
+      "Bash(git checkout *)"
     ]
   }
 }

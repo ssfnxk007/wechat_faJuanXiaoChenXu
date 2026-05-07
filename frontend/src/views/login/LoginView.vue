@@ -57,7 +57,7 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { adminLogin, getAdminProfile } from '@/api/admin-auth'
-import { authStorage } from '@/utils.auth'
+import { authStorage } from '@/utils/auth'
 import { getErrorMessage } from '@/utils/http-error'
 import { notify } from '@/utils/notify'
 

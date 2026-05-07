@@ -71,7 +71,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { authStorage } from '@/utils.auth'
+import { authStorage } from '@/utils/auth'
 
 const router = useRouter()
 const route = useRoute()

@@ -38,7 +38,8 @@ public class CouponOrderListItemDto
     public long Id { get; init; }
     public string OrderNo { get; init; } = string.Empty;
     public long AppUserId { get; init; }
-    public long CouponPackId { get; init; }
+    public long? CouponPackId { get; init; }
+    public long? CouponTemplateId { get; init; }
     public decimal OrderAmount { get; init; }
     public int Status { get; init; }
     public DateTime? PaidAt { get; init; }
@@ -50,8 +51,10 @@ public class CouponOrderDetailDto
     public long Id { get; init; }
     public string OrderNo { get; init; } = string.Empty;
     public long AppUserId { get; init; }
-    public long CouponPackId { get; init; }
-    public string CouponPackName { get; init; } = string.Empty;
+    public long? CouponPackId { get; init; }
+    public string? CouponPackName { get; init; }
+    public long? CouponTemplateId { get; init; }
+    public string? CouponTemplateName { get; init; }
     public decimal OrderAmount { get; init; }
     public int Status { get; init; }
     public string? PaymentNo { get; init; }

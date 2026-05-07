@@ -32,12 +32,12 @@
         </view>
         <view class="summary-row">
           <text class="summary-label">权益去向</text>
-          <text class="summary-value success">已发放至我的券包</text>
+          <text :class="['summary-value', isPaid ? 'success' : 'warning']">{{ entitlementText }}</text>
         </view>
       </view>
 
       <view class="cm-section">
-        <SectionHeader eyebrow="到账权益" title="本次发放结果" subtitle="本次到账卡券" />
+        <SectionHeader eyebrow="到账权益" title="本次发放结果" :subtitle="grantSectionSubtitle" />
         <view class="granted-stack">
           <view class="granted-card cm-card" v-for="item in grantedCoupons" :key="item.id">
             <view class="granted-top">
@@ -50,23 +50,9 @@
         </view>
       </view>
 
-      <view class="cm-section">
-        <SectionHeader eyebrow="后续操作" title="接下来" subtitle="查看卡券、订单或继续购买" />
-        <view class="action-grid">
-          <view class="action-card cm-card" @click="goCouponList">
-            <text class="action-title">查看我的券包</text>
-            <text class="action-desc">到账卡券都可在券包查看。</text>
-          </view>
-          <view class="action-card cm-card" @click="goOrderList">
-            <text class="action-title">查看订单记录</text>
-            <text class="action-desc">可回看支付与发放结果。</text>
-          </view>
-        </view>
-      </view>
-
       <view class="bottom-actions">
         <view class="ghost-action" @click="goMall">继续逛商城</view>
-        <view class="primary-action" @click="goCouponList">前往券包</view>
+        <view class="primary-action" @click="goCouponList">{{ isPaid ? '前往券包' : '返回订单' }}</view>
       </view>
     </view>
   </view>
@@ -83,25 +69,46 @@ import { useSessionStore } from '@/store/session'
 const session = useSessionStore()
 const { themeClass } = useTheme()
 const orderDetail = ref({
-  orderNo: 'YJ20260411000128',
-  orderAmount: 29.9,
+  orderNo: '',
+  orderAmount: 0,
+  status: 1,
   paidAt: '',
   grantedCoupons: []
 })
-const grantedCoupons = ref([
-  {
-    id: 1,
-    type: '无门槛券',
-    title: '门店通用券',
-    desc: '消费时出示二维码即可。',
-    meta: '已到账'
-  }
-])
+const grantedCoupons = ref([])
 
-const resultTitle = computed(() => '支付成功')
-const resultSubtitle = computed(() => '券包已完成支付，系统已将本单卡券权益发放到你的券包。')
+const isPaid = computed(() => Number(orderDetail.value.status) === 2)
+const hasGrantedCoupons = computed(() => grantedCoupons.value.length > 0)
+const resultTitle = computed(() => isPaid.value ? '支付成功' : '订单未确认支付')
+const resultSubtitle = computed(() => {
+  if (!isPaid.value) {
+    return '订单尚未收到服务端支付确认，系统暂未发放卡券。'
+  }
+  if (orderDetail.value.isProductCoupon) {
+    return '商品券已完成支付，系统已发券并标记为待履约 / 待 ERP 处理。'
+  }
+  if (orderDetail.value.couponTemplateId) {
+    return '单张售卖券已完成支付，系统已将本单卡券发放到你的券包。'
+  }
+  return '券包已完成支付，系统已将本单卡券权益发放到你的券包。'
+})
 const displayAmount = computed(() => formatAmount(orderDetail.value.orderAmount))
-const paidAtText = computed(() => formatDate(orderDetail.value.paidAt) || '已完成支付')
+const paidAtText = computed(() => formatDate(orderDetail.value.paidAt) || (isPaid.value ? '已完成支付' : '未确认支付'))
+const entitlementText = computed(() => {
+  if (!isPaid.value) {
+    return '暂未发券'
+  }
+  if (!hasGrantedCoupons.value) {
+    return '已支付但未查询到发券记录'
+  }
+  return orderDetail.value.isProductCoupon ? '已发放商品券，待后续履约' : '已发放至我的券包'
+})
+const grantSectionSubtitle = computed(() => {
+  if (!isPaid.value) {
+    return '未支付确认，暂无到账卡券'
+  }
+  return hasGrantedCoupons.value ? '本次到账卡券' : '未查询到发券记录'
+})
 
 function formatAmount(value) {
   const amount = Number(value || 0)
@@ -145,11 +152,11 @@ function goMall() {
 }
 
 function goCouponList() {
+  if (!isPaid.value) {
+    uni.navigateBack()
+    return
+  }
   uni.switchTab({ url: '/pages/coupon/index' })
-}
-
-function goOrderList() {
-  uni.navigateTo({ url: '/pages/order/list' })
 }
 
 async function loadOrderDetail(id) {
@@ -172,6 +179,16 @@ async function loadOrderDetail(id) {
         desc: buildCouponDesc(item),
         meta: buildCouponMeta(item)
       }))
+    } else if (Number(result.status) === 2 && result.couponTemplateName) {
+      grantedCoupons.value = [{
+        id: result.id,
+        type: result.isProductCoupon ? '商品券' : '售卖券',
+        title: result.couponTemplateName,
+        desc: result.isProductCoupon ? '商品券已到账，当前阶段待履约 / 待 ERP 处理。' : '单张售卖券已到账，可前往卡包查看。',
+        meta: result.fulfillmentStatusText || '已到账'
+      }]
+    } else {
+      grantedCoupons.value = []
     }
   } catch (error) {
     console.warn('[order-result] loadOrderDetail failed', error)
@@ -289,14 +306,15 @@ onLoad((options) => {
 .summary-value.success {
   color: $cm-success;
 }
-.granted-stack,
-.action-grid {
+.summary-value.warning {
+  color: $cm-primary-strong;
+}
+.granted-stack {
   display: grid;
   gap: 18rpx;
   margin-top: 18rpx;
 }
-.granted-card,
-.action-card {
+.granted-card {
   display: grid;
   gap: 10rpx;
   padding: 24rpx 26rpx;
@@ -315,14 +333,12 @@ onLoad((options) => {
   color: $cm-primary;
   font-size: 22rpx;
 }
-.granted-title,
-.action-title {
+.granted-title {
   color: $cm-text-primary;
   font-size: 30rpx;
   font-weight: 700;
 }
-.granted-desc,
-.action-desc {
+.granted-desc {
   color: $cm-text-secondary;
   font-size: 24rpx;
   line-height: 1.8;
@@ -373,15 +389,13 @@ onLoad((options) => {
 }
 
 .theme-light .result-subtitle,
-.theme-light .action-desc,
 .theme-light .granted-desc,
 .theme-light .summary-label {
   color: #64748b;
 }
 
 .theme-light .summary-card,
-.theme-light .granted-card,
-.theme-light .action-card {
+.theme-light .granted-card {
   background: #ffffff;
   border: 1rpx solid rgba(226, 232, 240, 0.9);
   box-shadow: 0 14rpx 36rpx rgba(15, 23, 42, 0.05);
@@ -429,15 +443,13 @@ onLoad((options) => {
 }
 
 .theme-candy .result-subtitle,
-.theme-candy .action-desc,
 .theme-candy .granted-desc,
 .theme-candy .summary-label {
   color: #3b82f6;
 }
 
 .theme-candy .summary-card,
-.theme-candy .granted-card,
-.theme-candy .action-card {
+.theme-candy .granted-card {
   background: #ffffff;
   border: 1rpx solid rgba(191, 219, 254, 0.75);
   box-shadow: 0 16rpx 40rpx rgba(37, 99, 235, 0.08);
@@ -499,15 +511,13 @@ onLoad((options) => {
 }
 
 .theme-orange .result-subtitle,
-.theme-orange .action-desc,
 .theme-orange .granted-desc,
 .theme-orange .summary-label {
   color: #F97316;
 }
 
 .theme-orange .summary-card,
-.theme-orange .granted-card,
-.theme-orange .action-card {
+.theme-orange .granted-card {
   background: #ffffff;
   border: 1rpx solid rgba(254, 215, 170, 0.75);
   box-shadow: 0 16rpx 40rpx rgba(234, 88, 12, 0.08);
@@ -569,15 +579,13 @@ onLoad((options) => {
 }
 
 .theme-red .result-subtitle,
-.theme-red .action-desc,
 .theme-red .granted-desc,
 .theme-red .summary-label {
   color: #EF5350;
 }
 
 .theme-red .summary-card,
-.theme-red .granted-card,
-.theme-red .action-card {
+.theme-red .granted-card {
   background: #ffffff;
   border: 1rpx solid rgba(255, 205, 210, 0.75);
   box-shadow: 0 16rpx 40rpx rgba(229, 57, 53, 0.08);

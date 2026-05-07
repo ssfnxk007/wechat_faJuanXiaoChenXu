@@ -21,4 +21,5 @@ export interface AuthLoginResultDto {
   miniOpenId: string
   mobile?: string
   isNewUser: boolean
+  expiresAt?: string
 }

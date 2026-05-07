@@ -35,7 +35,15 @@
         <div class="toolbar-actions">
           <button type="button" class="ghost-button" @click="resetQuery">重置筛选</button>
           <button type="button" class="ghost-button" @click="loadData">刷新列表</button>
-          <button v-if="canCreate" type="button" class="primary-button" @click="openCreateDialog">新增轮播图</button>
+          <button
+            type="button"
+            class="primary-button"
+            :disabled="!canCreate"
+            :title="canCreate ? '' : '当前账号缺少 banner.create 权限'"
+            @click="openCreateDialog"
+          >
+            {{ canCreate ? '新增轮播图' : '无新增权限：banner.create' }}
+          </button>
         </div>
       </div>
 
@@ -88,7 +96,7 @@
             <tr v-for="item in items" :key="item.id">
               <td class="cell-strong">{{ item.id }}</td>
               <td>
-                <div class="banner-preview" :style="item.imageUrl ? { backgroundImage: `url(${item.imageUrl})` } : {}"></div>
+                <div class="banner-preview" :style="item.imageUrl ? { backgroundImage: `url(${normalizeFileUrl(item.imageUrl)})` } : {}"></div>
               </td>
               <td>
                 <div class="table-primary-cell">
@@ -105,8 +113,12 @@
               <td>{{ formatDate(item.createdAt) }}</td>
               <td>
                 <div class="table-actions">
-                  <button v-if="canEdit" type="button" class="action-button" @click="openEditDialog(item)">编辑</button>
-                  <button v-if="canDelete" type="button" class="action-button danger" @click="removeItem(item)">删除</button>
+                  <button type="button" class="action-button" :disabled="!canEdit" :title="canEdit ? '' : '当前账号缺少 banner.edit 权限'" @click="openEditDialog(item)">
+                    {{ canEdit ? '编辑' : '无编辑权限' }}
+                  </button>
+                  <button type="button" class="action-button danger" :disabled="!canDelete" :title="canDelete ? '' : '当前账号缺少 banner.delete 权限'" @click="removeItem(item)">
+                    {{ canDelete ? '删除' : '无删除权限' }}
+                  </button>
                 </div>
               </td>
             </tr>
@@ -201,7 +213,7 @@
             <input ref="fileInputRef" type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden-file-input" @change="handleFileChange" />
 
             <div v-if="selectedAsset" class="selected-asset-card">
-              <img :src="selectedAsset.fileUrl" :alt="selectedAsset.name" class="selected-asset-image" />
+              <img :src="normalizeFileUrl(selectedAsset.fileUrl)" :alt="selectedAsset.name" class="selected-asset-image" />
               <div class="selected-asset-meta">
                 <strong>{{ selectedAsset.name }}</strong>
                 <span>素材 ID：{{ selectedAsset.id }}</span>
@@ -242,7 +254,7 @@
 
         <div class="media-grid">
           <button v-for="asset in mediaOptions" :key="asset.id" type="button" class="media-card" @click="selectMediaAsset(asset)">
-            <img :src="asset.fileUrl" :alt="asset.name" class="media-card-image" />
+            <img :src="normalizeFileUrl(asset.fileUrl)" :alt="asset.name" class="media-card-image" />
             <strong>{{ asset.name }}</strong>
             <span>{{ asset.bucketType }} / ID {{ asset.id }}</span>
           </button>
@@ -266,9 +278,10 @@ import type { CouponTemplateListItemDto } from '@/types/coupon'
 import type { CouponPackListItemDto } from '@/types/coupon-pack'
 import type { MediaAssetListItemDto } from '@/types/media-asset'
 import type { ProductListItemDto } from '@/types/product'
-import { authStorage } from '@/utils.auth'
+import { authStorage } from '@/utils/auth'
 import { getErrorMessage } from '@/utils/http-error'
 import { notify } from '@/utils/notify'
+import { normalizeAssetUrl } from '@/utils/asset-url'
 
 type LinkType = 'coupon' | 'pack' | 'product' | 'activity'
 
@@ -472,12 +485,7 @@ function handleLinkTypeChange() {
   targetOptions.value = []
 }
 
-function normalizeFileUrl(value?: string | null) {
-  if (!value) return ''
-  if (/^https?:\/\//i.test(value)) return value
-  const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5265/api').replace(/\/api\/?$/, '')
-  return `${base}${value.startsWith('/') ? value : `/${value}`}`
-}
+const normalizeFileUrl = normalizeAssetUrl
 
 function triggerUpload() {
   fileInputRef.value?.click()

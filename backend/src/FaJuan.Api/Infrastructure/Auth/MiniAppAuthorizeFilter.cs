@@ -26,7 +26,7 @@ public class MiniAppAuthorizeFilter(ILogger<MiniAppAuthorizeFilter> logger, ICon
                 return Task.CompletedTask;
             }
 
-            context.Result = new UnauthorizedObjectResult(ApiResponse<object>.Fail("请先登录", 401));
+            context.Result = new UnauthorizedObjectResult(ApiResponse<object>.Fail("请登录", 401));
             return Task.CompletedTask;
         }
 
@@ -56,7 +56,7 @@ public class MiniAppAuthorizeFilter(ILogger<MiniAppAuthorizeFilter> logger, ICon
         catch (Exception ex)
         {
             logger.LogWarning(ex, "MiniApp token validation failed");
-            context.Result = new UnauthorizedObjectResult(ApiResponse<object>.Fail("登录状态已失效", 401));
+            context.Result = new UnauthorizedObjectResult(ApiResponse<object>.Fail("请重新登录", 401));
         }
 
         return Task.CompletedTask;

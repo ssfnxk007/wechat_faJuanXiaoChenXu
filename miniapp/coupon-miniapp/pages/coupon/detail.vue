@@ -21,13 +21,13 @@
       <view v-if="isUserCouponMode" class="qr-card cm-card">
         <view class="qr-card-head">
           <text class="qr-card-title">核销二维码</text>
-          <text class="qr-card-note">到店出示即可</text>
+          <text class="qr-card-note">到店出示</text>
         </view>
         <view class="qr-box">
           <image v-if="qrImageUrl" class="qr-image" :src="qrImageUrl" mode="aspectFit" />
           <view v-else class="qr-empty">
             <text class="qr-empty-title">二维码加载中</text>
-            <text class="qr-empty-desc">稍后可重新进入本页。</text>
+            <text class="qr-empty-desc">请稍后重试</text>
           </view>
         </view>
         <text class="coupon-code">券码：{{ couponDetail.couponCode }}</text>
@@ -40,7 +40,7 @@
       <view v-else class="claim-card cm-card">
         <view class="claim-head">
           <text class="claim-title">立即领取</text>
-          <text class="claim-note">领取后自动进入券包</text>
+          <text class="claim-note">领取后入包</text>
         </view>
         <view class="claim-body">
           <view class="claim-stat">
@@ -61,7 +61,7 @@
       </view>
 
       <view class="cm-section">
-        <SectionHeader eyebrow="VALIDITY" title="使用信息" subtitle="有效期与适用范围" />
+        <SectionHeader eyebrow="VALIDITY" title="使用信息" subtitle="有效期与范围" />
         <view class="info-stack">
           <view class="info-card cm-card" v-for="item in infoBlocks" :key="item.label">
             <text class="info-label">{{ item.label }}</text>
@@ -71,7 +71,7 @@
       </view>
 
       <view class="cm-section">
-        <SectionHeader eyebrow="RULES" title="使用规则" subtitle="使用前请查看" />
+        <SectionHeader eyebrow="RULES" title="使用规则" subtitle="下单前查看" />
         <view class="rule-stack">
           <view class="rule-card cm-card" v-for="(rule, index) in rules" :key="rule">
             <text class="rule-index">0{{ index + 1 }}</text>
@@ -81,7 +81,7 @@
       </view>
 
       <view class="cm-section">
-        <SectionHeader eyebrow="RELATED GOODS" title="推荐搭配商品" subtitle="可搭配商品" action-text="查看全部" @action-click="goMall" />
+        <SectionHeader eyebrow="RELATED GOODS" title="推荐商品" subtitle="可搭配购买" action-text="查看全部" @action-click="goMall" />
         <view class="cm-grid-2 goods-grid">
           <view class="goods-card cm-card" v-for="item in relatedGoods" :key="item.id" @click="goMall">
             <view class="goods-cover"></view>
@@ -121,6 +121,7 @@ const couponDetail = ref({
   couponTemplateId: 0,
   couponTemplateName: '春日满减券',
   couponCode: '',
+  status: 1,
   templateType: 4,
   thresholdAmount: 100,
   discountAmount: 20,
@@ -135,7 +136,7 @@ const couponDetail = ref({
   perUserLimit: 1,
   claimedCount: 0,
   canClaim: true,
-  templateRemark: '到店结算时请出示二维码，由 ERP 端扫码核销。',
+  templateRemark: '到店出示二维码核销。',
   writeOffRecords: []
 })
 
@@ -165,6 +166,24 @@ const statusText = computed(() => {
   if (!isUserCouponMode.value) {
     return couponDetail.value.canClaim ? '可领取' : '已领完'
   }
+
+  if (Number(couponDetail.value.status) === 2) {
+    return '已使用'
+  }
+
+  if (Number(couponDetail.value.status) === 3) {
+    return '已过期'
+  }
+
+  if (couponDetail.value.expireAt) {
+    const expireAt = new Date(couponDetail.value.expireAt)
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    if (!Number.isNaN(expireAt.getTime()) && expireAt.getTime() < todayStart.getTime()) {
+      return '已过期'
+    }
+  }
+
   return '可使用'
 })
 const claimButtonText = computed(() => {
@@ -177,7 +196,7 @@ const couponDesc = computed(() => {
   const amountText = couponDetail.value.thresholdAmount
     ? `满 ${couponDetail.value.thresholdAmount} 元减 ${couponDetail.value.discountAmount || 0} 元`
     : `立减 ${couponDetail.value.discountAmount || 0} 元`
-  return `${amountText} · ${couponDetail.value.isAllStores ? '门店通用' : '指定门店'} · ${isUserCouponMode.value ? 'ERP 扫码核销' : '领取后进入我的券包'}`
+  return `${amountText} · ${couponDetail.value.isAllStores ? '门店通用' : '指定门店'} · ${isUserCouponMode.value ? '扫码核销' : '领取入包'}`
 })
 const effectiveDateText = computed(() => {
   if (isUserCouponMode.value && couponDetail.value.effectiveAt && couponDetail.value.expireAt) {
@@ -189,25 +208,25 @@ const effectiveDateText = computed(() => {
   if (Number(couponDetail.value.validPeriodType) === 2 && couponDetail.value.validDays) {
     return `领取后 ${couponDetail.value.validDays} 天有效`
   }
-  return '以下发时规则为准'
+  return '以下发放为准'
 })
 const infoBlocks = computed(() => ([
   { label: '优惠内容', value: couponDetail.value.thresholdAmount ? `满 ${couponDetail.value.thresholdAmount} 元减 ${couponDetail.value.discountAmount || 0} 元` : `立减 ${couponDetail.value.discountAmount || 0} 元` },
   { label: isUserCouponMode.value ? '有效期' : '领取后有效期', value: effectiveDateText.value },
   { label: '适用门店', value: couponDetail.value.isAllStores ? '全部门店可用' : '指定门店可用' },
-  { label: '适用说明', value: couponDetail.value.templateRemark || '请以活动规则为准' }
+  { label: '说明', value: couponDetail.value.templateRemark || '以活动规则为准' }
 ]))
 const rules = computed(() => {
   const baseRules = [
-    '同一张券只可核销一次，核销后不可恢复。',
-    '如为指定商品券，请在结算时确认商品属于可用范围。',
-    '券有效期以页面展示为准，过期后不可使用。'
+    '同一张券仅可核销一次。',
+    '指定商品券仅限对应商品使用。',
+    '请在有效期内使用。'
   ]
   if (!isUserCouponMode.value) {
-    baseRules.unshift('领取成功后将自动进入我的券包，后续在券详情页展示二维码。')
+    baseRules.unshift('领取后可在卡包查看。')
   }
   if (couponDetail.value.isNewUserOnly) {
-    baseRules.unshift('该券为新人专享券，成为用户后仅可领取一次。')
+    baseRules.unshift('新人券限领一次。')
   }
   return baseRules
 })

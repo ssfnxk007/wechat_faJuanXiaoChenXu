@@ -10,6 +10,13 @@ USE CODEX NATIVE SUBAGENTS FOR INDEPENDENT PARALLEL SUBTASKS WHEN THAT IMPROVES 
   - `Docs/2026-03-23-工作.md`
   - `Docs/2026-03-24-工作.md`
   - `Docs/2026-03-25-工作.md`
+
+## Project Truthfulness Directive
+- Do not add fallback/default/placeholder behavior unless the user explicitly asks for it.
+- Do not add mock, simulated, demo, seed-for-display, or test-only data; all behavior must reflect real business data and real runtime state.
+- Do not hide missing data, incomplete configuration, schema gaps, permission gaps, or integration failures; expose them clearly so they can be fixed at the root.
+- Do not make repair scripts silently forgiving/idempotent by default; prefer explicit failure when assumptions are not met unless the user specifically requests a safe rerunnable script.
+- Do not add tests, test scaffolding, or simulated verification data unless the user explicitly asks; use direct real-environment checks when verification is needed.
 # oh-my-codex - Intelligent Multi-Agent Orchestration
 
 You are running with oh-my-codex (OMX), a coordination layer for Codex CLI.

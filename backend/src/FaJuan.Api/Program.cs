@@ -1,15 +1,18 @@
 ﻿using System.Text;
 using FaJuan.Api.Application.Orders;
+using FaJuan.Api.Application.Erp;
 using FaJuan.Api.Application.UserCoupons;
 using FaJuan.Api.Contracts;
 using FaJuan.Api.Infrastructure.Auth;
 using FaJuan.Api.Infrastructure.Media;
 using FaJuan.Api.Infrastructure.MiniApp;
 using FaJuan.Api.Infrastructure.Persistence;
+using FaJuan.Api.Infrastructure.Startup;
 using FaJuan.Api.Infrastructure.WeChat;
 using FaJuan.Api.Infrastructure.WeChatPay;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -34,7 +37,8 @@ builder.Services.AddCors(options =>
                 "http://localhost:5180",
                 "https://localhost:5180",
                 "http://127.0.0.1:5180",
-                "https://127.0.0.1:5180")
+                "https://127.0.0.1:5180",
+                "https://xcx.bookso.cn")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -43,6 +47,7 @@ builder.Services.AddCors(options =>
 builder.Services.Configure<WeChatMiniProgramOptions>(builder.Configuration.GetSection("WeChatMiniProgram"));
 builder.Services.Configure<MiniAppThemeSettingsOptions>(builder.Configuration.GetSection("MiniAppTheme"));
 builder.Services.Configure<UploadOptions>(builder.Configuration.GetSection("Uploads"));
+builder.Services.Configure<ErpApiOptions>(builder.Configuration.GetSection("ErpApi"));
 
 var uploadMaxBytes = builder.Configuration.GetSection("Uploads").Get<UploadOptions>()?.MaxFileSizeBytes
                      ?? new UploadOptions().MaxFileSizeBytes;
@@ -87,7 +92,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         }));
 
 builder.Services.AddHealthChecks();
+builder.Services.AddScoped<ErpCouponService>();
 builder.Services.AddScoped<OrderPaymentService>();
+builder.Services.AddScoped<OrderExpirationService>();
 builder.Services.AddScoped<UserCouponGrantService>();
 builder.Services.AddSingleton<MiniAppThemeSettingsService>();
 builder.Services.AddSingleton<JwtTokenService>();
@@ -106,8 +113,12 @@ builder.Services.AddHttpClient<WeChatPayService>();
 
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
+TimeZoneAssertion.Assert();
+
+var autoMigrate = app.Configuration.GetValue("Database:AutoMigrate", app.Environment.IsDevelopment());
+if (autoMigrate)
 {
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 }
@@ -121,6 +132,11 @@ if (app.Environment.IsDevelopment())
 var webRootPath = app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot");
 Directory.CreateDirectory(webRootPath);
 Directory.CreateDirectory(Path.Combine(webRootPath, "uploads"));
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedHost | ForwardedHeaders.XForwardedProto
+});
 
 app.UseStaticFiles(new StaticFileOptions
 {

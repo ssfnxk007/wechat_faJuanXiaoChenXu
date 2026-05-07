@@ -36,7 +36,7 @@ public class AuthController(
         {
             IsConfigured = isConfigured,
             AppIdPreview = appIdPreview,
-            Message = isConfigured ? "微信小程序配置已就绪" : "请先在 appsettings 中填写 WeChatMiniProgram:AppId 和 WeChatMiniProgram:AppSecret",
+            Message = isConfigured ? "已配置" : "未配置",
         }));
     }
 
@@ -98,6 +98,7 @@ public class AuthController(
             Nickname = user.Nickname,
             IsNewUser = isNewUser,
             Token = tokenResult.AccessToken,
+            ExpiresAt = tokenResult.ExpiresAt,
         }));
     }
 
@@ -113,7 +114,7 @@ public class AuthController(
         var userId = GetCurrentUserId();
         if (userId is null || userId <= 0)
         {
-            return Unauthorized(Failure<AuthLoginResultDto>("登录状态已失效", 401));
+            return Unauthorized(Failure<AuthLoginResultDto>("请重新登录", 401));
         }
 
         var user = await dbContext.AppUsers.FirstOrDefaultAsync(x => x.Id == userId.Value, cancellationToken);
@@ -131,7 +132,7 @@ public class AuthController(
                 user.Id,
                 phoneResult.ErrorCode,
                 phoneResult.ErrorMessage);
-            return BadRequest(Failure<AuthLoginResultDto>(phoneResult.ErrorMessage ?? "微信手机号获取失败"));
+            return BadRequest(Failure<AuthLoginResultDto>(phoneResult.ErrorMessage ?? "获取手机号失败"));
         }
 
         user.Mobile = mobile;
@@ -144,7 +145,7 @@ public class AuthController(
             Mobile = user.Mobile,
             Nickname = user.Nickname,
             IsNewUser = false,
-        }, "手机号绑定成功"));
+        }, "绑定成功"));
     }
 
     [HttpPost("bind-mobile")]

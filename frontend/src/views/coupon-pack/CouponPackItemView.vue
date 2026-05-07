@@ -202,7 +202,7 @@ import type { CouponTemplateListItemDto } from '@/types/coupon'
 import type { CouponPackListItemDto } from '@/types/coupon-pack'
 import type { CouponPackItemDto, SaveCouponPackItemRequest } from '@/types/coupon-pack-item'
 import { getErrorMessage } from '@/utils/http-error'
-import { authStorage } from '@/utils.auth'
+import { authStorage } from '@/utils/auth'
 import { notify } from '@/utils/notify'
 
 const items = ref<CouponPackItemDto[]>([])
@@ -221,7 +221,10 @@ const canEdit = authStorage.hasPermission('coupon-pack-item.edit')
 const canDelete = authStorage.hasPermission('coupon-pack-item.delete')
 const templateTypeMap: Record<number, string> = { 1: '新人券', 2: '无门槛券', 3: '指定商品券', 4: '满减券' }
 const couponPackSelectOptions = computed(() => couponPackOptions.value.map((pack) => ({ value: pack.id, label: `${pack.name} / ¥${Number(pack.salePrice || 0).toFixed(2)}` })))
-const couponTemplateSelectOptions = computed(() => couponTemplateOptions.value.map((template) => ({ value: template.id, label: `${template.name} / ${templateTypeMap[template.templateType] || '券模板'}` })))
+const couponTemplateSelectOptions = computed(() => couponTemplateOptions.value.map((template) => ({
+  value: template.id,
+  label: `${template.name} / ${template.isSystemProductVoucher ? '商品提货券' : (templateTypeMap[template.templateType] || '券模板')}`,
+})))
 const totalQuantity = computed(() => items.value.reduce((sum, item) => sum + Number(item.quantity || 0), 0))
 const selectedCouponPackName = computed(() => couponPackOptions.value.find((item) => item.id === couponPackId.value)?.name || '')
 
@@ -237,7 +240,12 @@ const loadCouponPackOptions = async () => {
 }
 
 const loadCouponTemplateOptions = async () => {
-  const response = await getCouponTemplateList({ keyword: selectorQuery.couponTemplateKeyword || undefined, pageIndex: 1, pageSize: 50 })
+  const response = await getCouponTemplateList({
+    keyword: selectorQuery.couponTemplateKeyword || undefined,
+    includeSystemProductVoucher: true,
+    pageIndex: 1,
+    pageSize: 50,
+  })
   couponTemplateOptions.value = response.data.items
 }
 

@@ -1,5 +1,6 @@
 using FaJuan.Api.Application.Common;
 using FaJuan.Api.Application.Common.Models;
+using FaJuan.Api.Application.Orders;
 using FaJuan.Api.Contracts;
 using FaJuan.Api.Domain.Entities;
 using FaJuan.Api.Domain.Enums;
@@ -13,11 +14,15 @@ namespace FaJuan.Api.Controllers;
 
 [Authorize]
 [AdminMenuAuthorize("/coupon-orders")]
-public class CouponOrdersController(AppDbContext dbContext) : ApiControllerBase
+public class CouponOrdersController(
+    AppDbContext dbContext,
+    OrderExpirationService orderExpirationService) : ApiControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<ApiResponse<PagedResult<CouponOrderListItemDto>>>> GetList([FromQuery] string? keyword, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
+    public async Task<ActionResult<ApiResponse<PagedResult<CouponOrderListItemDto>>>> GetList([FromQuery] string? keyword, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
     {
+        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
+
         var query = dbContext.CouponOrders.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(keyword))
@@ -26,7 +31,7 @@ public class CouponOrdersController(AppDbContext dbContext) : ApiControllerBase
             query = query.Where(x => x.OrderNo.Contains(normalizedKeyword));
         }
 
-        var totalCount = await query.CountAsync();
+        var totalCount = await query.CountAsync(cancellationToken);
         var items = await query.ApplyLegacyPaging(pageIndex, pageSize, x => x.Id)
             .Select(x => new CouponOrderListItemDto
             {
@@ -39,7 +44,7 @@ public class CouponOrdersController(AppDbContext dbContext) : ApiControllerBase
                 PaidAt = x.PaidAt,
                 CreatedAt = x.CreatedAt,
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return Ok(Success(new PagedResult<CouponOrderListItemDto>
         {
@@ -52,20 +57,21 @@ public class CouponOrdersController(AppDbContext dbContext) : ApiControllerBase
     }
 
     [HttpGet("{id:long}")]
-    public async Task<ActionResult<ApiResponse<CouponOrderDetailDto>>> GetDetail(long id)
+    public async Task<ActionResult<ApiResponse<CouponOrderDetailDto>>> GetDetail(long id, CancellationToken cancellationToken)
     {
+        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
+
         var order = await dbContext.CouponOrders.AsNoTracking()
             .Where(x => x.Id == id)
-            .Join(
-                dbContext.CouponPacks.AsNoTracking(),
-                couponOrder => couponOrder.CouponPackId,
-                couponPack => couponPack.Id,
-                (couponOrder, couponPack) => new
-                {
-                    Order = couponOrder,
-                    CouponPackName = couponPack.Name,
-                })
-            .FirstOrDefaultAsync();
+            .Select(couponOrder => new
+            {
+                Order = couponOrder,
+                CouponPackName = dbContext.CouponPacks.AsNoTracking()
+                    .Where(pack => couponOrder.CouponPackId.HasValue && pack.Id == couponOrder.CouponPackId.Value)
+                    .Select(pack => pack.Name)
+                    .FirstOrDefault(),
+            })
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (order is null)
         {
@@ -86,7 +92,7 @@ public class CouponOrdersController(AppDbContext dbContext) : ApiControllerBase
                 PaidAt = x.PaidAt,
                 CreatedAt = x.CreatedAt,
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         var grantedCoupons = await dbContext.UserCoupons.AsNoTracking()
             .Where(x => x.CouponOrderId == id)
@@ -128,7 +134,7 @@ public class CouponOrdersController(AppDbContext dbContext) : ApiControllerBase
                 EffectiveAt = x.EffectiveAt,
                 ExpireAt = x.ExpireAt,
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return Ok(Success(new CouponOrderDetailDto
         {
@@ -149,15 +155,17 @@ public class CouponOrdersController(AppDbContext dbContext) : ApiControllerBase
 
     [AdminPermissionAuthorize("coupon-order.create")]
     [HttpPost]
-    public async Task<ActionResult<ApiResponse<long>>> Create([FromBody] CreateCouponOrderRequest request)
+    public async Task<ActionResult<ApiResponse<long>>> Create([FromBody] CreateCouponOrderRequest request, CancellationToken cancellationToken)
     {
-        var user = await dbContext.AppUsers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.UserId);
+        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
+
+        var user = await dbContext.AppUsers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken);
         if (user is null)
         {
             return BadRequest(Failure<long>("用户不存在"));
         }
 
-        var pack = await dbContext.CouponPacks.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.CouponPackId && x.Status == CouponPackStatus.Enabled);
+        var pack = await dbContext.CouponPacks.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.CouponPackId && x.Status == CouponPackStatus.Enabled, cancellationToken);
         if (pack is null)
         {
             return BadRequest(Failure<long>("券包不存在或已停用"));
@@ -167,13 +175,15 @@ public class CouponOrdersController(AppDbContext dbContext) : ApiControllerBase
         {
             OrderNo = OrderNoGenerator.Create("CP"),
             AppUserId = request.UserId,
+            SourceType = CouponSourceType.CouponPack,
             CouponPackId = request.CouponPackId,
+            CouponTemplateId = null,
             OrderAmount = pack.SalePrice,
             Status = CouponOrderStatus.PendingPayment,
         };
 
         dbContext.CouponOrders.Add(entity);
-        await dbContext.SaveChangesAsync();
+        await dbContext.SaveChangesAsync(cancellationToken);
         return Ok(Success(entity.Id, "下单成功"));
     }
 }

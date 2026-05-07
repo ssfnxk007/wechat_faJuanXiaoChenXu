@@ -1,3 +1,5 @@
+﻿using FaJuan.Api.Domain.Enums;
+
 namespace FaJuan.Api.Domain.Entities;
 
 public class Product
@@ -5,9 +7,18 @@ public class Product
     public long Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string ErpProductCode { get; set; } = string.Empty;
+    public string? ErpIsbnCode { get; set; }
     public long? MainImageAssetId { get; set; }
     public string? DetailImageAssetIds { get; set; }
+    public decimal? ErpOriginalPrice { get; set; }
     public decimal? SalePrice { get; set; }
+    public int? StockQuantity { get; set; }
     public bool IsEnabled { get; set; } = true;
+    public bool? ShowInMiniApp { get; set; }
+    public long? DirectPurchaseCouponTemplateId { get; set; }
+    public CouponValidPeriodType? DirectPurchaseValidPeriodType { get; set; }
+    public int? DirectPurchaseValidDays { get; set; }
+    public DateTime? DirectPurchaseValidFrom { get; set; }
+    public DateTime? DirectPurchaseValidTo { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 }

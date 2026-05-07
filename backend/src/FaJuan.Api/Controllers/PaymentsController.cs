@@ -17,6 +17,7 @@ namespace FaJuan.Api.Controllers;
 public class PaymentsController(
     AppDbContext dbContext,
     OrderPaymentService orderPaymentService,
+    OrderExpirationService orderExpirationService,
     WeChatPayService weChatPayService) : ApiControllerBase
 {
     [HttpGet("wechat-status")]
@@ -29,10 +30,22 @@ public class PaymentsController(
     [HttpPost("create")]
     public async Task<ActionResult<ApiResponse<CreatePaymentResultDto>>> Create([FromBody] CreatePaymentRequest request, CancellationToken cancellationToken)
     {
+        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
+
         var order = await dbContext.CouponOrders.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.OrderId, cancellationToken);
         if (order is null)
         {
             return BadRequest(Failure<CreatePaymentResultDto>("订单不存在"));
+        }
+
+        if (order.Status == CouponOrderStatus.Closed)
+        {
+            return BadRequest(Failure<CreatePaymentResultDto>($"订单已超过 {OrderExpirationService.PendingPaymentTimeoutMinutes} 分钟未支付，已自动关闭"));
+        }
+
+        if (order.Status != CouponOrderStatus.PendingPayment)
+        {
+            return BadRequest(Failure<CreatePaymentResultDto>("仅待支付订单可发起支付"));
         }
 
         var user = await dbContext.AppUsers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == order.AppUserId, cancellationToken);
@@ -174,6 +187,66 @@ public class PaymentsController(
         }
 
         var result = await orderPaymentService.MarkOrderPaidAsync(transaction, request.ChannelTradeNo, request.RawCallback);
+        if (!result.Success)
+        {
+            return BadRequest(Failure<bool>(result.Message));
+        }
+
+        return Ok(Success(true, result.Message));
+    }
+
+    [AdminPermissionAuthorize("coupon-order.pay")]
+    [HttpPost("orders/{orderId:long}/sync-paid")]
+    public async Task<ActionResult<ApiResponse<bool>>> SyncPaidOrder(long orderId, CancellationToken cancellationToken)
+    {
+        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
+
+        var order = await dbContext.CouponOrders.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
+        if (order is null)
+        {
+            return NotFound(Failure<bool>("订单不存在", 404));
+        }
+
+        if (order.Status == CouponOrderStatus.Paid)
+        {
+            return Ok(Success(true, "订单已是已支付状态"));
+        }
+
+        if (order.Status == CouponOrderStatus.Closed)
+        {
+            return BadRequest(Failure<bool>($"订单已超过 {OrderExpirationService.PendingPaymentTimeoutMinutes} 分钟未支付，已自动关闭"));
+        }
+
+        var transaction = await dbContext.PaymentTransactions
+            .Where(x => x.CouponOrderId == orderId && x.Status == PaymentStatus.Pending)
+            .OrderByDescending(x => x.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (transaction is null)
+        {
+            return BadRequest(Failure<bool>("未找到待确认支付流水，无法向微信查单"));
+        }
+
+        var queryResult = await weChatPayService.QueryTransactionByOutTradeNoAsync(transaction.PaymentNo, cancellationToken);
+        if (!queryResult.Success || queryResult.Result is null)
+        {
+            return BadRequest(Failure<bool>(queryResult.Message));
+        }
+
+        if (!string.Equals(queryResult.Result.OutTradeNo, transaction.PaymentNo, StringComparison.Ordinal))
+        {
+            return BadRequest(Failure<bool>("微信支付查单结果与本地支付流水不一致"));
+        }
+
+        if (!string.Equals(queryResult.Result.TradeState, "SUCCESS", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(Failure<bool>($"微信支付状态：{queryResult.Result.TradeState ?? "未知"}"));
+        }
+
+        var result = await orderPaymentService.MarkOrderPaidAsync(
+            transaction,
+            queryResult.Result.TransactionId,
+            $"admin-query-order:{queryResult.Result.TradeState}");
         if (!result.Success)
         {
             return BadRequest(Failure<bool>(result.Message));

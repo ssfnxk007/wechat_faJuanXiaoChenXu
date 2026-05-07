@@ -122,7 +122,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { getHealth } from '@/api/health'
-import { authStorage } from '@/utils.auth'
+import { authStorage } from '@/utils/auth'
 import { getErrorMessage } from '@/utils/http-error'
 import { notify } from '@/utils/notify'
 

@@ -262,7 +262,7 @@ import type { CouponTemplateListItemDto } from '@/types/coupon'
 import type { CouponPackListItemDto, SaveCouponPackRequest } from '@/types/coupon-pack'
 import type { CouponPackItemDto } from '@/types/coupon-pack-item'
 import { getErrorMessage } from '@/utils/http-error'
-import { authStorage } from '@/utils.auth'
+import { authStorage } from '@/utils/auth'
 import { notify } from '@/utils/notify'
 
 const items = ref<CouponPackListItemDto[]>([])
@@ -324,10 +324,13 @@ const querySummary = computed(() => `关键词：${query.keyword || '全部'} / 
 const totalPackItemQuantity = computed(() => packItems.value.reduce((sum, item) => sum + Number(item.quantity || 0), 0))
 const couponTemplateSelectOptions = computed(() => couponTemplateOptions.value.map((template) => ({
   value: template.id,
-  label: `${template.name} / ${templateTypeMap[template.templateType] || '券模板'}`,
+  label: `${template.name} / ${template.isSystemProductVoucher ? '商品提货券' : (templateTypeMap[template.templateType] || '券模板')}`,
 })))
 
-const normalizeDateTime = (value?: string) => (value ? value.replace('T', ' ') : undefined)
+const normalizeDateTime = (value?: string) => {
+  const normalized = value?.trim()
+  return normalized || undefined
+}
 const toDateTimeLocal = (value?: string) => (value ? value.slice(0, 16).replace(' ', 'T') : undefined)
 
 const resetForm = () => {
@@ -337,7 +340,12 @@ const resetForm = () => {
 }
 
 const loadCouponTemplateOptions = async () => {
-  const response = await getCouponTemplateList({ keyword: templateKeyword.value || undefined, pageIndex: 1, pageSize: 50 })
+  const response = await getCouponTemplateList({
+    keyword: templateKeyword.value || undefined,
+    includeSystemProductVoucher: true,
+    pageIndex: 1,
+    pageSize: 50,
+  })
   couponTemplateOptions.value = response.data.items
 }
 
@@ -484,11 +492,29 @@ const closeDialog = () => {
   resetForm()
 }
 
-const buildPayload = (): SaveCouponPackRequest => ({
-  ...form,
-  saleStartTime: normalizeDateTime(form.saleStartTime),
-  saleEndTime: normalizeDateTime(form.saleEndTime),
-})
+const buildPayload = (): SaveCouponPackRequest => {
+  const payload: SaveCouponPackRequest = {
+    name: form.name,
+    imageAssetId: form.imageAssetId,
+    salePrice: form.salePrice,
+    status: form.status,
+    perUserLimit: form.perUserLimit,
+    remark: form.remark,
+  }
+
+  const saleStartTime = normalizeDateTime(form.saleStartTime)
+  const saleEndTime = normalizeDateTime(form.saleEndTime)
+
+  if (saleStartTime) {
+    payload.saleStartTime = saleStartTime
+  }
+
+  if (saleEndTime) {
+    payload.saleEndTime = saleEndTime
+  }
+
+  return payload
+}
 
 const submit = async () => {
   if (submitting.value) return

@@ -136,7 +136,7 @@ import type { ProductListItemDto } from '@/types/product'
 import type { StoreListItemDto } from '@/types/store'
 import type { CouponWriteOffRequest, CouponWriteOffResultDto } from '@/types/user-coupon'
 import { getErrorMessage } from '@/utils/http-error'
-import { authStorage } from '@/utils.auth'
+import { authStorage } from '@/utils/auth'
 import { notify } from '@/utils/notify'
 
 const result = ref<CouponWriteOffResultDto | null>(null)

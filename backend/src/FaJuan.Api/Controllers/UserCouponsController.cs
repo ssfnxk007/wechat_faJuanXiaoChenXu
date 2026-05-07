@@ -326,6 +326,48 @@ public class UserCouponsController(AppDbContext dbContext, UserCouponGrantServic
         return Ok(Success(detail));
     }
 
+    [AdminPermissionAuthorize("user-coupon.grant")]
+    [HttpPut("{id:long}/expire-at")]
+    public async Task<ActionResult<ApiResponse<bool>>> UpdateExpireAt(long id, [FromBody] UpdateUserCouponExpireAtRequest request)
+    {
+        var coupon = await dbContext.UserCoupons.FirstOrDefaultAsync(x => x.Id == id);
+        if (coupon is null)
+        {
+            return NotFound(Failure<bool>("用户券不存在", 404));
+        }
+
+        if (coupon.Status == UserCouponStatus.Used)
+        {
+            return BadRequest(Failure<bool>("已核销的用户券不允许修改到期日期"));
+        }
+
+        if (coupon.Status == UserCouponStatus.Voided)
+        {
+            return BadRequest(Failure<bool>("已作废的用户券不允许修改到期日期"));
+        }
+
+        if (coupon.Status == UserCouponStatus.Recycled)
+        {
+            return BadRequest(Failure<bool>("已回收的用户券不允许修改到期日期"));
+        }
+
+        var expireAt = request.ExpireDate.Date.AddDays(1).AddSeconds(-1);
+        if (expireAt < coupon.EffectiveAt)
+        {
+            return BadRequest(Failure<bool>("到期日期不能早于生效时间"));
+        }
+
+        coupon.ExpireAt = expireAt;
+
+        var todayStart = DateTime.Now.Date;
+        coupon.Status = expireAt < todayStart
+            ? UserCouponStatus.Expired
+            : UserCouponStatus.Unused;
+
+        await dbContext.SaveChangesAsync();
+        return Ok(Success(true, "到期日期已更新"));
+    }
+
     [HttpGet("{id:long}/writeoff-records")]
     public async Task<ActionResult<ApiResponse<IReadOnlyCollection<CouponWriteOffRecordDto>>>> GetWriteOffRecords(long id)
     {
@@ -344,13 +386,24 @@ public class UserCouponsController(AppDbContext dbContext, UserCouponGrantServic
                 (record, stores) => new { record, stores })
             .SelectMany(
                 x => x.stores.DefaultIfEmpty(),
-                (x, store) => new CouponWriteOffRecordDto
+                (x, store) => new { x.record, store })
+            .GroupJoin(
+                dbContext.Products.AsNoTracking(),
+                x => x.record.ProductId,
+                product => product.Id,
+                (x, products) => new { x.record, x.store, products })
+            .SelectMany(
+                x => x.products.DefaultIfEmpty(),
+                (x, product) => new CouponWriteOffRecordDto
                 {
                     Id = x.record.Id,
                     UserCouponId = x.record.UserCouponId,
                     CouponCode = x.record.CouponCode,
                     StoreId = x.record.StoreId,
-                    StoreName = store != null ? store.Name : string.Empty,
+                    StoreName = x.store != null ? x.store.Name : string.Empty,
+                    ProductId = x.record.ProductId,
+                    ProductName = product != null ? product.Name : null,
+                    ProductCode = product != null ? product.ErpProductCode : null,
                     OperatorName = x.record.OperatorName,
                     DeviceCode = x.record.DeviceCode,
                     WriteOffAt = x.record.WriteOffAt,

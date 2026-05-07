@@ -37,6 +37,11 @@ public class UserCouponDetailDto
     public DateTime ReceivedAt { get; init; }
 }
 
+public class UpdateUserCouponExpireAtRequest
+{
+    public DateTime ExpireDate { get; init; }
+}
+
 public class CouponWriteOffRequest
 {
     public string CouponCode { get; init; } = string.Empty;
@@ -62,6 +67,9 @@ public class CouponWriteOffRecordDto
     public string CouponCode { get; init; } = string.Empty;
     public long StoreId { get; init; }
     public string StoreName { get; init; } = string.Empty;
+    public long? ProductId { get; init; }
+    public string? ProductName { get; init; }
+    public string? ProductCode { get; init; }
     public string? OperatorName { get; init; }
     public string? DeviceCode { get; init; }
     public DateTime WriteOffAt { get; init; }

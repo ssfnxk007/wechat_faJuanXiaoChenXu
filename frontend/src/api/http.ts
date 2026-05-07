@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { authStorage } from '@/utils.auth'
+import { authStorage } from '@/utils/auth'
 import { notify } from '@/utils/notify'
 
 const http = axios.create({

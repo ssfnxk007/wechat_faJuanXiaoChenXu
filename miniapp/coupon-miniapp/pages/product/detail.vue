@@ -21,9 +21,13 @@
         <view class="product-info-card cm-card">
           <text class="product-title">{{ detail.title }}</text>
           <view class="price-row">
-            <text class="price-unit">¥</text>
+            <text class="price-unit">￥</text>
             <text class="price-value">{{ detail.price || '--' }}</text>
             <view class="hero-tag" v-if="detail.tag">{{ detail.tag }}</view>
+          </view>
+          <view class="price-compare-row" v-if="showPriceCompare">
+            <text class="origin-price">ERP 售价 ￥{{ detail.erpOriginalPrice }}</text>
+            <text class="discount-price">立省 ￥{{ discountAmount }}</text>
           </view>
         </view>
       </view>
@@ -31,7 +35,7 @@
       <view class="cm-section">
         <SectionHeader eyebrow="DESCRIPTION" title="商品说明" subtitle="用于商品展示与活动承接" />
         <view class="desc-card cm-card">
-          <text class="desc-text">{{ detail.desc || '请以后台商品说明为准。' }}</text>
+          <text class="desc-text">{{ detail.desc || '请以后端商品说明为准。' }}</text>
         </view>
       </view>
 
@@ -45,7 +49,10 @@
       </view>
 
       <view class="cm-section" v-if="detail.availableCoupons.length">
-        <SectionHeader eyebrow="AVAILABLE COUPONS" title="商品专享券" subtitle="这些券与当前商品直接关联" action-text="去领券中心" @action-click="goCouponCenter" />
+        <SectionHeader eyebrow="AVAILABLE COUPONS" title="商品专享券" subtitle="这些券与当前商品直接关联" />
+        <view v-if="detail.canDirectPurchase" class="coupon-hint cm-card">
+          <text class="coupon-hint-text">以下优惠券仅作补充参考，不影响当前商品直接购买。</text>
+        </view>
         <view class="coupon-stack">
           <view class="coupon-card cm-card" v-for="coupon in detail.availableCoupons" :key="coupon.id">
             <view class="coupon-top">
@@ -68,7 +75,10 @@
       </view>
 
       <view class="cm-section" v-if="detail.recommendedCoupons.length">
-        <SectionHeader eyebrow="RECOMMENDED COUPONS" title="推荐优惠券" subtitle="当前商品也适合搭配这些通用券" action-text="去领券中心" @action-click="goCouponCenter" />
+        <SectionHeader eyebrow="RECOMMENDED COUPONS" title="推荐优惠券" subtitle="当前商品也适合搭配这些通用券" />
+        <view v-if="detail.canDirectPurchase" class="coupon-hint cm-card coupon-hint-secondary">
+          <text class="coupon-hint-text">推荐券不是购买前提，是否领取不影响直接下单。</text>
+        </view>
         <view class="coupon-stack coupon-stack-secondary">
           <view class="coupon-card cm-card coupon-card-secondary" v-for="coupon in detail.recommendedCoupons" :key="`recommend-${coupon.id}`">
             <view class="coupon-top">
@@ -93,11 +103,11 @@
       <view class="buy-bar cm-card">
         <view class="buy-left">
           <text class="buy-title">{{ detail.title }}</text>
-          <text class="buy-summary">领券后下单或到店核销更优惠</text>
+          <text class="buy-summary">{{ buySummaryText }}</text>
         </view>
         <view class="buy-right">
-          <text class="buy-price">¥{{ detail.price || '--' }}</text>
-          <view class="buy-button" @click="goCouponCenter">去领券</view>
+          <text class="buy-price">￥{{ detail.price || '--' }}</text>
+          <view class="buy-button" @click="handleBuyProduct">{{ buyButtonText }}</view>
         </view>
       </view>
     </view>
@@ -109,21 +119,53 @@ import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import SectionHeader from '@/components/SectionHeader.vue'
 import { useTheme } from '@/composables/use-theme'
+import { ensureMiniProgramLogin, ensurePhoneReady } from '@/api/auth'
 import { fetchMiniAppProductDetail } from '@/api/mall'
+import { completeMiniAppOrderPayment, createMiniAppOrder, createMiniAppOrderPayment } from '@/api/miniapp'
+import { useSessionStore } from '@/store/session'
 
+const session = useSessionStore()
 const { themeClass } = useTheme()
+const buying = ref(false)
 
 const detail = ref({
   id: 0,
   title: '商品详情',
   desc: '',
+  erpOriginalPrice: '',
   price: '',
   tag: '',
   imageUrl: '',
   highlights: [],
   detailImages: [],
+  canDirectPurchase: false,
+  directPurchaseValidityText: '',
   availableCoupons: [],
   recommendedCoupons: [],
+})
+
+const buyButtonText = computed(() => buying.value
+  ? '下单中'
+  : (detail.value.canDirectPurchase ? '去购买' : '暂不可购'))
+const buySummaryText = computed(() => {
+  if (!detail.value.canDirectPurchase) {
+    return detail.value.directPurchaseValidityText || '当前商品暂未开启直购'
+  }
+
+  return detail.value.directPurchaseValidityText || '可直接购买，支付成功后自动发放1张商品提货券'
+})
+const showPriceCompare = computed(() => {
+  const origin = Number(detail.value.erpOriginalPrice || 0)
+  const price = Number(detail.value.price || 0)
+  return origin > 0 && price > 0 && origin > price
+})
+const discountAmount = computed(() => {
+  const origin = Number(detail.value.erpOriginalPrice || 0)
+  const price = Number(detail.value.price || 0)
+  if (origin > price) {
+    return (origin - price).toFixed(2)
+  }
+  return '0.00'
 })
 
 const galleryImages = computed(() => {
@@ -153,11 +195,14 @@ onLoad(async (options = {}) => {
     id: result.id,
     title: result.title,
     desc: result.desc,
+    erpOriginalPrice: result.erpOriginalPrice,
     price: result.price,
     tag: result.tag,
     imageUrl: result.imageUrl,
     highlights: Array.isArray(result.highlights) ? result.highlights : [],
     detailImages: Array.isArray(result.detailImages) ? result.detailImages : [],
+    canDirectPurchase: Boolean(result.canDirectPurchase),
+    directPurchaseValidityText: result.directPurchaseValidityText || '',
     availableCoupons: Array.isArray(result.availableCoupons) ? result.availableCoupons : [],
     recommendedCoupons: Array.isArray(result.recommendedCoupons) ? result.recommendedCoupons : [],
   }
@@ -167,17 +212,112 @@ function goBack() {
   uni.navigateBack({ delta: 1 })
 }
 
-function goCouponCenter() {
-  uni.switchTab({ url: '/pages/coupon/index' })
-}
-
 function openCoupon(coupon) {
   const templateId = Number(coupon?.templateId || coupon?.id || 0)
   if (!templateId) {
-    goCouponCenter()
+    uni.showToast({ title: '券信息不存在', icon: 'none' })
+    return
+  }
+  if (Number(coupon?.distributionMode) === 1) {
+    uni.navigateTo({ url: `/pages/sale-coupon/detail?id=${templateId}` })
     return
   }
   uni.navigateTo({ url: `/pages/coupon/detail?templateId=${templateId}` })
+}
+
+async function handleBuyProduct() {
+  if (buying.value) {
+    return
+  }
+
+  if (!detail.value.canDirectPurchase || !detail.value.id) {
+    uni.showToast({ title: detail.value.directPurchaseValidityText || '暂不可购买', icon: 'none' })
+    return
+  }
+
+  buying.value = true
+  uni.showLoading({ title: '正在下单', mask: true })
+
+  try {
+    await ensureMiniProgramLogin()
+    if (!session.userId) {
+      await ensureMiniProgramLogin({ force: true })
+    }
+
+    if (!session.userId) {
+      await new Promise((resolve) => {
+        uni.showModal({
+          title: '登录失败',
+          content: session.loginMessage || '请先完成登录后再购买商品',
+          confirmText: '去我的',
+          cancelText: '取消',
+          success: (result) => {
+            if (result.confirm) {
+              uni.switchTab({ url: '/pages/profile/index' })
+            }
+            resolve()
+          },
+          fail: () => resolve()
+        })
+      })
+      return
+    }
+
+    const ready = await ensurePhoneReady({
+      force: true,
+      redirect: `/pages/product/detail?id=${detail.value.id}`
+    })
+    if (!ready) {
+      return
+    }
+
+    const order = await createMiniAppOrder({ productId: detail.value.id })
+    const paymentResult = await createMiniAppOrderPayment(order.orderId, {})
+    if (paymentResult.paid || paymentResult.payment?.isMock) {
+      uni.showToast({ title: '购买成功', icon: 'success' })
+      uni.navigateTo({ url: `/pages/order/result?orderId=${order.orderId}` })
+      return
+    }
+
+    // #ifdef MP-WEIXIN
+    await new Promise((resolve, reject) => {
+      uni.requestPayment({
+        provider: 'wxpay',
+        timeStamp: paymentResult.payment?.timeStamp || '',
+        nonceStr: paymentResult.payment?.nonceStr || '',
+        package: paymentResult.payment?.packageValue || '',
+        signType: paymentResult.payment?.signType || 'RSA',
+        paySign: paymentResult.payment?.paySign || '',
+        success: resolve,
+        fail: reject
+      })
+    })
+
+    await completeMiniAppOrderPayment(order.orderId, {
+      paymentNo: paymentResult.payment?.paymentNo,
+      channelTradeNo: paymentResult.payment?.prepayId,
+      rawCallback: 'miniapp-product-direct-purchase-success'
+    })
+
+    uni.showToast({ title: '支付成功', icon: 'success' })
+    uni.navigateTo({ url: `/pages/order/result?orderId=${order.orderId}` })
+    return
+    // #endif
+
+    // #ifndef MP-WEIXIN
+    uni.showToast({ title: '请在微信小程序中完成支付', icon: 'none' })
+    uni.navigateTo({ url: `/pages/order/result?orderId=${order.orderId}` })
+    // #endif
+  } catch (error) {
+    console.warn('[product-detail] direct purchase failed', error)
+    const message = error?.errMsg?.includes('cancel')
+      ? '已取消支付'
+      : (error?.message || '购买失败，请稍后再试')
+    uni.showToast({ title: message, icon: 'none' })
+  } finally {
+    uni.hideLoading()
+    buying.value = false
+  }
 }
 
 function formatThreshold(value, fallback) {
@@ -265,6 +405,11 @@ function formatThreshold(value, fallback) {
   gap: 8rpx;
   flex-wrap: wrap;
 }
+.price-compare-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
 
 .price-unit,
 .price-value,
@@ -279,6 +424,16 @@ function formatThreshold(value, fallback) {
 
 .price-value {
   font-size: 46rpx;
+}
+.origin-price {
+  color: $cm-text-tertiary;
+  font-size: 22rpx;
+  text-decoration: line-through;
+}
+.discount-price {
+  color: $cm-warning;
+  font-size: 22rpx;
+  font-weight: 700;
 }
 
 .coupon-type {
@@ -296,6 +451,24 @@ function formatThreshold(value, fallback) {
   display: grid;
   gap: 18rpx;
   margin-top: 18rpx;
+}
+
+.coupon-hint {
+  margin-top: 18rpx;
+  padding: 18rpx 24rpx;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1rpx solid rgba(59, 130, 246, 0.16);
+}
+
+.coupon-hint-secondary {
+  background: rgba(148, 163, 184, 0.08);
+  border-color: rgba(148, 163, 184, 0.16);
+}
+
+.coupon-hint-text {
+  color: $cm-text-secondary;
+  font-size: 24rpx;
+  line-height: 1.6;
 }
 
 .gallery-image {
@@ -345,7 +518,7 @@ function formatThreshold(value, fallback) {
   position: sticky;
   bottom: 24rpx;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 20rpx;
   margin-top: 22rpx;
@@ -360,8 +533,15 @@ function formatThreshold(value, fallback) {
   gap: 8rpx;
 }
 
+.buy-left {
+  flex: 1;
+  min-width: 0;
+}
+
 .buy-right {
+  flex-shrink: 0;
   justify-items: end;
+  gap: 10rpx;
 }
 
 .buy-title {
@@ -377,8 +557,9 @@ function formatThreshold(value, fallback) {
 
 .buy-price {
   color: $cm-primary-strong;
-  font-size: 38rpx;
+  font-size: 42rpx;
   font-weight: 700;
+  line-height: 1;
 }
 
 .buy-button {
@@ -386,11 +567,12 @@ function formatThreshold(value, fallback) {
   align-items: center;
   justify-content: center;
   min-height: 64rpx;
-  padding: 0 36rpx;
+  min-width: 168rpx;
+  padding: 0 32rpx;
   border-radius: 999rpx;
   background: $cm-primary;
   color: #fff;
-  font-size: 26rpx;
+  font-size: 24rpx;
   font-weight: 700;
 }
 

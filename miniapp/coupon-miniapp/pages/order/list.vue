@@ -1,13 +1,24 @@
 <template>
   <view :class="['cm-page', themeClass]">
+    <CmPullRefresh
+      :refreshing="refreshing"
+      :loading-more="loadingMore"
+      :no-more="noMore"
+      :show-load-more="true"
+      @refresh="onRefresh"
+      @loadmore="onLoadMore"
+    >
     <view class="order-hero">
       <view class="order-hero-mask"></view>
       <view class="cm-nav-spacer"></view>
       <view class="cm-container order-hero-content">
+        <view class="hero-topbar">
+          <view class="hero-back" @click="goBack">‹ 返回</view>
+        </view>
         <view class="hero-copy">
           <text class="hero-eyebrow">ORDER CENTER</text>
           <text class="hero-title">订单列表</text>
-          <text class="hero-subtitle">集中查看购买记录、支付状态与券包履约进度，重要信息一页掌握。</text>
+          <text class="hero-subtitle">查看订单与状态</text>
         </view>
 
         <view class="hero-stats cm-card">
@@ -35,14 +46,14 @@
 
       <view class="summary-strip cm-card cm-section">
         <view class="summary-main">
-          <text class="summary-title">近期订单概览</text>
-          <text class="summary-text">已支付订单可前往券包详情查看可用权益；待付款订单将为您保留当前下单信息。</text>
+          <text class="summary-title">近期订单</text>
+          <text class="summary-text">支付、发券、履约一页查看。</text>
         </view>
         <view class="summary-side">{{ currentStatusLabel }}</view>
       </view>
 
       <view class="cm-section">
-        <SectionHeader eyebrow="ORDER LIST" title="订单明细" subtitle="按下单时间顺序展示，便于快速追踪" />
+        <SectionHeader eyebrow="ORDER LIST" title="订单明细" subtitle="按时间查看" />
         <view class="order-stack">
           <view class="order-card cm-card" v-for="item in filteredOrders" :key="item.id">
             <view class="order-card-top">
@@ -98,12 +109,13 @@
       <view class="notice-card cm-card cm-section">
         <text class="notice-title">订单说明</text>
         <view class="notice-list">
-          <text class="notice-item">支付成功后，券包权益将自动进入账户，可在“我的卡券”中查看。</text>
-          <text class="notice-item">如遇门店网络波动，核销结果以门店系统与本页记录为准。</text>
-          <text class="notice-item">订单关闭后不可恢复，请以提交页显示的支付时限为准。</text>
+          <text class="notice-item">支付后自动发券。</text>
+          <text class="notice-item">商品券会显示待履约。</text>
+          <text class="notice-item">核销结果以门店记录为准。</text>
         </view>
       </view>
     </view>
+    </CmPullRefresh>
   </view>
 </template>
 
@@ -111,7 +123,9 @@
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import SectionHeader from '@/components/SectionHeader.vue'
+import CmPullRefresh from '@/components/CmPullRefresh.vue'
 import { useTheme } from '@/composables/use-theme'
+import { useListPagination } from '@/composables/use-list-pagination'
 import { ensureMiniProgramLogin, ensurePhoneReady } from '@/api/auth'
 import { fetchOrderList } from '@/api/order'
 import { useSessionStore } from '@/store/session'
@@ -119,33 +133,31 @@ import { useSessionStore } from '@/store/session'
 const session = useSessionStore()
 const { themeClass } = useTheme()
 const currentStatus = ref('all')
-const orders = ref([])
 
-const loadOrders = async () => {
-  try {
-    await ensureMiniProgramLogin()
-    const ready = await ensurePhoneReady({
-      force: true,
-      redirect: '/pages/order/list'
-    })
-    if (!ready) {
-      orders.value = []
-      return
-    }
-    const result = await fetchOrderList({
-      pageIndex: 1,
-      pageSize: 50
-    })
-    orders.value = result.items
-  } catch (error) {
-    console.warn('[order-list] loadOrders failed', error)
-    orders.value = []
-    uni.showToast({ title: error?.message || '加载订单失败', icon: 'none' })
+async function ordersFetcher(query) {
+  await ensureMiniProgramLogin()
+  const ready = await ensurePhoneReady({
+    force: true,
+    redirect: '/pages/order/list'
+  })
+  if (!ready) {
+    return { items: [], pageIndex: 1, totalPages: 1, totalCount: 0 }
   }
+  return fetchOrderList(query)
 }
 
+const {
+  items: orders,
+  refreshing,
+  loadingMore,
+  noMore,
+  onRefresh,
+  onLoadMore,
+  reload
+} = useListPagination(ordersFetcher, { pageSize: 10 })
+
 onShow(() => {
-  loadOrders()
+  reload()
 })
 
 const statusTabs = computed(() => {
@@ -163,11 +175,15 @@ const overviewStats = computed(() => {
   return [
     { label: '累计订单', value: String(list.length) },
     { label: '待付款', value: String(list.filter((item) => item.status === 'pending').length) },
-    { label: '待使用', value: String(list.filter((item) => item.fulfillment && item.fulfillment.indexOf('待使用') > -1).length) }
+    { label: '待处理', value: String(list.filter((item) => item.fulfillment && (item.fulfillment.indexOf('待使用') > -1 || item.fulfillment.indexOf('待履约') > -1)).length) }
   ]
 })
 
 const currentStatusLabel = computed(() => statusTabs.value.find((item) => item.value === currentStatus.value)?.label || '全部')
+
+function goBack() {
+  uni.switchTab({ url: '/pages/profile/index' })
+}
 
 function goOrderResult(id) {
   if (!id) {
@@ -203,6 +219,24 @@ const filteredOrders = computed(() => {
 .order-hero-content {
   position: relative;
   z-index: 1;
+}
+
+.hero-topbar {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 18rpx;
+}
+
+.hero-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56rpx;
+  padding: 0 22rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 252, 246, 0.16);
+  color: #fffaf3;
+  font-size: 24rpx;
 }
 
 .hero-copy {
@@ -373,9 +407,16 @@ const filteredOrders = computed(() => {
 }
 
 .order-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92rpx;
+  white-space: nowrap;
   padding: 10rpx 18rpx;
   border-radius: 999rpx;
   font-size: 22rpx;
+  line-height: 1;
+  text-align: center;
 }
 
 .status-paid,
@@ -547,6 +588,11 @@ const filteredOrders = computed(() => {
   color: #ffffff;
 }
 
+.theme-light .hero-back {
+  background: rgba(15, 23, 42, 0.12);
+  color: #f8fafc;
+}
+
 /* ========== Candy Theme ========== */
 .theme-candy .order-hero {
   background: linear-gradient(135deg, #E0E7FF 0%, #DBEAFE 52%, #BFDBFE 100%);
@@ -634,6 +680,11 @@ const filteredOrders = computed(() => {
 .theme-candy .primary-action {
   background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
   color: #ffffff;
+}
+
+.theme-candy .hero-back {
+  background: rgba(59, 130, 246, 0.18);
+  color: #1E3A8A;
 }
 
 
@@ -726,6 +777,11 @@ const filteredOrders = computed(() => {
   color: #ffffff;
 }
 
+.theme-orange .hero-back {
+  background: rgba(249, 115, 22, 0.18);
+  color: #9A3412;
+}
+
 /* ========== Red Theme ========== */
 .theme-red .order-hero {
   background: linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 52%, #FFCDD2 100%);
@@ -802,6 +858,11 @@ const filteredOrders = computed(() => {
 
 .theme-red .meta-value.price {
   color: #E53935;
+}
+
+.theme-red .hero-back {
+  background: rgba(239, 83, 80, 0.18);
+  color: #B71C1C;
 }
 
 .theme-red .ghost-action {

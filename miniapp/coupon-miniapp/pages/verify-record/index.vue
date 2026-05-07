@@ -1,44 +1,30 @@
 <template>
-  <view :class="['cm-page', 'cm-container', themeClass]">
+  <view :class="['cm-page', themeClass]">
+    <CmPullRefresh :refreshing="refreshing" @refresh="handleRefresh">
+    <view class="cm-container">
     <view class="cm-nav-spacer"></view>
 
-    <view class="record-hero cm-card">
-      <view class="record-hero-copy">
-        <text class="record-eyebrow">VERIFY RECORD</text>
-        <text class="record-title">核销记录</text>
-        <text class="record-subtitle">每次核销记录都在这里。</text>
+    <view class="page-topbar">
+      <view class="page-back" @click="goBack">‹ 返回</view>
+    </view>
+
+    <view class="summary-card cm-card">
+      <view>
+        <text class="summary-title">核销记录</text>
+        <text class="summary-subtitle">查看使用记录</text>
       </view>
-      <view class="record-highlight">
-        <text class="record-highlight-value">12</text>
-        <text class="record-highlight-label">本月核销次数</text>
-      </view>
+      <view class="summary-badge">{{ summary.monthWriteOffCount }}</view>
     </view>
 
     <view class="stats-grid cm-section">
       <view class="stats-card cm-card" v-for="item in stats" :key="item.label">
         <text class="stats-value">{{ item.value }}</text>
         <text class="stats-label">{{ item.label }}</text>
-        <text class="stats-note">{{ item.note }}</text>
-      </view>
-    </view>
-
-    <view class="filter-panel cm-card cm-section">
-      <view class="filter-item">
-        <text class="filter-label">记录范围</text>
-        <text class="filter-value">近 30 天</text>
-      </view>
-      <view class="filter-item">
-        <text class="filter-label">核销门店</text>
-        <text class="filter-value">全部门店</text>
-      </view>
-      <view class="filter-item">
-        <text class="filter-label">记录状态</text>
-        <text class="filter-value">核销成功</text>
       </view>
     </view>
 
     <view class="cm-section">
-      <SectionHeader eyebrow="TIMELINE" title="核销时间轴" subtitle="按时间查看使用记录" />
+      <SectionHeader eyebrow="TIMELINE" title="核销时间轴" subtitle="按时间查看" />
       <view class="timeline-list">
         <view class="timeline-item" v-for="item in records" :key="item.id">
           <view class="timeline-line">
@@ -85,19 +71,48 @@
     <view class="rules-card cm-card cm-section">
       <text class="rules-title">记录说明</text>
       <view class="rules-list">
-        <text class="rules-item">核销成功后记录即时写入，如遇网络延迟，请以门店最终受理结果为准。</text>
-        <text class="rules-item">组合券包将按单张券依次记录，便于区分不同权益的使用情况。</text>
-        <text class="rules-item">若需核对历史订单，可结合订单列表中的订单号进行交叉查询。</text>
+        <text class="rules-item">核销后即时写入。</text>
+        <text class="rules-item">组合券按单张记录。</text>
+        <text class="rules-item">可结合订单号核对。</text>
       </view>
     </view>
+    </view>
+    </CmPullRefresh>
   </view>
 </template>
 
 <script setup lang="ts">
+import { computed, ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import SectionHeader from '@/components/SectionHeader.vue'
+import CmPullRefresh from '@/components/CmPullRefresh.vue'
 import { useTheme } from '@/composables/use-theme'
+import { ensureMiniProgramLogin, ensurePhoneReady } from '@/api/auth'
+import { fetchMiniAppWriteOffRecords } from '@/api/verify-record'
 
 const { themeClass } = useTheme()
+const refreshing = ref(false)
+const records = ref<VerifyRecordItem[]>([])
+const summary = ref({
+  totalWriteOffCount: 0,
+  monthWriteOffCount: 0,
+  unusedCouponCount: 0
+})
+
+async function handleRefresh() {
+  if (refreshing.value) return
+  refreshing.value = true
+  try {
+    await loadRecords()
+    uni.showToast({ title: '已刷新', icon: 'none' })
+  } finally {
+    refreshing.value = false
+  }
+}
+
+function goBack() {
+  uni.switchTab({ url: '/pages/profile/index' })
+}
 
 interface StatItem {
   label: string
@@ -118,162 +133,134 @@ interface VerifyRecordItem {
   tag: string
 }
 
-const stats: StatItem[] = [
-  { label: '累计核销', value: '36', note: '累计' },
-  { label: '本月到店', value: '12', note: '近30天' },
-  { label: '待使用权益', value: '4', note: '待使用' }
-]
+const stats = computed<StatItem[]>(() => ([
+  { label: '累计核销', value: String(summary.value.totalWriteOffCount), note: '累计' },
+  { label: '近 30 天', value: String(summary.value.monthWriteOffCount), note: '近30天' },
+  { label: '待使用权益', value: String(summary.value.unusedCouponCount), note: '待使用' }
+]))
 
-const records: VerifyRecordItem[] = [
-  {
-    id: 1,
-    title: '春序礼遇券包首张券已使用',
-    time: '2026-04-11 10:36',
-    status: '核销成功',
-    store: '南京西路门店',
-    coupon: '门店通用满减券',
-    verifyNo: 'HX202604110032',
-    channel: '门店扫码',
-    note: '本次已完成核销。',
-    tag: '部分使用'
-  },
-  {
-    id: 2,
-    title: '新客到店礼券已完成使用',
-    time: '2026-04-09 16:20',
-    status: '核销成功',
-    store: '华亭路门店',
-    coupon: '新客礼券',
-    verifyNo: 'HX202604090118',
-    channel: '收银台核销',
-    note: '新人礼券已使用完成。',
-    tag: '已完成'
-  },
-  {
-    id: 3,
-    title: '节令优享券包商品券核销',
-    time: '2026-04-07 19:48',
-    status: '核销成功',
-    store: '静安寺门店',
-    coupon: '指定商品优惠券',
-    verifyNo: 'HX202604070076',
-    channel: '店员受理',
-    note: '商品券已使用，其余权益仍可用。',
-    tag: '商品权益'
+async function loadRecords() {
+  await ensureMiniProgramLogin()
+  const ready = await ensurePhoneReady({
+    force: true,
+    redirect: '/pages/verify-record/index'
+  })
+  if (!ready) {
+    records.value = []
+    summary.value = {
+      totalWriteOffCount: 0,
+      monthWriteOffCount: 0,
+      unusedCouponCount: 0
+    }
+    return
   }
-]
+
+  const result = await fetchMiniAppWriteOffRecords()
+  summary.value = {
+    totalWriteOffCount: result.totalWriteOffCount,
+    monthWriteOffCount: result.monthWriteOffCount,
+    unusedCouponCount: result.unusedCouponCount
+  }
+  records.value = result.items.map((item: any) => ({
+    id: Number(item.id || 0),
+    title: String(item.title || ''),
+    time: String(item.time || '').replace('T', ' ').slice(0, 16),
+    status: String(item.status || ''),
+    store: String(item.store || ''),
+    coupon: String(item.coupon || ''),
+    verifyNo: String(item.verifyNo || ''),
+    channel: String(item.channel || ''),
+    note: String(item.note || ''),
+    tag: String(item.tag || '')
+  }))
+}
+
+onShow(() => {
+  loadRecords().catch((error) => {
+    console.warn('[verify-record] load failed', error)
+    uni.showToast({ title: error?.message || '加载失败', icon: 'none' })
+  })
+})
 </script>
 
 <style lang="scss" scoped>
-.record-hero {
+.page-topbar {
   display: flex;
-  align-items: stretch;
+  justify-content: flex-start;
+  margin-bottom: 18rpx;
+}
+
+.page-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56rpx;
+  padding: 0 22rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 252, 246, 0.86);
+  border: 1rpx solid $cm-border-soft;
+  color: $cm-text-primary;
+  font-size: 24rpx;
+}
+
+.summary-card {
+  display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 20rpx;
-  overflow: hidden;
+  gap: 18rpx;
   padding: 28rpx;
-  background: linear-gradient(135deg, rgba(45, 91, 72, 0.94) 0%, rgba(95, 116, 83, 0.9) 62%, rgba(183, 155, 99, 0.76) 100%);
 }
 
-.record-hero-copy {
-  display: grid;
-  gap: 14rpx;
-  color: #fffaf3;
-}
-
-.record-eyebrow {
-  color: rgba(247, 235, 208, 0.84);
-  font-size: 22rpx;
-  letter-spacing: 3rpx;
-}
-
-.record-title {
-  font-size: 44rpx;
+.summary-title {
+  display: block;
+  color: $cm-text-primary;
+  font-size: 34rpx;
   font-weight: 700;
 }
 
-.record-subtitle {
-  max-width: 460rpx;
-  color: rgba(255, 250, 243, 0.88);
+.summary-subtitle {
+  display: block;
+  margin-top: 10rpx;
+  color: $cm-text-secondary;
   font-size: 24rpx;
   line-height: 1.8;
 }
 
-.record-highlight {
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  min-width: 172rpx;
-  padding: 22rpx 18rpx;
-  border-radius: 28rpx;
-  background: rgba(255, 252, 246, 0.14);
-}
-
-.record-highlight-value {
-  color: #fffdf8;
-  font-size: 52rpx;
-  font-weight: 700;
-}
-
-.record-highlight-label {
-  margin-top: 8rpx;
-  color: rgba(255, 250, 243, 0.78);
+.summary-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72rpx;
+  min-height: 48rpx;
+  padding: 0 18rpx;
+  border-radius: 999rpx;
+  background: rgba(183, 155, 99, 0.14);
+  color: $cm-accent-gold;
   font-size: 22rpx;
-  text-align: center;
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16rpx;
+  gap: 14rpx;
 }
 
 .stats-card {
   display: grid;
   gap: 8rpx;
-  padding: 24rpx;
+  padding: 22rpx 18rpx;
+  text-align: center;
 }
 
 .stats-value {
-  color: $cm-primary-strong;
-  font-size: 40rpx;
+  color: $cm-text-primary;
+  font-size: 34rpx;
   font-weight: 700;
 }
 
 .stats-label {
-  color: $cm-text-primary;
-  font-size: 26rpx;
-}
-
-.stats-note {
-  color: $cm-text-tertiary;
+  color: $cm-text-secondary;
   font-size: 22rpx;
-}
-
-.filter-panel {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16rpx;
-  padding: 24rpx;
-}
-
-.filter-item {
-  display: grid;
-  gap: 8rpx;
-  padding: 18rpx;
-  border-radius: 22rpx;
-  background: rgba(247, 242, 233, 0.76);
-}
-
-.filter-label {
-  color: $cm-text-tertiary;
-  font-size: 22rpx;
-}
-
-.filter-value {
-  color: $cm-text-primary;
-  font-size: 26rpx;
-  font-weight: 600;
 }
 
 .timeline-list {
@@ -401,5 +388,49 @@ const records: VerifyRecordItem[] = [
   color: $cm-text-secondary;
   font-size: 24rpx;
   line-height: 1.8;
+}
+
+.theme-light .page-back {
+  background: #ffffff;
+  border: 1rpx solid rgba(226, 232, 240, 0.9);
+  color: #475569;
+}
+
+.theme-light .summary-badge {
+  background: rgba(15, 23, 42, 0.06);
+  color: #475569;
+}
+
+.theme-candy .page-back {
+  background: #ffffff;
+  border: 1rpx solid rgba(191, 219, 254, 0.6);
+  color: #2563EB;
+}
+
+.theme-candy .summary-badge {
+  background: rgba(59, 130, 246, 0.08);
+  color: #2563EB;
+}
+
+.theme-orange .page-back {
+  background: #ffffff;
+  border: 1rpx solid rgba(254, 215, 170, 0.6);
+  color: #EA580C;
+}
+
+.theme-orange .summary-badge {
+  background: rgba(249, 115, 22, 0.08);
+  color: #EA580C;
+}
+
+.theme-red .page-back {
+  background: #ffffff;
+  border: 1rpx solid rgba(255, 205, 210, 0.6);
+  color: #E53935;
+}
+
+.theme-red .summary-badge {
+  background: rgba(239, 83, 80, 0.08);
+  color: #E53935;
 }
 </style>
