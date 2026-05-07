@@ -94,6 +94,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddHealthChecks();
 builder.Services.AddScoped<ErpCouponService>();
 builder.Services.AddScoped<OrderPaymentService>();
+builder.Services.AddScoped<OrderExpirationService>();
 builder.Services.AddScoped<UserCouponGrantService>();
 builder.Services.AddSingleton<MiniAppThemeSettingsService>();
 builder.Services.AddSingleton<JwtTokenService>();

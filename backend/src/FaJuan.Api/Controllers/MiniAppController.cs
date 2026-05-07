@@ -21,6 +21,7 @@ namespace FaJuan.Api.Controllers;
 public class MiniAppController(
     AppDbContext dbContext,
     OrderPaymentService orderPaymentService,
+    OrderExpirationService orderExpirationService,
     UserCouponGrantService userCouponGrantService,
     WeChatPayService weChatPayService,
     MiniAppThemeSettingsService miniAppThemeSettingsService) : ApiControllerBase
@@ -883,6 +884,8 @@ public class MiniAppController(
             return Unauthorized(Failure<PagedResult<MiniAppOrderCardDto>>("请先登录", 401));
         }
 
+        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
+
         if (!await dbContext.AppUsers.AsNoTracking().AnyAsync(x => x.Id == userId.Value, cancellationToken))
         {
             return NotFound(Failure<PagedResult<MiniAppOrderCardDto>>("用户不存在", 404));
@@ -1014,6 +1017,8 @@ public class MiniAppController(
             return Unauthorized(Failure<MiniAppOrderDetailDto>("请先登录", 401));
         }
 
+        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
+
         var order = await dbContext.CouponOrders.AsNoTracking()
             .Where(x => x.Id == id && x.AppUserId == userId.Value)
             .Select(couponOrder => new MiniAppOrderDetailDto
@@ -1124,6 +1129,8 @@ public class MiniAppController(
         {
             return BadRequest(Failure<MiniAppCreateOrderResultDto>("用户不能为空"));
         }
+
+        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
 
         var user = await dbContext.AppUsers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == userId.Value, cancellationToken);
         if (user is null)
@@ -1346,6 +1353,8 @@ public class MiniAppController(
             return Unauthorized(Failure<MiniAppCreateOrderPaymentResultDto>("请先登录", 401));
         }
 
+        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
+
         var order = await dbContext.CouponOrders.FirstOrDefaultAsync(x => x.Id == id && x.AppUserId == userId.Value, cancellationToken);
         if (order is null)
         {
@@ -1374,6 +1383,11 @@ public class MiniAppController(
                     Amount = order.OrderAmount,
                 },
             }, "订单已支付"));
+        }
+
+        if (order.Status == CouponOrderStatus.Closed)
+        {
+            return BadRequest(Failure<MiniAppCreateOrderPaymentResultDto>($"订单已超过 {OrderExpirationService.PendingPaymentTimeoutMinutes} 分钟未支付，已自动关闭"));
         }
 
         var user = await dbContext.AppUsers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == order.AppUserId, cancellationToken);
@@ -1484,6 +1498,8 @@ public class MiniAppController(
             return Unauthorized(Failure<bool>("请先登录", 401));
         }
 
+        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
+
         var order = await dbContext.CouponOrders.AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == id && x.AppUserId == userId.Value, cancellationToken);
         if (order is null)
@@ -1494,6 +1510,11 @@ public class MiniAppController(
         if (order.Status == CouponOrderStatus.Paid)
         {
             return Ok(Success(true, "支付已处理"));
+        }
+
+        if (order.Status == CouponOrderStatus.Closed)
+        {
+            return Ok(Success(false, $"订单已超过 {OrderExpirationService.PendingPaymentTimeoutMinutes} 分钟未支付，已自动关闭"));
         }
 
         var transaction = await dbContext.PaymentTransactions

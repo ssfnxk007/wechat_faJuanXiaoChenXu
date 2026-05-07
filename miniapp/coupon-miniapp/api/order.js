@@ -82,9 +82,13 @@ function mapOrder(item) {
 
   let note = String(firstValue(item, ['note', 'remark'], '以后端状态为准'))
   if (!item?.note && !item?.remark) {
-    note = statusInfo.value === 'paid'
-      ? (isProductCoupon ? '商品券已发放，待履约。' : (packName ? '权益已发放，可在卡包查看。' : '已发券，可在卡包查看。'))
-      : '订单未确认支付完成，暂未发券。'
+    note = statusInfo.text === '已关闭'
+      ? '订单超过支付时限已关闭，未发券。'
+      : statusInfo.text === '已退款'
+        ? '订单已退款，相关权益以后台状态为准。'
+        : statusInfo.value === 'paid'
+          ? (isProductCoupon ? '商品券已发放，待履约。' : (packName ? '权益已发放，可在卡包查看。' : '已发券，可在卡包查看。'))
+          : '订单未确认支付完成，暂未发券。'
   }
 
   return {

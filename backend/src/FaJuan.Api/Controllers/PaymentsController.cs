@@ -17,6 +17,7 @@ namespace FaJuan.Api.Controllers;
 public class PaymentsController(
     AppDbContext dbContext,
     OrderPaymentService orderPaymentService,
+    OrderExpirationService orderExpirationService,
     WeChatPayService weChatPayService) : ApiControllerBase
 {
     [HttpGet("wechat-status")]
@@ -29,10 +30,22 @@ public class PaymentsController(
     [HttpPost("create")]
     public async Task<ActionResult<ApiResponse<CreatePaymentResultDto>>> Create([FromBody] CreatePaymentRequest request, CancellationToken cancellationToken)
     {
+        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
+
         var order = await dbContext.CouponOrders.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.OrderId, cancellationToken);
         if (order is null)
         {
             return BadRequest(Failure<CreatePaymentResultDto>("订单不存在"));
+        }
+
+        if (order.Status == CouponOrderStatus.Closed)
+        {
+            return BadRequest(Failure<CreatePaymentResultDto>($"订单已超过 {OrderExpirationService.PendingPaymentTimeoutMinutes} 分钟未支付，已自动关闭"));
+        }
+
+        if (order.Status != CouponOrderStatus.PendingPayment)
+        {
+            return BadRequest(Failure<CreatePaymentResultDto>("仅待支付订单可发起支付"));
         }
 
         var user = await dbContext.AppUsers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == order.AppUserId, cancellationToken);
@@ -186,6 +199,8 @@ public class PaymentsController(
     [HttpPost("orders/{orderId:long}/sync-paid")]
     public async Task<ActionResult<ApiResponse<bool>>> SyncPaidOrder(long orderId, CancellationToken cancellationToken)
     {
+        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
+
         var order = await dbContext.CouponOrders.AsNoTracking()
             .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
         if (order is null)
@@ -196,6 +211,11 @@ public class PaymentsController(
         if (order.Status == CouponOrderStatus.Paid)
         {
             return Ok(Success(true, "订单已是已支付状态"));
+        }
+
+        if (order.Status == CouponOrderStatus.Closed)
+        {
+            return BadRequest(Failure<bool>($"订单已超过 {OrderExpirationService.PendingPaymentTimeoutMinutes} 分钟未支付，已自动关闭"));
         }
 
         var transaction = await dbContext.PaymentTransactions
