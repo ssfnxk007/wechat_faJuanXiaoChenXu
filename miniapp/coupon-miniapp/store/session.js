@@ -5,8 +5,7 @@ const SESSION_STORAGE_KEY = 'coupon-miniapp:session'
 const API_BASE_URL_STORAGE_KEY = 'coupon-miniapp:api-base-url'
 const THEME_STORAGE_KEY = 'coupon-miniapp:theme-code'
 const ONBOARDING_STORAGE_KEY = 'coupon-miniapp:onboarding'
-// 仅开发环境使用 LAN 默认值；生产构建要求显式配置 HTTPS 域名，避免误连
-const DEFAULT_API_BASE_URL = process.env.NODE_ENV === 'production' ? '' : 'http://10.168.1.106:5265'
+const DEFAULT_API_BASE_URL = 'http://120.48.175.83:8081'
 
 const state = reactive({
   hydrated: false,
@@ -18,6 +17,7 @@ const state = reactive({
   nickname: '',
   isNewUser: false,
   token: '',
+  tokenExpiresAt: '',
   wechatConfigured: false,
   loginStatus: 'idle',
   loginMessage: '',
@@ -33,6 +33,20 @@ function normalizeThemeCode(themeCode) {
   return VALID_THEME_CODES.includes(normalized) ? normalized : ''
 }
 
+function normalizeDateTime(value) {
+  const normalized = trimText(value)
+  if (!normalized) {
+    return ''
+  }
+
+  const timestamp = Date.parse(normalized)
+  if (Number.isNaN(timestamp)) {
+    return ''
+  }
+
+  return new Date(timestamp).toISOString()
+}
+
 function persistSession() {
   uni.setStorageSync(SESSION_STORAGE_KEY, {
     userId: state.userId,
@@ -40,7 +54,8 @@ function persistSession() {
     mobile: state.mobile,
     nickname: state.nickname,
     isNewUser: state.isNewUser,
-    token: state.token
+    token: state.token,
+    tokenExpiresAt: state.tokenExpiresAt
   })
 }
 
@@ -61,6 +76,7 @@ export function hydrateSessionStore() {
   state.nickname = trimText(savedSession.nickname)
   state.isNewUser = Boolean(savedSession.isNewUser)
   state.token = trimText(savedSession.token)
+  state.tokenExpiresAt = normalizeDateTime(savedSession.tokenExpiresAt)
   state.hydrated = true
 
   return state
@@ -99,6 +115,7 @@ export function updateSession(payload = {}) {
   state.nickname = trimText(payload.nickname || state.nickname)
   state.isNewUser = typeof payload.isNewUser === 'boolean' ? payload.isNewUser : state.isNewUser
   state.token = trimText(payload.token || state.token)
+  state.tokenExpiresAt = normalizeDateTime(payload.expiresAt || payload.tokenExpiresAt || state.tokenExpiresAt)
   if (state.mobile) {
     state.skippedPhoneOnboarding = false
     uni.removeStorageSync(ONBOARDING_STORAGE_KEY)
@@ -150,9 +167,30 @@ export function clearSession() {
   state.nickname = ''
   state.isNewUser = false
   state.token = ''
+  state.tokenExpiresAt = ''
   state.loginStatus = 'idle'
   state.loginMessage = ''
   state.skippedPhoneOnboarding = false
   uni.removeStorageSync(SESSION_STORAGE_KEY)
+  uni.removeStorageSync(API_BASE_URL_STORAGE_KEY)
   uni.removeStorageSync(ONBOARDING_STORAGE_KEY)
+}
+
+export function hasUsableToken(bufferSeconds = 60) {
+  hydrateSessionStore()
+
+  if (!state.userId || !state.token) {
+    return false
+  }
+
+  if (!state.tokenExpiresAt) {
+    return true
+  }
+
+  const expiresAt = Date.parse(state.tokenExpiresAt)
+  if (Number.isNaN(expiresAt)) {
+    return false
+  }
+
+  return expiresAt > Date.now() + bufferSeconds * 1000
 }

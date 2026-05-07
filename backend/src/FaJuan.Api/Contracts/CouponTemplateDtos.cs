@@ -19,6 +19,7 @@ public class CouponTemplateListItemDto
     public bool IsAllStores { get; init; }
     public int PerUserLimit { get; init; }
     public bool IsEnabled { get; init; }
+    public bool IsSystemProductVoucher { get; init; }
     public CouponDistributionMode DistributionMode { get; init; }
     public decimal? SalePrice { get; init; }
     public string? Remark { get; init; }

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace FaJuan.Api.Controllers;
 
 [Authorize]
-[AdminMenuAuthorize("/coupon-pack-items")]
+[AdminMenuAuthorize("/coupon-packs")]
 public class CouponPackItemsController(AppDbContext dbContext) : ApiControllerBase
 {
     [HttpGet("{couponPackId:long}")]

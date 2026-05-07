@@ -42,8 +42,9 @@
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { exchangePhoneNumber } from '@/api/auth'
+import { getMiniAppSettings } from '@/api/miniapp'
 import { useTheme } from '@/composables/use-theme'
-import { markPhoneOnboardingSkipped } from '@/store/session'
+import { markPhoneOnboardingSkipped, setThemeCode } from '@/store/session'
 
 const { themeClass } = useTheme()
 const submitting = ref(false)
@@ -99,6 +100,13 @@ function handleSkip() {
 onLoad((options) => {
   redirect.value = String(options?.redirect || '')
   force.value = String(options?.force || '0') === '1'
+  getMiniAppSettings()
+    .then((settings) => {
+      setThemeCode(settings?.themeCode)
+    })
+    .catch((error) => {
+      console.warn('[phone-onboarding] load theme settings failed', error)
+    })
 })
 </script>
 
@@ -121,7 +129,7 @@ onLoad((options) => {
 }
 
 .phone-onboarding-eyebrow {
-  color: $cm-accent-gold;
+  color: var(--cm-theme-primary-soft);
   font-size: 22rpx;
   letter-spacing: 4rpx;
 }
@@ -155,7 +163,7 @@ onLoad((options) => {
   height: 18rpx;
   margin-top: 10rpx;
   border-radius: 50%;
-  background: $cm-primary;
+  background: var(--cm-theme-primary);
 }
 
 .point-text {
@@ -170,8 +178,9 @@ onLoad((options) => {
   justify-content: center;
   min-height: 92rpx;
   border-radius: 999rpx;
-  background: linear-gradient(135deg, #2d5b48 0%, #5f7453 100%);
-  color: #fffdf8;
+  background: var(--cm-pack-action-bg);
+  box-shadow: var(--cm-pack-action-shadow);
+  color: var(--cm-pack-action-color);
   font-size: 28rpx;
   font-weight: 700;
 }
@@ -183,7 +192,7 @@ onLoad((options) => {
 }
 
 .secondary-link {
-  color: $cm-primary;
+  color: var(--cm-theme-primary);
   font-size: 24rpx;
 }
 

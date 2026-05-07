@@ -42,12 +42,13 @@ public class WriteOffController(AppDbContext dbContext) : ApiControllerBase
         }
 
         var now = DateTime.Now;
+        var todayStart = now.Date;
         if (coupon.EffectiveAt > now)
         {
             return BadRequest(Failure<CouponWriteOffResultDto>("券未到生效时间"));
         }
 
-        if (coupon.ExpireAt < now)
+        if (coupon.ExpireAt < todayStart)
         {
             coupon.Status = UserCouponStatus.Expired;
             await dbContext.SaveChangesAsync();
@@ -71,7 +72,19 @@ public class WriteOffController(AppDbContext dbContext) : ApiControllerBase
             }
         }
 
-        if (template.TemplateType == CouponTemplateType.Product)
+        if (coupon.SourceType == CouponSourceType.ProductDirectPurchase)
+        {
+            if (!request.ProductId.HasValue || request.ProductId.Value <= 0)
+            {
+                return BadRequest(Failure<CouponWriteOffResultDto>("商品提货券核销时必须提供商品ID"));
+            }
+
+            if (coupon.BoundProductId != request.ProductId.Value)
+            {
+                return BadRequest(Failure<CouponWriteOffResultDto>("该券只能核销指定商品"));
+            }
+        }
+        else if (template.TemplateType == CouponTemplateType.Product)
         {
             if (!request.ProductId.HasValue || request.ProductId.Value <= 0)
             {
@@ -110,7 +123,6 @@ public class WriteOffController(AppDbContext dbContext) : ApiControllerBase
         }
         catch (DbUpdateConcurrencyException)
         {
-            // 并发核销：另一笔请求已写入 Used，此处直接返回"已核销"
             return BadRequest(Failure<CouponWriteOffResultDto>("券已核销"));
         }
 

@@ -456,6 +456,12 @@
             <strong>失效时间</strong>
             <div>{{ formatDate(detailCoupon?.expireAt) }}</div>
           </div>
+          <div v-if="canEditExpireAt" class="result-panel">
+            <strong>修改到期日期</strong>
+            <div class="inline-edit-field">
+              <input v-model="detailForm.expireDate" type="date" />
+            </div>
+          </div>
           <div class="result-panel">
             <strong>固定有效期</strong>
             <div>{{ formatDate(detailCoupon?.validFrom) }} ~ {{ formatDate(detailCoupon?.validTo) }}</div>
@@ -504,6 +510,7 @@
 
         <div class="dialog-actions">
           <button type="button" class="ghost-button" @click="openQrDialog(selectedCoupon!)">查看二维码</button>
+          <button v-if="canEditExpireAt" type="button" class="ghost-button" :disabled="expireAtSubmitting" @click="submitExpireAt">{{ expireAtSubmitting ? '保存中...' : '保存到期日期' }}</button>
           <button type="button" class="primary-button" @click="closeDetailDialog">关闭</button>
         </div>
       </div>
@@ -521,6 +528,7 @@ import {
   getUserCouponWriteOffRecords,
   importGrantUserCoupons,
   manualGrantUserCoupons,
+  updateUserCouponExpireAt,
 } from '@/api/user-coupon'
 import { getCouponTemplateList } from '@/api/coupon-template'
 import { getUserList } from '@/api/user'
@@ -562,6 +570,7 @@ const selectedGrantUserIds = ref<number[]>([])
 const selectorQuery = reactive({ templateKeyword: '' })
 const grantSubmitting = ref(false)
 const importSubmitting = ref(false)
+const expireAtSubmitting = ref(false)
 
 const query = reactive({
   userId: 0,
@@ -576,6 +585,10 @@ const grantForm = reactive({
 const importForm = reactive({
   couponTemplateId: 0,
   quantityPerUser: 1,
+})
+
+const detailForm = reactive({
+  expireDate: '',
 })
 
 const statusMap: Record<number, string> = {
@@ -605,6 +618,7 @@ const validPeriodTypeMap: Record<number, string> = {
 }
 
 const canGrant = authStorage.hasPermission('user-coupon.grant')
+const canEditExpireAt = canGrant
 
 const unusedCount = computed(() => items.value.filter((item) => item.status === 1).length)
 const usedCount = computed(() => items.value.filter((item) => item.status === 2).length)
@@ -638,6 +652,7 @@ const lastImportSummary = computed(() => {
 })
 
 const formatDate = (value?: string) => (value ? value.replace('T', ' ').slice(0, 19) : '-')
+const formatDateInput = (value?: string) => (value ? value.slice(0, 10) : '')
 const formatMoney = (value?: number) => (typeof value === 'number' ? `¥${value.toFixed(2)}` : '-')
 const formatUserLabel = (user: Pick<UserListItemDto, 'id' | 'miniOpenId' | 'mobile' | 'nickname'>) => user.mobile ? `${user.mobile} / 用户 #${user.id}` : (user.nickname?.trim() || user.miniOpenId || `用户 #${user.id}`)
 const formatTemplateLabel = (template: CouponTemplateListItemDto) => `${template.name} / ${templateTypeMap[template.templateType] || '券模板'}`
@@ -830,15 +845,20 @@ const closeQrDialog = () => {
   qrCodeDataUrl.value = ''
 }
 
+const loadUserCouponDetailBundle = async (id: number) => {
+  const [detailResponse, recordResponse] = await Promise.all([
+    getUserCouponDetail(id),
+    getUserCouponWriteOffRecords(id),
+  ])
+  detailCoupon.value = detailResponse.data
+  writeOffRecords.value = recordResponse.data
+  detailForm.expireDate = formatDateInput(detailResponse.data.expireAt)
+}
+
 const openDetailDialog = async (item: UserCouponListItemDto) => {
   try {
     selectedCoupon.value = item
-    const [detailResponse, recordResponse] = await Promise.all([
-      getUserCouponDetail(item.id),
-      getUserCouponWriteOffRecords(item.id),
-    ])
-    detailCoupon.value = detailResponse.data
-    writeOffRecords.value = recordResponse.data
+    await loadUserCouponDetailBundle(item.id)
     detailDialogVisible.value = true
   } catch (error) {
     notify.error(getErrorMessage(error, '加载用户券详情失败'))
@@ -849,6 +869,25 @@ const closeDetailDialog = () => {
   detailDialogVisible.value = false
   detailCoupon.value = null
   writeOffRecords.value = []
+  detailForm.expireDate = ''
+}
+
+const submitExpireAt = async () => {
+  if (!detailCoupon.value) return
+  if (!detailForm.expireDate) return notify.info('请选择新的到期日期')
+  if (expireAtSubmitting.value) return
+
+  expireAtSubmitting.value = true
+  try {
+    await updateUserCouponExpireAt(detailCoupon.value.id, { expireDate: detailForm.expireDate })
+    notify.success('到期日期已更新')
+    await loadUserCouponDetailBundle(detailCoupon.value.id)
+    await loadData()
+  } catch (error) {
+    notify.error(getErrorMessage(error, '更新到期日期失败'))
+  } finally {
+    expireAtSubmitting.value = false
+  }
 }
 
 const copyCouponCode = async (couponCode: string) => {
@@ -1008,6 +1047,15 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
+}
+
+.inline-edit-field input {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: #fff;
 }
 
 .detail-history-card {

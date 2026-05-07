@@ -8,5 +8,8 @@ export const createPayment = (payload: CreatePaymentRequest) =>
 export const paymentCallback = (payload: PaymentCallbackRequest) =>
   http.post<PaymentCallbackRequest, ApiResponse<boolean>>('/payments/callback', payload)
 
+export const syncPaidOrder = (orderId: number) =>
+  http.post<undefined, ApiResponse<boolean>>(`/payments/orders/${orderId}/sync-paid`, undefined)
+
 export const refundOrder = (payload: RefundOrderRequest) =>
   http.post<RefundOrderRequest, ApiResponse<boolean>>('/payments/refund', payload)

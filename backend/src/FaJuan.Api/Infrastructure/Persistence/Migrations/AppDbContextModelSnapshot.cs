@@ -436,6 +436,18 @@ namespace FaJuan.Api.Infrastructure.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
+                    b.Property<string>("ProductErpProductCodeSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long?>("ProductId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ProductNameSnapshot")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SourceType")
+                        .HasColumnType("int");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -544,6 +556,9 @@ namespace FaJuan.Api.Infrastructure.Persistence.Migrations
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsNewUserOnly")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSystemProductVoucher")
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")
@@ -871,6 +886,25 @@ namespace FaJuan.Api.Infrastructure.Persistence.Migrations
                     b.Property<string>("DetailImageAssetIds")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<long?>("DirectPurchaseCouponTemplateId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int?>("DirectPurchaseValidDays")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DirectPurchaseValidFrom")
+                        .HasColumnType("datetime");
+
+                    b.Property<int?>("DirectPurchaseValidPeriodType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DirectPurchaseValidTo")
+                        .HasColumnType("datetime");
+
+                    b.Property<string>("ErpIsbnCode")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
                     b.Property<decimal?>("ErpOriginalPrice")
                         .HasColumnType("decimal(18,2)");
 
@@ -955,6 +989,15 @@ namespace FaJuan.Api.Infrastructure.Persistence.Migrations
                     b.Property<long>("AppUserId")
                         .HasColumnType("bigint");
 
+                    b.Property<string>("BoundErpProductCode")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<long?>("BoundProductId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("BoundProductName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("CouponCode")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -986,6 +1029,9 @@ namespace FaJuan.Api.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
+
+                    b.Property<int>("SourceType")
+                        .HasColumnType("int");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");

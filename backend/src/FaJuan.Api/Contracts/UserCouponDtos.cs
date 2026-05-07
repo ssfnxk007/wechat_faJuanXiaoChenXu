@@ -37,6 +37,11 @@ public class UserCouponDetailDto
     public DateTime ReceivedAt { get; init; }
 }
 
+public class UpdateUserCouponExpireAtRequest
+{
+    public DateTime ExpireDate { get; init; }
+}
+
 public class CouponWriteOffRequest
 {
     public string CouponCode { get; init; } = string.Empty;

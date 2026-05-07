@@ -47,8 +47,23 @@ public class WeChatPaySettingsProvider(AppDbContext dbContext)
         await Gate.WaitAsync(cancellationToken);
         try
         {
-            var row = await dbContext.WeChatPaySettings.SingleOrDefaultAsync(x => x.Id == 1, cancellationToken)
-                      ?? throw new InvalidOperationException("WeChatPaySetting seed row missing");
+            var row = await dbContext.WeChatPaySettings.SingleOrDefaultAsync(x => x.Id == 1, cancellationToken);
+            if (row is null)
+            {
+                row = new WeChatPaySetting
+                {
+                    Id = 1,
+                    AppId = string.Empty,
+                    MerchantId = string.Empty,
+                    MerchantSerialNo = string.Empty,
+                    PrivateKeyPem = string.Empty,
+                    ApiV3Key = string.Empty,
+                    NotifyUrl = string.Empty,
+                    EnableMockFallback = true,
+                    UpdatedAt = DateTime.UtcNow,
+                };
+                dbContext.WeChatPaySettings.Add(row);
+            }
 
             if (update.AppId is not null) row.AppId = update.AppId.Trim();
             if (update.MerchantId is not null) row.MerchantId = update.MerchantId.Trim();

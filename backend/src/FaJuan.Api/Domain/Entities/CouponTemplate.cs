@@ -21,5 +21,6 @@ public class CouponTemplate
     public CouponDistributionMode DistributionMode { get; set; } = CouponDistributionMode.FreeClaim;
     public decimal? SalePrice { get; set; }
     public string? Remark { get; set; }
+    public bool IsSystemProductVoucher { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 }

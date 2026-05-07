@@ -1,4 +1,4 @@
-﻿using FaJuan.Api.Application.Common;
+using FaJuan.Api.Application.Common;
 using FaJuan.Api.Domain.Entities;
 using FaJuan.Api.Domain.Enums;
 using FaJuan.Api.Infrastructure.Persistence;
@@ -81,20 +81,25 @@ public class OrderPaymentService(AppDbContext dbContext)
     private void AddGrantedCoupon(CouponOrder order, CouponTemplate template, int index, CouponFulfillmentStatus fulfillmentStatus)
     {
         var now = DateTime.Now;
-        var expireAt = template.ValidPeriodType == CouponValidPeriodType.FixedDateRange
-            ? (template.ValidTo ?? now)
-            : now.AddDays(template.ValidDays ?? 0);
+        var (effectiveAt, expireAt) = CouponPeriodCalculator.BuildCouponPeriod(template, now);
+        var sourceType = order.SourceType == CouponSourceType.ProductDirectPurchase
+            ? CouponSourceType.ProductDirectPurchase
+            : order.SourceType;
 
         dbContext.UserCoupons.Add(new UserCoupon
         {
             AppUserId = order.AppUserId,
             CouponTemplateId = template.Id,
             CouponOrderId = order.Id,
+            SourceType = sourceType,
+            BoundProductId = order.ProductId,
+            BoundProductName = order.ProductNameSnapshot,
+            BoundErpProductCode = order.ProductErpProductCodeSnapshot,
             CouponCode = $"{OrderNoGenerator.Create("CPN")}{index:D2}",
             Status = UserCouponStatus.Unused,
             FulfillmentStatus = fulfillmentStatus,
             ReceivedAt = now,
-            EffectiveAt = template.ValidPeriodType == CouponValidPeriodType.FixedDateRange ? (template.ValidFrom ?? now) : now,
+            EffectiveAt = effectiveAt,
             ExpireAt = expireAt,
         });
     }

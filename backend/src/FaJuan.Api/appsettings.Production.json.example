@@ -1,0 +1,42 @@
+{
+  "ConnectionStrings": {
+    "Default": "Server=YOUR_DB_HOST,1433;Database=FaJuanDb;User Id=YOUR_DB_USER;Password=YOUR_DB_PASSWORD;TrustServerCertificate=True;"
+  },
+  "Database": {
+    "AutoMigrate": false
+  },
+  "WeChatMiniProgram": {
+    "AppId": "wx92e01ecc74c0772e",
+    "AppSecret": "YOUR_MINIAPP_APPSECRET"
+  },
+  "MiniAppTheme": {
+    "ThemeCode": "candy"
+  },
+  "Uploads": {
+    "MaxFileSizeBytes": 10485760,
+    "DefaultLongSide": 1080,
+    "BannerLongSide": 1200,
+    "WebpQuality": 82
+  },
+  "Jwt": {
+    "Issuer": "FaJuan.Api",
+    "Audience": "FaJuan.Admin",
+    "SecurityKey": "REPLACE_WITH_RANDOM_PRODUCTION_SECRET",
+    "ExpireMinutes": 720
+  },
+  "AdminAuth": {
+    "Username": "REPLACE_ADMIN_USERNAME",
+    "Password": "REPLACE_ADMIN_PASSWORD"
+  },
+  "ErpApi": {
+    "ApiKey": "REPLACE_ERP_API_KEY",
+    "ApiKeyHeaderName": "X-Api-Key"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}

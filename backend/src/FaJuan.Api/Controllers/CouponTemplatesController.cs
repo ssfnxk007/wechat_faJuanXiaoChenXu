@@ -16,9 +16,17 @@ namespace FaJuan.Api.Controllers;
 public class CouponTemplatesController(AppDbContext dbContext) : ApiControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<ApiResponse<PagedResult<CouponTemplateListItemDto>>>> GetList([FromQuery] string? keyword, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20)
+    public async Task<ActionResult<ApiResponse<PagedResult<CouponTemplateListItemDto>>>> GetList(
+        [FromQuery] string? keyword,
+        [FromQuery] bool includeSystemProductVoucher = false,
+        [FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 20)
     {
         var query = dbContext.CouponTemplates.AsNoTracking();
+        if (!includeSystemProductVoucher)
+        {
+            query = query.Where(x => !x.IsSystemProductVoucher);
+        }
 
         if (!string.IsNullOrWhiteSpace(keyword))
         {
@@ -43,6 +51,7 @@ public class CouponTemplatesController(AppDbContext dbContext) : ApiControllerBa
                 IsAllStores = x.IsAllStores,
                 PerUserLimit = x.PerUserLimit,
                 IsEnabled = x.IsEnabled,
+                IsSystemProductVoucher = x.IsSystemProductVoucher,
                 DistributionMode = x.DistributionMode,
                 SalePrice = x.SalePrice,
                 Remark = x.Remark,
@@ -93,6 +102,7 @@ public class CouponTemplatesController(AppDbContext dbContext) : ApiControllerBa
             IsAllStores = x.IsAllStores,
             PerUserLimit = x.PerUserLimit,
             IsEnabled = x.IsEnabled,
+            IsSystemProductVoucher = x.IsSystemProductVoucher,
             DistributionMode = x.DistributionMode,
             SalePrice = x.SalePrice,
             Remark = x.Remark,

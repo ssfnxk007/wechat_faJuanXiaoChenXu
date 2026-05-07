@@ -1,12 +1,13 @@
 import {
   clearSession,
+  hasUsableToken,
   hydrateOnboardingState,
   markPhoneOnboardingSkipped,
   patchSessionStatus,
   updateSession,
   useSessionStore
 } from '@/store/session'
-import { requestWithFallback, request } from '@/utils/request'
+import { request } from '@/utils/request'
 
 function loginByWeChat() {
   return new Promise((resolve, reject) => {
@@ -19,19 +20,15 @@ function loginByWeChat() {
 }
 
 export async function fetchWeChatStatus() {
-  const result = await requestWithFallback(
-    { url: '/api/auth/wechat-status', skipAuthIntercept: true },
-    () => ({ isConfigured: false, message: '后端微信配置状态暂不可用' })
-  )
-
-  const payload = result.data || {}
+  const response = await request({ url: '/api/auth/wechat-status', skipAuthIntercept: true })
+  const payload = response.data || {}
   patchSessionStatus({
     wechatConfigured: Boolean(payload.isConfigured),
     loginStatus: payload.isConfigured ? 'checking' : 'offline',
     loginMessage: payload.message || ''
   })
 
-  return result
+  return response
 }
 
 export async function ensureMiniProgramLogin(options = {}) {
@@ -41,14 +38,14 @@ export async function ensureMiniProgramLogin(options = {}) {
 
   if (force) {
     clearSession()
-  } else if (session.userId && session.token) {
+  } else if (hasUsableToken()) {
     return session
   }
 
   const weChatStatus = await fetchWeChatStatus()
   if (!weChatStatus.data?.isConfigured) {
     patchSessionStatus({
-      loginStatus: weChatStatus.source === 'fallback' ? 'fallback' : 'offline',
+      loginStatus: 'offline',
       loginMessage: weChatStatus.data?.message || '微信登录暂未配置'
     })
     return session

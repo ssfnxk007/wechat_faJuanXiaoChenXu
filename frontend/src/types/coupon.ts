@@ -14,6 +14,7 @@ export interface CouponTemplateListItemDto {
   isAllStores: boolean
   perUserLimit: number
   isEnabled: boolean
+  isSystemProductVoucher: boolean
   distributionMode: number
   salePrice?: number
   remark?: string

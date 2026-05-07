@@ -166,6 +166,7 @@ public class CouponOrdersController(AppDbContext dbContext) : ApiControllerBase
         {
             OrderNo = OrderNoGenerator.Create("CP"),
             AppUserId = request.UserId,
+            SourceType = CouponSourceType.CouponPack,
             CouponPackId = request.CouponPackId,
             CouponTemplateId = null,
             OrderAmount = pack.SalePrice,

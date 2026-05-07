@@ -42,6 +42,9 @@ public class ErpCouponProductOptionDto
     public long ProductId { get; init; }
     public string ProductName { get; init; } = string.Empty;
     public string ErpProductCode { get; init; } = string.Empty;
+    public decimal? ErpPrice { get; init; }
+    public decimal? CouponPrice { get; init; }
+    public decimal? SettlementPrice { get; init; }
 }
 
 public class ErpCouponWriteOffResultDto
@@ -55,6 +58,7 @@ public class ErpCouponWriteOffResultDto
     public long StoreId { get; init; }
     public string StoreName { get; init; } = string.Empty;
     public string SettlementType { get; init; } = string.Empty;
+    public long? ProductId { get; init; }
     public string? SelectedProductCode { get; init; }
     public string? SelectedProductName { get; init; }
     public string Message { get; init; } = string.Empty;

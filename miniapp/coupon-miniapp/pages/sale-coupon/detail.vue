@@ -202,7 +202,26 @@ async function handleBuy() {
   try {
     await ensureMiniProgramLogin()
     if (!session.userId) {
-      throw new Error('请先完成微信授权后再购买')
+      await ensureMiniProgramLogin({ force: true })
+    }
+
+    if (!session.userId) {
+      await new Promise((resolve) => {
+        uni.showModal({
+          title: '登录失败',
+          content: session.loginMessage || '微信登录失败，请先完成登录后再购买。',
+          confirmText: '去我的页',
+          cancelText: '取消',
+          success: (result) => {
+            if (result.confirm) {
+              uni.switchTab({ url: '/pages/profile/index' })
+            }
+            resolve()
+          },
+          fail: () => resolve()
+        })
+      })
+      return
     }
 
     const ready = await ensurePhoneReady({
@@ -322,7 +341,6 @@ onLoad(async (options = {}) => {
 }
 
 .sale-topbar,
-.price-row,
 .step-card,
 .buy-bar,
 .buy-right {
@@ -330,6 +348,13 @@ onLoad(async (options = {}) => {
   align-items: center;
   justify-content: space-between;
   gap: 16rpx;
+}
+
+.price-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 6rpx;
 }
 
 .sale-topbar {
@@ -393,7 +418,7 @@ onLoad(async (options = {}) => {
 
 .price-card {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 18rpx;
   padding: 28rpx;
@@ -402,6 +427,8 @@ onLoad(async (options = {}) => {
 .price-main {
   display: grid;
   gap: 14rpx;
+  flex: 1;
+  min-width: 0;
 }
 
 .price-label,
@@ -428,6 +455,14 @@ onLoad(async (options = {}) => {
 
 .price-value {
   font-size: 56rpx;
+  line-height: 1;
+}
+
+.price-badge {
+  flex-shrink: 0;
+  min-width: 116rpx;
+  padding: 0 18rpx;
+  text-align: center;
 }
 
 .overview-grid {
@@ -500,6 +535,7 @@ onLoad(async (options = {}) => {
 .buy-right {
   min-width: 220rpx;
   justify-content: flex-end;
+  align-items: center;
 }
 
 .buy-button {

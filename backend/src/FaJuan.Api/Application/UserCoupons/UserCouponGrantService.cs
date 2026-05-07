@@ -1,4 +1,5 @@
 using FaJuan.Api.Contracts;
+using FaJuan.Api.Application.Common;
 using FaJuan.Api.Domain.Entities;
 using FaJuan.Api.Domain.Enums;
 using FaJuan.Api.Infrastructure.Persistence;
@@ -70,7 +71,7 @@ public class UserCouponGrantService(AppDbContext dbContext)
             .ToDictionary(x => x.AppUserId, x => x.Count);
 
         var now = DateTime.Now;
-        var (effectiveAt, expireAt) = BuildCouponPeriod(template, now);
+        var (effectiveAt, expireAt) = CouponPeriodCalculator.BuildCouponPeriod(template, now);
 
         var resultItems = new List<ManualGrantUserCouponItemDto>();
 
@@ -137,19 +138,6 @@ public class UserCouponGrantService(AppDbContext dbContext)
             Items = resultItems,
         };
     }
-
-    private static (DateTime EffectiveAt, DateTime ExpireAt) BuildCouponPeriod(CouponTemplate template, DateTime now)
-    {
-        var effectiveAt = template.ValidPeriodType == CouponValidPeriodType.FixedDateRange
-            ? (template.ValidFrom ?? now)
-            : now;
-        var expireAt = template.ValidPeriodType == CouponValidPeriodType.FixedDateRange
-            ? (template.ValidTo ?? now)
-            : now.AddDays(template.ValidDays ?? 0);
-
-        return (effectiveAt, expireAt);
-    }
-
     private static string GenerateCouponCode()
     {
         return $"CPN{DateTime.Now:yyyyMMddHHmmssfff}{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}";

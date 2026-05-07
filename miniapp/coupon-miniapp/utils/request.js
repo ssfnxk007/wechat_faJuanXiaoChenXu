@@ -1,7 +1,10 @@
 import { useSessionStore } from '@/store/session'
 
-const DEFAULT_TIMEOUT = 12000
+const DEFAULT_TIMEOUT = 30000
 let pendingLoginPromise = null
+let lastAuthToastAt = 0
+let authModalVisible = false
+const AUTH_RECOVERY_PAGE = '/pages/profile/index'
 
 function joinUrl(baseUrl, path) {
   if (/^https?:\/\//i.test(path)) {
@@ -33,6 +36,56 @@ function createRequestError(message, extra = {}) {
   const error = new Error(message || '请求失败')
   Object.assign(error, extra)
   return error
+}
+
+function notifyAuthIssue(message) {
+  const now = Date.now()
+  if (now - lastAuthToastAt < 2500) {
+    return
+  }
+
+  lastAuthToastAt = now
+  uni.showToast({
+    title: message || '请重新登录',
+    icon: 'none'
+  })
+}
+
+function navigateToAuthRecoveryPage() {
+  const pages = typeof getCurrentPages === 'function' ? getCurrentPages() : []
+  const currentRoute = pages.length ? `/${pages[pages.length - 1].route}` : ''
+  if (currentRoute === AUTH_RECOVERY_PAGE) {
+    return
+  }
+
+  uni.switchTab({
+    url: AUTH_RECOVERY_PAGE,
+    fail: () => {
+      uni.reLaunch({ url: AUTH_RECOVERY_PAGE })
+    }
+  })
+}
+
+function showAuthFailureModal(message) {
+  if (authModalVisible) {
+    return
+  }
+
+  authModalVisible = true
+  uni.showModal({
+    title: '请重新登录',
+    content: message || '登录已过期，请重新登录。',
+    showCancel: false,
+    confirmText: '我知道了',
+    success: (result) => {
+      if (result.confirm) {
+        navigateToAuthRecoveryPage()
+      }
+    },
+    complete: () => {
+      authModalVisible = false
+    }
+  })
 }
 
 function unwrapApiEnvelope(payload) {
@@ -75,10 +128,16 @@ async function triggerAuthRefresh() {
       try {
         const mod = await import('@/api/auth')
         if (mod && typeof mod.ensureMiniProgramLogin === 'function') {
-          await mod.ensureMiniProgramLogin({ force: true })
+          const session = await mod.ensureMiniProgramLogin({ force: true })
+          if (!session?.token) {
+            throw createRequestError('请重新登录', { code: 401 })
+          }
         }
       } catch (error) {
         console.warn('[coupon-miniapp][auth-refresh]', error)
+        notifyAuthIssue(error?.message || '请重新登录')
+        showAuthFailureModal(error?.message || '登录已过期，请重新登录。')
+        throw error
       } finally {
         pendingLoginPromise = null
       }
@@ -98,6 +157,7 @@ function performRequest(options, finalUrl, headers) {
       responseType: options.responseType || 'text',
       success: (response) => resolve(response),
       fail: (error) => {
+        console.warn('[coupon-miniapp][request fail]', finalUrl, error)
         reject(createRequestError(error.errMsg || '网络请求失败', {
           cause: error,
           url: finalUrl
@@ -125,8 +185,14 @@ export async function request(options = {}) {
   const response = await performRequest(options, finalUrl, buildHeaders())
 
   if (isUnauthorizedResponse(response) && !options.skipAuthIntercept && !options._retriedAuth) {
+    notifyAuthIssue('登录已过期，正在重登')
     await triggerAuthRefresh()
     return request({ ...options, _retriedAuth: true })
+  }
+
+  if (isUnauthorizedResponse(response) && !options.skipAuthIntercept && options._retriedAuth) {
+    notifyAuthIssue(response.data?.message || '请重新登录')
+    showAuthFailureModal(response.data?.message || '登录已过期，请重新登录。')
   }
 
   if (response.statusCode >= 400) {

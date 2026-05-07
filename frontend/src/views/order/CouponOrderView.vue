@@ -119,7 +119,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import RemoteSelectField from '@/components/RemoteSelectField.vue'
 import { createCouponOrder, getCouponOrderDetail, getCouponOrderList } from '@/api/coupon-pack'
 import { getCouponPackList } from '@/api/coupon-pack'
-import { createPayment, paymentCallback, refundOrder } from '@/api/payment'
+import { refundOrder, syncPaidOrder } from '@/api/payment'
 import type { CouponOrderDetailDto, CouponOrderListItemDto } from '@/types/coupon-pack'
 import type { CouponPackListItemDto } from '@/types/coupon-pack'
 import { getUserList } from '@/api/user'
@@ -225,8 +225,7 @@ const payOrder = async (orderId: number) => {
   if (payingOrderId.value) return
   payingOrderId.value = orderId
   try {
-    const payment = await createPayment({ orderId })
-    await paymentCallback({ paymentNo: payment.data.paymentNo, success: true, channelTradeNo: `PAY-${payment.data.paymentNo}`, rawCallback: 'payment success' })
+    await syncPaidOrder(orderId)
     await loadData()
     if (detail.value?.id === orderId) await openDetailDialog(orderId)
     notify.success('支付处理成功，已刷新订单状态')

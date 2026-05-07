@@ -12,6 +12,7 @@ using FaJuan.Api.Infrastructure.WeChat;
 using FaJuan.Api.Infrastructure.WeChatPay;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -36,7 +37,8 @@ builder.Services.AddCors(options =>
                 "http://localhost:5180",
                 "https://localhost:5180",
                 "http://127.0.0.1:5180",
-                "https://127.0.0.1:5180")
+                "https://127.0.0.1:5180",
+                "https://xcx.bookso.cn")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -112,8 +114,10 @@ var app = builder.Build();
 
 TimeZoneAssertion.Assert();
 
-using (var scope = app.Services.CreateScope())
+var autoMigrate = app.Configuration.GetValue("Database:AutoMigrate", app.Environment.IsDevelopment());
+if (autoMigrate)
 {
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 }
@@ -127,6 +131,11 @@ if (app.Environment.IsDevelopment())
 var webRootPath = app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot");
 Directory.CreateDirectory(webRootPath);
 Directory.CreateDirectory(Path.Combine(webRootPath, "uploads"));
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedHost | ForwardedHeaders.XForwardedProto
+});
 
 app.UseStaticFiles(new StaticFileOptions
 {

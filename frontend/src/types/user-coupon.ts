@@ -33,6 +33,10 @@ export interface UserCouponDetailDto {
   receivedAt: string
 }
 
+export interface UpdateUserCouponExpireAtRequest {
+  expireDate: string
+}
+
 export interface CouponWriteOffRequest {
   couponCode: string
   storeId: number

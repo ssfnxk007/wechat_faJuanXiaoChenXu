@@ -15,11 +15,7 @@
     @scroll="handleScroll"
   >
     <view slot="refresher" class="cm-pull-refresher">
-      <image
-        src="/static/logo.png"
-        :class="['cm-pull-logo', refreshing ? 'is-spinning' : '']"
-        mode="aspectFit"
-      />
+      <view :class="['cm-pull-wordmark', refreshing ? 'is-spinning' : '']">文一海图书</view>
       <text class="cm-pull-text">{{ pullText }}</text>
     </view>
 
@@ -97,21 +93,36 @@ function handleScroll(e) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  width: 100%;
   height: 120rpx;
   gap: 8rpx;
+  text-align: center;
 }
 
-.cm-pull-logo {
-  width: 48rpx;
-  height: 48rpx;
+.cm-pull-wordmark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48rpx;
+  padding: 0 20rpx;
+  margin: 0 auto;
+  border-radius: 999rpx;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1rpx solid rgba(45, 91, 72, 0.12);
+  color: var(--cm-theme-primary-strong, #23493b);
+  font-size: 24rpx;
+  font-weight: 700;
+  letter-spacing: 2rpx;
   transition: transform 0.2s;
 }
 
-.cm-pull-logo.is-spinning {
+.cm-pull-wordmark.is-spinning {
   animation: cm-pull-spin 1s linear infinite;
 }
 
 .cm-pull-text {
+  width: 100%;
+  text-align: center;
   font-size: 22rpx;
   color: var(--cm-theme-primary-strong, #23493b);
 }

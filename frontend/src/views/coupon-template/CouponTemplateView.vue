@@ -104,7 +104,7 @@
               <td class="cell-strong">{{ item.id }}</td>
               <td>
                 <div class="cover-thumb-cell">
-                  <img v-if="item.imageUrl" :src="item.imageUrl" :alt="item.name" class="cover-thumb" />
+                  <img v-if="item.imageUrl" :src="normalizeAssetUrl(item.imageUrl)" :alt="item.name" class="cover-thumb" />
                   <div v-else class="cover-thumb cover-thumb-empty">无图</div>
                 </div>
               </td>
@@ -178,7 +178,7 @@
               </div>
             </div>
             <div v-if="selectedImageAsset" class="selected-media-card">
-              <img :src="selectedImageAsset.fileUrl" :alt="selectedImageAsset.name" class="selected-media-image" />
+              <img :src="normalizeAssetUrl(selectedImageAsset.fileUrl)" :alt="selectedImageAsset.name" class="selected-media-image" />
               <div class="table-primary-cell"><strong>{{ selectedImageAsset.name }}</strong><span>素材ID {{ selectedImageAsset.id }}</span></div>
             </div>
             <p v-else class="helper-text">未设置封面素材，可从素材库选择或直接上传图片。</p>
@@ -258,7 +258,7 @@
           <div class="toolbar-actions selector-actions"><button type="button" class="ghost-button" @click="loadMediaOptions">搜索</button><button type="button" class="ghost-button" @click="resetMediaQuery">重置</button></div>
         </div>
         <div class="media-grid">
-          <button v-for="asset in mediaOptions" :key="asset.id" type="button" class="media-card" @click="selectMediaAsset(asset)"><img :src="asset.fileUrl" :alt="asset.name" class="media-card-image" /><strong>{{ asset.name }}</strong><span>{{ asset.bucketType }}</span></button>
+          <button v-for="asset in mediaOptions" :key="asset.id" type="button" class="media-card" @click="selectMediaAsset(asset)"><img :src="normalizeAssetUrl(asset.fileUrl)" :alt="asset.name" class="media-card-image" /><strong>{{ asset.name }}</strong><span>{{ asset.bucketType }}</span></button>
           <div v-if="mediaOptions.length === 0" class="empty-text media-empty">当前没有可选素材</div>
         </div>
         <div class="dialog-actions"><button type="button" class="primary-button" @click="closeMediaDialog">关闭</button></div>
@@ -307,6 +307,7 @@ import type { StoreListItemDto } from '@/types/store'
 import { getErrorMessage } from '@/utils/http-error'
 import { authStorage } from '@/utils/auth'
 import { notify } from '@/utils/notify'
+import { normalizeAssetUrl } from '@/utils/asset-url'
 
 type CouponTemplateForm = SaveCouponTemplateRequest & { imageUrl?: string }
 

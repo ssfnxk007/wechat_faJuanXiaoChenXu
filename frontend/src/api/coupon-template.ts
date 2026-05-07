@@ -5,6 +5,7 @@ import type { CouponTemplateListItemDto, SaveCouponTemplateRequest } from '@/typ
 
 export interface CouponTemplateListQuery {
   keyword?: string
+  includeSystemProductVoucher?: boolean
   pageIndex?: number
   pageSize?: number
 }

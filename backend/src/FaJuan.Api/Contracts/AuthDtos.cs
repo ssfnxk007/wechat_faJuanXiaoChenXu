@@ -25,4 +25,5 @@ public class AuthLoginResultDto
     public string? Nickname { get; init; }
     public bool IsNewUser { get; init; }
     public string? Token { get; init; }
+    public DateTimeOffset? ExpiresAt { get; init; }
 }

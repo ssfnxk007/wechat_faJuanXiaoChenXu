@@ -1,4 +1,4 @@
-﻿using FaJuan.Api.Domain.Entities;
+using FaJuan.Api.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace FaJuan.Api.Infrastructure.Persistence;
@@ -67,9 +67,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Name).HasMaxLength(100).IsRequired();
             entity.Property(x => x.ErpProductCode).HasMaxLength(64).IsRequired();
+            entity.Property(x => x.ErpIsbnCode).HasMaxLength(64);
             entity.Property(x => x.DetailImageAssetIds).HasColumnType("nvarchar(max)");
             entity.Property(x => x.ErpOriginalPrice).HasColumnType("decimal(18,2)");
             entity.Property(x => x.SalePrice).HasColumnType("decimal(18,2)");
+            entity.Property(x => x.DirectPurchaseValidFrom).HasColumnType("datetime");
+            entity.Property(x => x.DirectPurchaseValidTo).HasColumnType("datetime");
             entity.Property(x => x.CreatedAt).HasColumnType("datetime");
             entity.HasIndex(x => x.ErpProductCode).IsUnique();
         });

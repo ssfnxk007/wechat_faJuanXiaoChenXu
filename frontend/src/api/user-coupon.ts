@@ -1,7 +1,7 @@
 import http from './http'
 import type { ApiResponse } from '@/types/api'
 import type { PagedResult } from '@/types/paged'
-import type { CouponWriteOffRecordDto, CouponWriteOffRequest, CouponWriteOffResultDto, ImportGrantUserCouponsResultDto, ManualGrantUserCouponsRequest, ManualGrantUserCouponsResultDto, UserCouponDetailDto, UserCouponListItemDto } from '@/types/user-coupon'
+import type { CouponWriteOffRecordDto, CouponWriteOffRequest, CouponWriteOffResultDto, ImportGrantUserCouponsResultDto, ManualGrantUserCouponsRequest, ManualGrantUserCouponsResultDto, UpdateUserCouponExpireAtRequest, UserCouponDetailDto, UserCouponListItemDto } from '@/types/user-coupon'
 
 export interface UserCouponListQuery {
   userId?: number
@@ -18,6 +18,9 @@ export const getUserCouponDetail = (id: number) =>
 
 export const getUserCouponWriteOffRecords = (id: number) =>
   http.get<never, ApiResponse<CouponWriteOffRecordDto[]>>(`/usercoupons/${id}/writeoff-records`)
+
+export const updateUserCouponExpireAt = (id: number, payload: UpdateUserCouponExpireAtRequest) =>
+  http.put<UpdateUserCouponExpireAtRequest, ApiResponse<boolean>>(`/usercoupons/${id}/expire-at`, payload)
 
 export const writeOffCoupon = (payload: CouponWriteOffRequest) =>
   http.post<CouponWriteOffRequest, ApiResponse<CouponWriteOffResultDto>>('/writeoff', payload)

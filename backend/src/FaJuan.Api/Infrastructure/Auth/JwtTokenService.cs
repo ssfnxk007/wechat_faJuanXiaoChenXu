@@ -13,7 +13,7 @@ public class JwtTokenService(IConfiguration configuration)
         var audience = configuration["Jwt:Audience"] ?? "FaJuan.Admin";
         var securityKey = configuration["Jwt:SecurityKey"] ?? throw new InvalidOperationException("Jwt:SecurityKey 未配置");
         var expireMinutes = int.TryParse(configuration["Jwt:ExpireMinutes"], out var minutes) ? minutes : 720;
-        var expiresAt = DateTimeOffset.Now.AddMinutes(expireMinutes);
+        var expiresAt = DateTimeOffset.UtcNow.AddMinutes(expireMinutes);
 
         var claims = new List<Claim>
         {
@@ -31,7 +31,7 @@ public class JwtTokenService(IConfiguration configuration)
             issuer: issuer,
             audience: audience,
             claims: claims,
-            expires: expiresAt.LocalDateTime,
+            expires: expiresAt.UtcDateTime,
             signingCredentials: credentials);
 
         return (new JwtSecurityTokenHandler().WriteToken(token), expiresAt);
@@ -41,7 +41,7 @@ public class JwtTokenService(IConfiguration configuration)
     {
         var issuer = configuration["Jwt:Issuer"] ?? "FaJuan.Api";
         var securityKey = configuration["Jwt:SecurityKey"] ?? throw new InvalidOperationException("Jwt:SecurityKey 未配置");
-        var expiresAt = DateTimeOffset.Now.AddDays(7);
+        var expiresAt = DateTimeOffset.UtcNow.AddDays(7);
 
         var claims = new List<Claim>
         {
@@ -57,7 +57,7 @@ public class JwtTokenService(IConfiguration configuration)
             issuer: issuer,
             audience: "FaJuan.MiniApp",
             claims: claims,
-            expires: expiresAt.LocalDateTime,
+            expires: expiresAt.UtcDateTime,
             signingCredentials: credentials);
 
         return (new JwtSecurityTokenHandler().WriteToken(token), expiresAt);

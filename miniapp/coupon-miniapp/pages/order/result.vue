@@ -32,12 +32,12 @@
         </view>
         <view class="summary-row">
           <text class="summary-label">权益去向</text>
-          <text class="summary-value success">{{ entitlementText }}</text>
+          <text :class="['summary-value', isPaid ? 'success' : 'warning']">{{ entitlementText }}</text>
         </view>
       </view>
 
       <view class="cm-section">
-        <SectionHeader eyebrow="到账权益" title="本次发放结果" subtitle="本次到账卡券" />
+        <SectionHeader eyebrow="到账权益" title="本次发放结果" :subtitle="grantSectionSubtitle" />
         <view class="granted-stack">
           <view class="granted-card cm-card" v-for="item in grantedCoupons" :key="item.id">
             <view class="granted-top">
@@ -52,7 +52,7 @@
 
       <view class="bottom-actions">
         <view class="ghost-action" @click="goMall">继续逛商城</view>
-        <view class="primary-action" @click="goCouponList">前往券包</view>
+        <view class="primary-action" @click="goCouponList">{{ isPaid ? '前往券包' : '返回订单' }}</view>
       </view>
     </view>
   </view>
@@ -69,23 +69,21 @@ import { useSessionStore } from '@/store/session'
 const session = useSessionStore()
 const { themeClass } = useTheme()
 const orderDetail = ref({
-  orderNo: 'YJ20260411000128',
-  orderAmount: 29.9,
+  orderNo: '',
+  orderAmount: 0,
+  status: 1,
   paidAt: '',
   grantedCoupons: []
 })
-const grantedCoupons = ref([
-  {
-    id: 1,
-    type: '无门槛券',
-    title: '门店通用券',
-    desc: '消费时出示二维码即可。',
-    meta: '已到账'
-  }
-])
+const grantedCoupons = ref([])
 
-const resultTitle = computed(() => '支付成功')
+const isPaid = computed(() => Number(orderDetail.value.status) === 2)
+const hasGrantedCoupons = computed(() => grantedCoupons.value.length > 0)
+const resultTitle = computed(() => isPaid.value ? '支付成功' : '订单未确认支付')
 const resultSubtitle = computed(() => {
+  if (!isPaid.value) {
+    return '订单尚未收到服务端支付确认，系统暂未发放卡券。'
+  }
   if (orderDetail.value.isProductCoupon) {
     return '商品券已完成支付，系统已发券并标记为待履约 / 待 ERP 处理。'
   }
@@ -95,8 +93,22 @@ const resultSubtitle = computed(() => {
   return '券包已完成支付，系统已将本单卡券权益发放到你的券包。'
 })
 const displayAmount = computed(() => formatAmount(orderDetail.value.orderAmount))
-const paidAtText = computed(() => formatDate(orderDetail.value.paidAt) || '已完成支付')
-const entitlementText = computed(() => orderDetail.value.isProductCoupon ? '已发放商品券，待后续履约' : '已发放至我的券包')
+const paidAtText = computed(() => formatDate(orderDetail.value.paidAt) || (isPaid.value ? '已完成支付' : '未确认支付'))
+const entitlementText = computed(() => {
+  if (!isPaid.value) {
+    return '暂未发券'
+  }
+  if (!hasGrantedCoupons.value) {
+    return '已支付但未查询到发券记录'
+  }
+  return orderDetail.value.isProductCoupon ? '已发放商品券，待后续履约' : '已发放至我的券包'
+})
+const grantSectionSubtitle = computed(() => {
+  if (!isPaid.value) {
+    return '未支付确认，暂无到账卡券'
+  }
+  return hasGrantedCoupons.value ? '本次到账卡券' : '未查询到发券记录'
+})
 
 function formatAmount(value) {
   const amount = Number(value || 0)
@@ -140,6 +152,10 @@ function goMall() {
 }
 
 function goCouponList() {
+  if (!isPaid.value) {
+    uni.navigateBack()
+    return
+  }
   uni.switchTab({ url: '/pages/coupon/index' })
 }
 
@@ -163,7 +179,7 @@ async function loadOrderDetail(id) {
         desc: buildCouponDesc(item),
         meta: buildCouponMeta(item)
       }))
-    } else if (result.couponTemplateName) {
+    } else if (Number(result.status) === 2 && result.couponTemplateName) {
       grantedCoupons.value = [{
         id: result.id,
         type: result.isProductCoupon ? '商品券' : '售卖券',
@@ -171,6 +187,8 @@ async function loadOrderDetail(id) {
         desc: result.isProductCoupon ? '商品券已到账，当前阶段待履约 / 待 ERP 处理。' : '单张售卖券已到账，可前往卡包查看。',
         meta: result.fulfillmentStatusText || '已到账'
       }]
+    } else {
+      grantedCoupons.value = []
     }
   } catch (error) {
     console.warn('[order-result] loadOrderDetail failed', error)
@@ -287,6 +305,9 @@ onLoad((options) => {
 }
 .summary-value.success {
   color: $cm-success;
+}
+.summary-value.warning {
+  color: $cm-primary-strong;
 }
 .granted-stack {
   display: grid;

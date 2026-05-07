@@ -34,7 +34,13 @@ public class UserCouponGrantServiceTests
         Assert.Single(result.Items);
         Assert.True(result.Items.First().Success);
         Assert.Equal(2, result.Items.First().GrantedCount);
-        Assert.Equal(2, await dbContext.UserCoupons.CountAsync(x => x.AppUserId == 1 && x.CouponTemplateId == 10));
+        var coupons = await dbContext.UserCoupons.Where(x => x.AppUserId == 1 && x.CouponTemplateId == 10).ToListAsync();
+        Assert.Equal(2, coupons.Count);
+        Assert.All(coupons, coupon =>
+        {
+            Assert.Equal(coupon.ExpireAt.Date, coupon.ReceivedAt.Date.AddDays(7));
+            Assert.Equal(new DateTime(coupon.ExpireAt.Year, coupon.ExpireAt.Month, coupon.ExpireAt.Day, 23, 59, 59).TimeOfDay, TruncateToSecond(coupon.ExpireAt.TimeOfDay));
+        });
     }
 
     [Fact]
@@ -103,6 +109,40 @@ public class UserCouponGrantServiceTests
         Assert.Single(result.Items);
         Assert.False(result.Items.First().Success);
         Assert.Contains("已停用", result.Items.First().Message);
+    }
+
+    [Fact]
+    public async Task GrantAsync_Should_Use_End_Of_Day_For_Fixed_Date_Range_Expiry()
+    {
+        await using var dbContext = CreateDbContext();
+        dbContext.AppUsers.Add(new AppUser { Id = 4, MiniOpenId = "mini-4", OfficialOpenId = "gh-4" });
+        dbContext.CouponTemplates.Add(new CouponTemplate
+        {
+            Id = 40,
+            Name = "固定时间券",
+            TemplateType = CouponTemplateType.FullReduction,
+            ValidPeriodType = CouponValidPeriodType.FixedDateRange,
+            ValidFrom = new DateTime(2026, 4, 22, 15, 0, 0),
+            ValidTo = new DateTime(2026, 4, 29, 8, 30, 0),
+            PerUserLimit = 2,
+            IsEnabled = true,
+        });
+        await dbContext.SaveChangesAsync();
+
+        var service = new UserCouponGrantService(dbContext);
+
+        var result = await service.GrantAsync(40, [new() { AppUserId = 4, QuantityPerUser = 1 }]);
+
+        Assert.Equal(1, result.SuccessCount);
+        var coupon = await dbContext.UserCoupons.SingleAsync(x => x.AppUserId == 4 && x.CouponTemplateId == 40);
+        Assert.Equal(new DateTime(2026, 4, 22), coupon.EffectiveAt);
+        Assert.Equal(new DateTime(2026, 4, 29), coupon.ExpireAt.Date);
+        Assert.Equal(new TimeSpan(23, 59, 59), TruncateToSecond(coupon.ExpireAt.TimeOfDay));
+    }
+
+    private static TimeSpan TruncateToSecond(TimeSpan value)
+    {
+        return TimeSpan.FromSeconds(Math.Floor(value.TotalSeconds));
     }
 
     private static AppDbContext CreateDbContext()

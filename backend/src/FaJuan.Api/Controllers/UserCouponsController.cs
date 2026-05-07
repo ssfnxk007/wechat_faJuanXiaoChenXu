@@ -326,6 +326,48 @@ public class UserCouponsController(AppDbContext dbContext, UserCouponGrantServic
         return Ok(Success(detail));
     }
 
+    [AdminPermissionAuthorize("user-coupon.grant")]
+    [HttpPut("{id:long}/expire-at")]
+    public async Task<ActionResult<ApiResponse<bool>>> UpdateExpireAt(long id, [FromBody] UpdateUserCouponExpireAtRequest request)
+    {
+        var coupon = await dbContext.UserCoupons.FirstOrDefaultAsync(x => x.Id == id);
+        if (coupon is null)
+        {
+            return NotFound(Failure<bool>("用户券不存在", 404));
+        }
+
+        if (coupon.Status == UserCouponStatus.Used)
+        {
+            return BadRequest(Failure<bool>("已核销的用户券不允许修改到期日期"));
+        }
+
+        if (coupon.Status == UserCouponStatus.Voided)
+        {
+            return BadRequest(Failure<bool>("已作废的用户券不允许修改到期日期"));
+        }
+
+        if (coupon.Status == UserCouponStatus.Recycled)
+        {
+            return BadRequest(Failure<bool>("已回收的用户券不允许修改到期日期"));
+        }
+
+        var expireAt = request.ExpireDate.Date.AddDays(1).AddSeconds(-1);
+        if (expireAt < coupon.EffectiveAt)
+        {
+            return BadRequest(Failure<bool>("到期日期不能早于生效时间"));
+        }
+
+        coupon.ExpireAt = expireAt;
+
+        var todayStart = DateTime.Now.Date;
+        coupon.Status = expireAt < todayStart
+            ? UserCouponStatus.Expired
+            : UserCouponStatus.Unused;
+
+        await dbContext.SaveChangesAsync();
+        return Ok(Success(true, "到期日期已更新"));
+    }
+
     [HttpGet("{id:long}/writeoff-records")]
     public async Task<ActionResult<ApiResponse<IReadOnlyCollection<CouponWriteOffRecordDto>>>> GetWriteOffRecords(long id)
     {

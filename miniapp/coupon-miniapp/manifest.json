@@ -1,6 +1,6 @@
 {
     "name" : "coupon-miniapp",
-    "appid" : "wx4a1bbaf246820712",
+    "appid" : "wx92e01ecc74c0772e",
     "description" : "",
     "versionName" : "1.0.0",
     "versionCode" : "100",
@@ -50,7 +50,7 @@
     "quickapp" : {},
     /* 小程序特有相关 */
     "mp-weixin" : {
-        "appid" : "wx4a1bbaf246820712",
+        "appid" : "wx92e01ecc74c0772e",
         "setting" : {
             "urlCheck" : false
         },

@@ -1,4 +1,4 @@
-using FaJuan.Api.Contracts;
+﻿using FaJuan.Api.Contracts;
 using FaJuan.Api.Domain.Entities;
 using FaJuan.Api.Domain.Enums;
 using FaJuan.Api.Infrastructure.Persistence;
@@ -50,9 +50,16 @@ public class ErpCouponService(AppDbContext dbContext)
             return BuildPreview(store, coupon, null, [], false, "券模板不存在或已删除");
         }
 
-        var productScope = await LoadProductScopeAsync(template.Id, cancellationToken);
+        var productScope = coupon.SourceType == CouponSourceType.ProductDirectPurchase
+            ? await BuildBoundProductScopeAsync(coupon, cancellationToken)
+            : await LoadProductScopeAsync(template.Id, cancellationToken);
+
         var validationMessage = await ValidateCouponAsync(coupon, template, store.Id, persistExpiredStatus: false, cancellationToken);
-        if (template.TemplateType == CouponTemplateType.Product && productScope.Count == 0)
+        if (coupon.SourceType == CouponSourceType.ProductDirectPurchase && productScope.Count == 0)
+        {
+            validationMessage ??= "商品提货券缺少绑定商品";
+        }
+        else if (template.TemplateType == CouponTemplateType.Product && productScope.Count == 0)
         {
             validationMessage ??= "商品券未配置可兑换商品";
         }
@@ -98,7 +105,25 @@ public class ErpCouponService(AppDbContext dbContext)
         }
 
         ErpCouponProductOptionDto? selectedProduct = null;
-        if (template.TemplateType == CouponTemplateType.Product)
+        if (coupon.SourceType == CouponSourceType.ProductDirectPurchase)
+        {
+            if (string.IsNullOrWhiteSpace(request.SelectedProductCode))
+            {
+                return ErpCouponWriteOffServiceResult.Fail("商品提货券核销时必须提供商品编码");
+            }
+
+            if (!string.Equals(coupon.BoundErpProductCode, request.SelectedProductCode.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                return ErpCouponWriteOffServiceResult.Fail("该券只能核销指定商品");
+            }
+
+            selectedProduct = (await BuildBoundProductScopeAsync(coupon, cancellationToken)).FirstOrDefault();
+            if (selectedProduct is null)
+            {
+                return ErpCouponWriteOffServiceResult.Fail("商品提货券缺少绑定商品");
+            }
+        }
+        else if (template.TemplateType == CouponTemplateType.Product)
         {
             var productScope = await LoadProductScopeAsync(template.Id, cancellationToken);
             if (productScope.Count == 0)
@@ -120,10 +145,10 @@ public class ErpCouponService(AppDbContext dbContext)
             }
             else
             {
-                selectedProduct = productScope.FirstOrDefault(x => x.ErpProductCode == normalizedProductCode);
+                selectedProduct = productScope.FirstOrDefault(x => string.Equals(x.ErpProductCode, normalizedProductCode, StringComparison.OrdinalIgnoreCase));
                 if (selectedProduct is null)
                 {
-                    return ErpCouponWriteOffServiceResult.Fail("所选商品不在券适用范围内");
+                    return ErpCouponWriteOffServiceResult.Fail("该商品不在券适用范围内");
                 }
             }
         }
@@ -134,7 +159,6 @@ public class ErpCouponService(AppDbContext dbContext)
             coupon.FulfillmentStatus = CouponFulfillmentStatus.Fulfilled;
         }
 
-        var now = DateTime.Now;
         dbContext.CouponWriteOffRecords.Add(new CouponWriteOffRecord
         {
             UserCouponId = coupon.Id,
@@ -143,7 +167,7 @@ public class ErpCouponService(AppDbContext dbContext)
             ProductId = selectedProduct?.ProductId,
             OperatorName = request.OperatorName?.Trim(),
             DeviceCode = request.DeviceCode?.Trim(),
-            WriteOffAt = now,
+            WriteOffAt = DateTime.Now,
         });
 
         try
@@ -190,12 +214,13 @@ public class ErpCouponService(AppDbContext dbContext)
         }
 
         var now = DateTime.Now;
+        var todayStart = now.Date;
         if (coupon.EffectiveAt > now)
         {
             return "券未到生效时间";
         }
 
-        if (coupon.ExpireAt < now)
+        if (coupon.ExpireAt < todayStart)
         {
             if (persistExpiredStatus)
             {
@@ -232,9 +257,51 @@ public class ErpCouponService(AppDbContext dbContext)
                     ProductId = product.Id,
                     ProductName = product.Name,
                     ErpProductCode = product.ErpProductCode,
+                    ErpPrice = product.ErpOriginalPrice,
+                    CouponPrice = product.SalePrice,
+                    SettlementPrice = product.SalePrice,
                 })
             .OrderBy(x => x.ProductId)
             .ToListAsync(cancellationToken);
+    }
+
+    private async Task<IReadOnlyList<ErpCouponProductOptionDto>> BuildBoundProductScopeAsync(UserCoupon coupon, CancellationToken cancellationToken)
+    {
+        if (!coupon.BoundProductId.HasValue || string.IsNullOrWhiteSpace(coupon.BoundErpProductCode))
+        {
+            return [];
+        }
+
+        var product = await dbContext.Products.AsNoTracking()
+            .Where(x => x.Id == coupon.BoundProductId.Value)
+            .Select(product => new ErpCouponProductOptionDto
+            {
+                ProductId = product.Id,
+                ProductName = product.Name,
+                ErpProductCode = product.ErpProductCode,
+                ErpPrice = product.ErpOriginalPrice,
+                CouponPrice = product.SalePrice,
+                SettlementPrice = product.SalePrice,
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (product is not null)
+        {
+            return [product];
+        }
+
+        return
+        [
+            new ErpCouponProductOptionDto
+            {
+                ProductId = coupon.BoundProductId.Value,
+                ProductName = coupon.BoundProductName ?? string.Empty,
+                ErpProductCode = coupon.BoundErpProductCode,
+                ErpPrice = null,
+                CouponPrice = null,
+                SettlementPrice = null,
+            }
+        ];
     }
 
     private static ErpCouponPreviewDto BuildPreview(
@@ -254,7 +321,7 @@ public class ErpCouponService(AppDbContext dbContext)
             UserCouponId = coupon.Id,
             AppUserId = coupon.AppUserId,
             CouponTemplateId = template?.Id,
-            CouponTemplateName = template?.Name ?? string.Empty,
+            CouponTemplateName = template?.Name ?? coupon.BoundProductName ?? string.Empty,
             TemplateType = template is null ? null : (int)template.TemplateType,
             Status = (int)coupon.Status,
             SettlementType = template is null ? string.Empty : GetSettlementType(template.TemplateType),

@@ -4,6 +4,10 @@
     <view class="cm-container">
     <view class="cm-nav-spacer"></view>
 
+    <view class="page-topbar">
+      <view class="page-back" @click="goBack">‹ 返回</view>
+    </view>
+
     <view class="summary-card cm-card">
       <view>
         <text class="summary-title">我的卡券</text>
@@ -120,6 +124,25 @@ function mapCoupon(item) {
   }
 }
 
+function isExpiredCoupon(item) {
+  if (Number(item?.status) === 3) {
+    return true
+  }
+
+  if (!item?.expireAt) {
+    return false
+  }
+
+  const expireDate = new Date(item.expireAt)
+  if (Number.isNaN(expireDate.getTime())) {
+    return false
+  }
+
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+  return expireDate.getTime() < todayStart.getTime()
+}
+
 async function loadCoupons() {
   try {
     await ensureMiniProgramLogin()
@@ -142,7 +165,15 @@ async function loadCoupons() {
       pageSize: 20
     })
 
-    const items = Array.isArray(result?.items) ? result.items.map(mapCoupon) : []
+    const sourceItems = Array.isArray(result?.items) ? result.items : []
+    const filteredItems = sourceItems.filter((item) => {
+      const expired = isExpiredCoupon(item)
+      if (currentStatus.value === 1) return !expired
+      if (currentStatus.value === 3) return expired
+      return true
+    })
+
+    const items = filteredItems.map(mapCoupon)
     coupons.value = items
   } catch (error) {
     coupons.value = []
@@ -161,6 +192,10 @@ function changeStatus(status) {
 
 function goDetail(id) {
   uni.navigateTo({ url: id ? `/pages/coupon/detail?id=${id}` : '/pages/coupon/detail' })
+}
+
+function goBack() {
+  uni.switchTab({ url: '/pages/profile/index' })
 }
 
 function goHome() {
@@ -192,6 +227,23 @@ async function handleRefresh() {
 <style lang="scss" scoped>
 .coupon-page {
   padding-bottom: 36rpx;
+}
+.page-topbar {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 18rpx;
+}
+.page-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56rpx;
+  padding: 0 22rpx;
+  border-radius: 999rpx;
+  background: rgba(255, 252, 246, 0.86);
+  border: 1rpx solid $cm-border-soft;
+  color: $cm-text-primary;
+  font-size: 24rpx;
 }
 .summary-card {
   display: flex;
@@ -294,6 +346,12 @@ async function handleRefresh() {
   color: #475569;
 }
 
+.theme-light .page-back {
+  background: #ffffff;
+  border: 1rpx solid rgba(226, 232, 240, 0.9);
+  color: #475569;
+}
+
 .theme-light .segment-item {
   background: #ffffff;
   border: 1rpx solid rgba(226, 232, 240, 0.9);
@@ -323,6 +381,12 @@ async function handleRefresh() {
 /* ========== Candy Theme ========== */
 .theme-candy .summary-badge {
   background: rgba(59, 130, 246, 0.1);
+  color: #2563EB;
+}
+
+.theme-candy .page-back {
+  background: #ffffff;
+  border: 1rpx solid rgba(191, 219, 254, 0.6);
   color: #2563EB;
 }
 
@@ -360,6 +424,12 @@ async function handleRefresh() {
   color: #EA580C;
 }
 
+.theme-orange .page-back {
+  background: #ffffff;
+  border: 1rpx solid rgba(254, 215, 170, 0.6);
+  color: #EA580C;
+}
+
 .theme-orange .segment-item {
   background: #ffffff;
   border: 1rpx solid rgba(254, 215, 170, 0.6);
@@ -390,6 +460,12 @@ async function handleRefresh() {
 /* ========== Red Theme ========== */
 .theme-red .summary-badge {
   background: rgba(239, 83, 80, 0.1);
+  color: #E53935;
+}
+
+.theme-red .page-back {
+  background: #ffffff;
+  border: 1rpx solid rgba(255, 205, 210, 0.6);
   color: #E53935;
 }
 
