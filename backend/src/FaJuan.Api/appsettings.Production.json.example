@@ -5,6 +5,11 @@
   "Database": {
     "AutoMigrate": false
   },
+  "Cors": {
+    "AdminOrigins": [
+      "https://fajuan-admin.wenyihai.cn"
+    ]
+  },
   "WeChatMiniProgram": {
     "AppId": "wx92e01ecc74c0772e",
     "AppSecret": "YOUR_MINIAPP_APPSECRET"

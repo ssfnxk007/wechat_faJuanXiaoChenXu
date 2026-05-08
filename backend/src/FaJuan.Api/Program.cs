@@ -18,6 +18,28 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
+var configuredAdminOrigins = builder.Configuration
+    .GetSection("Cors:AdminOrigins")
+    .Get<string[]>() ?? [];
+var adminOrigins = new[]
+{
+    "http://localhost:5173",
+    "https://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://127.0.0.1:5173",
+    "http://10.168.1.106:5173",
+    "https://10.168.1.106:5173",
+    "http://localhost:5180",
+    "https://localhost:5180",
+    "http://127.0.0.1:5180",
+    "https://127.0.0.1:5180",
+    "https://xcx.bookso.cn",
+}
+    .Concat(configuredAdminOrigins)
+    .Where(origin => !string.IsNullOrWhiteSpace(origin))
+    .Select(origin => origin.Trim().TrimEnd('/'))
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .ToArray();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -27,18 +49,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AdminWeb", policy =>
     {
-        policy.WithOrigins(
-                "http://localhost:5173",
-                "https://localhost:5173",
-                "http://127.0.0.1:5173",
-                "https://127.0.0.1:5173",
-                "http://10.168.1.106:5173",
-                "https://10.168.1.106:5173",
-                "http://localhost:5180",
-                "https://localhost:5180",
-                "http://127.0.0.1:5180",
-                "https://127.0.0.1:5180",
-                "https://xcx.bookso.cn")
+        policy.WithOrigins(adminOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
