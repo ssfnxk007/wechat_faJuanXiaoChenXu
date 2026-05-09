@@ -15,14 +15,11 @@ namespace FaJuan.Api.Controllers;
 [Authorize]
 [AdminMenuAuthorize("/coupon-orders")]
 public class CouponOrdersController(
-    AppDbContext dbContext,
-    OrderExpirationService orderExpirationService) : ApiControllerBase
+    AppDbContext dbContext) : ApiControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<ApiResponse<PagedResult<CouponOrderListItemDto>>>> GetList([FromQuery] string? keyword, [FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 20, CancellationToken cancellationToken = default)
     {
-        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
-
         var query = dbContext.CouponOrders.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(keyword))
@@ -59,8 +56,6 @@ public class CouponOrdersController(
     [HttpGet("{id:long}")]
     public async Task<ActionResult<ApiResponse<CouponOrderDetailDto>>> GetDetail(long id, CancellationToken cancellationToken)
     {
-        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
-
         var order = await dbContext.CouponOrders.AsNoTracking()
             .Where(x => x.Id == id)
             .Select(couponOrder => new
@@ -157,8 +152,6 @@ public class CouponOrdersController(
     [HttpPost]
     public async Task<ActionResult<ApiResponse<long>>> Create([FromBody] CreateCouponOrderRequest request, CancellationToken cancellationToken)
     {
-        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
-
         var user = await dbContext.AppUsers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.UserId, cancellationToken);
         if (user is null)
         {

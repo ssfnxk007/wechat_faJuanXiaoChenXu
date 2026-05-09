@@ -1,11 +1,29 @@
 <script>
 import { getMiniAppSettings } from '@/api/miniapp'
-import { hydrateSessionStore } from '@/store/session'
+import { verifyMiniProgramSession } from '@/api/auth'
+import { clearSession, hydrateSessionStore, patchSessionStatus } from '@/store/session'
 import { setThemeCode } from '@/store/session'
 
 export default {
   async onLaunch() {
-    hydrateSessionStore()
+    const session = hydrateSessionStore()
+    if (session.userId && session.token) {
+      try {
+        await verifyMiniProgramSession()
+        patchSessionStatus({
+          loginStatus: 'ready',
+          loginMessage: ''
+        })
+      } catch (error) {
+        console.warn('[coupon-miniapp] session verify failed', error)
+        clearSession()
+        patchSessionStatus({
+          loginStatus: 'error',
+          loginMessage: error?.message || '请重新登录'
+        })
+      }
+    }
+
     getMiniAppSettings()
       .then((settings) => {
         setThemeCode(settings?.themeCode)

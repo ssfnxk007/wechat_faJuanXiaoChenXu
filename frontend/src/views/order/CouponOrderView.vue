@@ -1,122 +1,273 @@
 <template>
-  <div class="business-page page-v2 coupon-order-page">
-    <section class="hero-panel order-hero">
-      <div class="hero-copy">
-        <span class="page-kicker">交易中心</span>
-        <h2>订单管理</h2>
-        <p>集中查看券包订单、支付状态与发券结果，支持创建订单、处理支付并回看订单下发放的全部用户券。</p>
-        <div class="hero-tags">
-          <span class="badge info">订单与支付统一归档</span>
-          <span class="badge success">支持发券结果回看</span>
-          <span class="badge warning">适合运营核对订单闭环</span>
+  <div class="admin-page coupon-order-page">
+    <section class="search-card">
+      <div class="search-grid">
+        <div class="field">
+          <label for="order-keyword">订单号</label>
+          <input
+            id="order-keyword"
+            v-model.trim="query.keyword"
+            type="text"
+            placeholder="输入订单号回车检索"
+            @keyup.enter="handleSearch"
+          />
+        </div>
+        <div class="field">
+          <label for="order-status">状态</label>
+          <select id="order-status" v-model="filters.status" @change="handleSearch">
+            <option value="all">全部</option>
+            <option value="1">待支付</option>
+            <option value="2">已支付</option>
+            <option value="3">已退款</option>
+            <option value="4">已关闭</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="order-user">用户</label>
+          <select id="order-user" v-model.number="filters.userId" @change="handleSearch">
+            <option :value="0">全部用户</option>
+            <option v-for="user in userOptions" :key="user.id" :value="user.id">
+              {{ formatUserLabel(user) }}
+            </option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="order-page-size">每页条数</label>
+          <select id="order-page-size" v-model.number="pageSize" @change="handlePageSizeChange">
+            <option :value="10">10 条</option>
+            <option :value="20">20 条</option>
+            <option :value="50">50 条</option>
+          </select>
         </div>
       </div>
-      <div class="hero-side hero-side-stack">
-        <article class="quick-card quick-card-spotlight"><span class="quick-card-label">订单总数</span><strong>{{ totalCount }}</strong><p>当前查询范围内的券包订单记录。</p></article>
-        <div class="hero-side-grid">
-          <article class="quick-card compact"><span class="quick-card-label">待支付</span><strong>{{ pendingCount }}</strong><p>当前页待处理订单</p></article>
-          <article class="quick-card compact"><span class="quick-card-label">已支付</span><strong>{{ paidCount }}</strong><p>当前页已完成支付</p></article>
-        </div>
-      </div>
-    </section>
-
-    <div class="stats-grid stats-grid-v2">
-      <article class="stat-card accent-blue"><span class="label">订单总数</span><strong class="stat-value">{{ totalCount }}</strong><span class="stat-footnote">当前查询范围内订单数</span></article>
-      <article class="stat-card accent-indigo"><span class="label">当前页码</span><strong class="stat-value">{{ pageIndex }}</strong><span class="stat-footnote">共 {{ totalPages }} 页</span></article>
-      <article class="stat-card accent-amber"><span class="label">待支付</span><strong class="stat-value">{{ pendingCount }}</strong><span class="stat-footnote">当前页待支付订单</span></article>
-      <article class="stat-card accent-green"><span class="label">已支付</span><strong class="stat-value">{{ paidCount }}</strong><span class="stat-footnote">当前页已支付订单</span></article>
-    </div>
-
-    <section class="card toolbar-card card-v2 operations-card">
-      <div class="toolbar-row">
-        <div class="toolbar-title">
-          <span class="section-kicker">检索与动作</span>
-          <h3>订单筛选与处理入口</h3>
-          <p class="section-tip">按订单号、状态与用户筛选订单，并在统一入口完成新建订单和支付处理。</p>
-        </div>
-        <div class="toolbar-actions">
-          <button type="button" class="ghost-button" @click="resetQuery">重置筛选</button>
-          <button type="button" class="ghost-button" @click="loadData">刷新列表</button>
-          <button v-if="canCreate" type="button" class="primary-button" @click="openCreateDialog">新建订单</button>
-        </div>
-      </div>
-
-      <div class="filter-panel-grid order-filter-grid">
-        <label class="field-card filter-field"><span class="field-label">订单号</span><input v-model.trim="query.keyword" type="text" placeholder="输入订单号后回车检索" @keyup.enter="handleSearch" /></label>
-        <label class="field-card filter-field compact-field"><span class="field-label">状态</span><select v-model="filters.status" @change="handleSearch"><option value="all">全部</option><option value="1">待支付</option><option value="2">已支付</option><option value="3">已退款</option><option value="4">已关闭</option></select></label>
-        <label class="field-card filter-field compact-field"><span class="field-label">用户</span><select v-model.number="filters.userId" @change="handleSearch"><option :value="0">全部用户</option><option v-for="user in userOptions" :key="user.id" :value="user.id">{{ formatUserLabel(user) }}</option></select></label>
-        <label class="field-card filter-field compact-field"><span class="field-label">分页条数</span><select v-model.number="pageSize" @change="handlePageSizeChange"><option :value="10">每页 10 条</option><option :value="20">每页 20 条</option><option :value="50">每页 50 条</option></select></label>
-        <div class="field-card summary-field order-summary-card"><span class="field-label">当前筛选</span><strong>{{ querySummary }}</strong><p>当前列表基于服务端分页加载，并叠加前端状态 / 用户过滤。</p></div>
+      <div class="search-actions">
+        <button type="button" class="primary-button compact" @click="handleSearch">查询</button>
+        <button type="button" class="ghost-button compact" @click="resetQuery">重置</button>
+        <button v-if="canCreate" type="button" class="primary-button compact" @click="openCreateDialog">+ 新建订单</button>
+        <button type="button" class="ghost-button compact" @click="notifyColumnSettingsPlaceholder">列设置</button>
       </div>
     </section>
 
-    <section class="card card-v2 data-card archive-card">
-      <div class="section-head"><div class="section-head-main"><span class="section-kicker">订单档案</span><h3>订单列表</h3><p class="section-tip">展示订单号、用户、券包、金额、支付状态与创建时间，可直接查看详情或处理支付。</p></div><div class="inline-metrics"><span class="badge info">当前页 {{ filteredItems.length }} 条</span><span class="badge warning">每页 {{ pageSize }} 条</span></div></div>
-      <div class="table-wrap table-wrap-v2">
-        <table class="table">
-          <thead><tr><th>ID</th><th>订单信息</th><th>用户与券包</th><th>金额</th><th>状态</th><th>支付时间</th><th>创建时间</th><th>操作</th></tr></thead>
+    <section class="data-card">
+      <header class="data-card-head">
+        <div class="data-card-title">
+          <h3>订单查询</h3>
+          <span class="count-pill">共 {{ totalCount }} 条</span>
+        </div>
+        <div class="data-card-meta">{{ querySummary }}</div>
+      </header>
+
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="min-width: 56px;">ID</th>
+              <th style="min-width: 200px;">订单号</th>
+              <th style="min-width: 120px;">用户</th>
+              <th style="min-width: 200px;">券包</th>
+              <th class="num-cell" style="min-width: 96px;">金额</th>
+              <th style="min-width: 84px;">状态</th>
+              <th style="min-width: 156px;">支付时间</th>
+              <th style="min-width: 156px;">创建时间</th>
+              <th style="min-width: 64px;">操作</th>
+            </tr>
+          </thead>
           <tbody>
             <tr v-for="item in filteredItems" :key="item.id">
-              <td class="cell-strong">{{ item.id }}</td>
-              <td><div class="table-primary-cell"><strong>{{ item.orderNo }}</strong><span>订单编号</span></div></td>
-              <td><div class="table-primary-cell"><strong>用户 #{{ item.appUserId }}</strong><span>券包 #{{ item.couponPackId }}</span></div></td>
-              <td class="cell-strong">{{ formatAmount(item.orderAmount) }}</td>
-              <td><span :class="['status-badge', statusClassMap[item.status] ?? 'warning']">{{ statusMap[item.status] || '未知状态' }}</span></td>
+              <td>{{ item.id }}</td>
+              <td class="cell-mono">{{ item.orderNo }}</td>
+              <td>用户 #{{ item.appUserId }}</td>
+              <td>券包 #{{ item.couponPackId }}</td>
+              <td class="num-cell">{{ formatAmount(item.orderAmount) }}</td>
+              <td>
+                <span :class="['status-badge', statusClassMap[item.status] ?? 'warning']">
+                  {{ statusMap[item.status] || '未知' }}
+                </span>
+              </td>
               <td>{{ formatDate(item.paidAt) }}</td>
               <td>{{ formatDate(item.createdAt) }}</td>
-              <td><div class="table-actions"><button type="button" class="action-button" @click="openDetailDialog(item.id)">详情</button><button v-if="canPay && item.status === 1" type="button" class="action-button" :disabled="payingOrderId === item.id || refundingOrderId === item.id" @click="payOrder(item.id)">{{ payingOrderId === item.id ? '处理中...' : '处理支付' }}</button><button v-if="canRefund && item.status === 2" type="button" class="action-button danger" :disabled="refundingOrderId === item.id || payingOrderId === item.id" @click="refundOrderAction(item.id)">{{ refundingOrderId === item.id ? '退款中...' : '退款' }}</button></div></td>
+              <td>
+                <button type="button" class="cell-link" @click="openDetailDialog(item.id)">编辑</button>
+              </td>
             </tr>
-            <tr v-if="filteredItems.length === 0"><td colspan="8" class="empty-text">当前没有符合条件的订单记录</td></tr>
+            <tr v-if="filteredItems.length === 0" class="empty-row">
+              <td colspan="9">当前没有符合条件的订单记录</td>
+            </tr>
           </tbody>
         </table>
       </div>
-      <div class="pager pager-v2"><div class="pager-info">第 {{ pageIndex }} 页 / 共 {{ totalPages }} 页，共 {{ totalCount }} 条记录</div><div class="pager-actions"><button type="button" class="ghost-button" :disabled="pageIndex <= 1" @click="goPrevPage">上一页</button><button type="button" :disabled="pageIndex >= totalPages" @click="goNextPage">下一页</button></div></div>
+
+      <footer class="pager-compact">
+        <div class="pager-info">第 {{ pageIndex }} / {{ totalPages }} 页 · 共 {{ totalCount }} 条</div>
+        <div class="pager-actions">
+          <button type="button" :disabled="pageIndex <= 1" @click="goPrevPage">上一页</button>
+          <button type="button" :disabled="pageIndex >= totalPages" @click="goNextPage">下一页</button>
+        </div>
+      </footer>
     </section>
 
-    <div v-if="dialogVisible" class="dialog-mask" @click.self="closeDialog">
-      <div class="dialog-card dialog-card-v2 order-dialog">
-        <div class="dialog-head"><div class="dialog-head-main"><span class="section-kicker">订单表单</span><h3>新建订单</h3><p>从现有用户与券包档案中选择，生成待支付订单。</p></div></div>
-        <div class="grid-form dialog-form order-form-grid">
-          <label>
-            <span>搜索用户</span>
-            <RemoteSelectField v-model="form.userId" v-model:keyword="selectorQuery.userKeyword" placeholder="手机号 / 昵称 / OpenId" empty-label="请选择用户" :options="userSelectOptions" @search="searchUsers" />
-          </label>
-          <label>
-            <span>搜索券包</span>
-            <RemoteSelectField v-model="form.couponPackId" v-model:keyword="selectorQuery.couponPackKeyword" placeholder="券包名称" empty-label="请选择券包" :options="couponPackSelectOptions" @search="searchCouponPacks" />
-          </label>
-        </div>
-        <div class="dialog-actions"><button type="button" class="ghost-button" :disabled="submitting" @click="closeDialog">取消</button><button type="button" class="primary-button" :disabled="submitting" @click="submit">{{ submitting ? '提交中...' : '创建订单' }}</button></div>
+    <MainDetailDialog
+      v-if="dialogVisible"
+      title="新建订单"
+      sub="从现有用户与券包档案中选择，生成待支付订单。"
+      size="md"
+      @close="closeDialog"
+    >
+      <div class="dialog-form-grid">
+        <label class="dialog-field">
+          <span>搜索用户</span>
+          <RemoteSelectField
+            v-model="form.userId"
+            v-model:keyword="selectorQuery.userKeyword"
+            placeholder="手机号 / 昵称 / OpenId"
+            empty-label="请选择用户"
+            :options="userSelectOptions"
+            @search="searchUsers"
+          />
+        </label>
+        <label class="dialog-field">
+          <span>搜索券包</span>
+          <RemoteSelectField
+            v-model="form.couponPackId"
+            v-model:keyword="selectorQuery.couponPackKeyword"
+            placeholder="券包名称"
+            empty-label="请选择券包"
+            :options="couponPackSelectOptions"
+            @search="searchCouponPacks"
+          />
+        </label>
       </div>
-    </div>
+      <template #footer>
+        <button type="button" class="ghost-button compact" :disabled="submitting" @click="closeDialog">取消</button>
+        <button type="button" class="primary-button compact" :disabled="submitting" @click="submit">
+          {{ submitting ? '提交中...' : '创建订单' }}
+        </button>
+      </template>
+    </MainDetailDialog>
 
-    <div v-if="detailDialogVisible" class="dialog-mask" @click.self="closeDetailDialog">
-      <div class="dialog-card dialog-card-v2 order-detail-dialog">
-        <div class="dialog-head"><div class="dialog-head-main"><span class="section-kicker">订单详情</span><h3>订单明细</h3><p>查看支付流水与本订单发放的全部用户券。</p></div></div>
-        <div v-if="detail" class="detail-grid">
-          <div class="result-panel"><strong>订单号</strong><div class="cell-mono">{{ detail.orderNo }}</div></div>
-          <div class="result-panel"><strong>订单状态</strong><div><span :class="['status-badge', statusClassMap[detail.status] ?? 'warning']">{{ statusMap[detail.status] || '-' }}</span></div></div>
-          <div class="result-panel"><strong>订单金额</strong><div>{{ formatAmount(detail.orderAmount) }}</div></div>
-          <div class="result-panel"><strong>用户 ID</strong><div>{{ detail.appUserId }}</div></div>
-          <div class="result-panel"><strong>券包</strong><div>{{ detail.couponPackName }} (#{{ detail.couponPackId }})</div></div>
-          <div class="result-panel"><strong>支付单号</strong><div class="cell-mono">{{ detail.paymentNo || '-' }}</div></div>
-          <div class="result-panel"><strong>支付时间</strong><div>{{ formatDate(detail.paidAt) }}</div></div>
-          <div class="result-panel"><strong>创建时间</strong><div>{{ formatDate(detail.createdAt) }}</div></div>
+    <MainDetailDialog
+      v-if="detailDialogVisible"
+      title="订单明细"
+      sub="支付流水与发券结果"
+      size="xl"
+      @close="closeDetailDialog"
+    >
+      <div v-if="detail" class="detail-grid">
+        <div class="detail-cell"><span class="detail-label">订单号</span><div class="cell-mono">{{ detail.orderNo }}</div></div>
+        <div class="detail-cell"><span class="detail-label">订单状态</span>
+          <span :class="['status-badge', statusClassMap[detail.status] ?? 'warning']">{{ statusMap[detail.status] || '-' }}</span>
         </div>
-
-        <div class="card toolbar-card detail-history-card"><div class="toolbar-title"><span class="section-kicker">支付流水</span><h3>支付记录</h3><p class="section-tip">展示当前订单关联的支付记录与处理结果。</p></div><div v-if="!detail || detail.payments.length === 0" class="empty-text">暂无支付记录</div><div v-else class="table-wrap"><table class="table"><thead><tr><th>支付单号</th><th>金额</th><th>状态</th><th>渠道流水号</th><th>支付时间</th></tr></thead><tbody><tr v-for="payment in detail.payments" :key="payment.id"><td class="cell-mono">{{ payment.paymentNo }}</td><td>{{ formatAmount(payment.amount) }}</td><td><span :class="['status-badge', payment.status === 2 ? 'success' : 'warning']">{{ payment.status === 2 ? '成功' : '待处理' }}</span></td><td class="cell-mono">{{ payment.channelTradeNo || '-' }}</td><td>{{ formatDate(payment.paidAt) }}</td></tr></tbody></table></div></div>
-
-        <div class="card toolbar-card detail-history-card"><div class="toolbar-title"><span class="section-kicker">发券结果</span><h3>订单发放券</h3><p class="section-tip">查看本订单完成支付后实际发放到用户卡包的券。</p></div><div v-if="!detail || detail.grantedCoupons.length === 0" class="empty-text">当前订单暂无发券记录</div><div v-else class="table-wrap"><table class="table"><thead><tr><th>模板</th><th>优惠</th><th>券码</th><th>状态</th><th>有效期</th></tr></thead><tbody><tr v-for="coupon in detail.grantedCoupons" :key="coupon.id"><td><div class="table-primary-cell"><strong>{{ coupon.couponTemplateName }}</strong><span>{{ templateTypeMap[coupon.templateType] || '-' }}</span></div></td><td>{{ formatCouponBenefit(coupon) }}</td><td class="cell-mono">{{ coupon.couponCode }}</td><td><span :class="['status-badge', coupon.status === 1 ? 'success' : 'warning']">{{ couponStatusMap[coupon.status] || '未知' }}</span></td><td><div class="table-primary-cell"><strong>{{ formatDate(coupon.effectiveAt) }}</strong><span>至 {{ formatDate(coupon.expireAt) }}</span></div></td></tr></tbody></table></div></div>
-
-        <div class="dialog-actions"><button v-if="canPay && detail?.status === 1" type="button" class="ghost-button" :disabled="payingOrderId === detail.id || refundingOrderId === detail.id" @click="payOrder(detail.id)">{{ payingOrderId === detail.id ? '处理中...' : '处理支付' }}</button><button v-if="canRefund && detail?.status === 2" type="button" class="ghost-button danger" :disabled="refundingOrderId === detail.id || payingOrderId === detail.id" @click="refundOrderAction(detail.id)">{{ refundingOrderId === detail.id ? '退款中...' : '退款' }}</button><button type="button" class="primary-button" :disabled="submitting || payingOrderId === detail?.id || refundingOrderId === detail?.id" @click="closeDetailDialog">关闭</button></div>
+        <div class="detail-cell"><span class="detail-label">订单金额</span><div>{{ formatAmount(detail.orderAmount) }}</div></div>
+        <div class="detail-cell"><span class="detail-label">用户 ID</span><div>{{ detail.appUserId }}</div></div>
+        <div class="detail-cell"><span class="detail-label">券包</span><div>{{ detail.couponPackName }} (#{{ detail.couponPackId }})</div></div>
+        <div class="detail-cell"><span class="detail-label">支付单号</span><div class="cell-mono">{{ detail.paymentNo || '-' }}</div></div>
+        <div class="detail-cell"><span class="detail-label">支付时间</span><div>{{ formatDate(detail.paidAt) }}</div></div>
+        <div class="detail-cell"><span class="detail-label">创建时间</span><div>{{ formatDate(detail.createdAt) }}</div></div>
       </div>
-    </div>
+
+      <section class="detail-section">
+        <header class="detail-section-head">
+          <h4>支付流水</h4>
+          <span class="detail-section-tip">展示当前订单关联的支付记录与处理结果</span>
+        </header>
+        <div v-if="!detail || detail.payments.length === 0" class="detail-empty">暂无支付记录</div>
+        <div v-else class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>支付单号</th>
+                <th class="num-cell">金额</th>
+                <th>状态</th>
+                <th>渠道流水号</th>
+                <th>支付时间</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="payment in detail.payments" :key="payment.id">
+                <td class="cell-mono">{{ payment.paymentNo }}</td>
+                <td class="num-cell">{{ formatAmount(payment.amount) }}</td>
+                <td>
+                  <span :class="['status-badge', payment.status === 2 ? 'success' : 'warning']">
+                    {{ payment.status === 2 ? '成功' : '待处理' }}
+                  </span>
+                </td>
+                <td class="cell-mono">{{ payment.channelTradeNo || '-' }}</td>
+                <td>{{ formatDate(payment.paidAt) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="detail-section">
+        <header class="detail-section-head">
+          <h4>发券结果</h4>
+          <span class="detail-section-tip">查看本订单完成支付后实际发放到用户卡包的券</span>
+        </header>
+        <div v-if="!detail || detail.grantedCoupons.length === 0" class="detail-empty">当前订单暂无发券记录</div>
+        <div v-else class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>模板</th>
+                <th>优惠</th>
+                <th>券码</th>
+                <th>状态</th>
+                <th>有效期</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="coupon in detail.grantedCoupons" :key="coupon.id">
+                <td>
+                  <strong>{{ coupon.couponTemplateName }}</strong>
+                  <span class="detail-subtle"> · {{ templateTypeMap[coupon.templateType] || '-' }}</span>
+                </td>
+                <td>{{ formatCouponBenefit(coupon) }}</td>
+                <td class="cell-mono">{{ coupon.couponCode }}</td>
+                <td>
+                  <span :class="['status-badge', coupon.status === 1 ? 'success' : 'warning']">
+                    {{ couponStatusMap[coupon.status] || '未知' }}
+                  </span>
+                </td>
+                <td>
+                  <div>{{ formatDate(coupon.effectiveAt) }}</div>
+                  <div class="detail-subtle">至 {{ formatDate(coupon.expireAt) }}</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <template #footer>
+        <button
+          v-if="canPay && detail?.status === 1"
+          type="button"
+          class="primary-button compact"
+          :disabled="payingOrderId === detail?.id || refundingOrderId === detail?.id"
+          @click="payOrder(detail!.id)"
+        >
+          {{ payingOrderId === detail?.id ? '处理中...' : '处理支付' }}
+        </button>
+        <button
+          v-if="canRefund && detail?.status === 2"
+          type="button"
+          class="danger-button compact"
+          :disabled="refundingOrderId === detail?.id || payingOrderId === detail?.id"
+          @click="refundOrderAction(detail!.id)"
+        >
+          {{ refundingOrderId === detail?.id ? '退款中...' : '退款' }}
+        </button>
+        <button type="button" class="ghost-button compact" @click="closeDetailDialog">关闭</button>
+      </template>
+    </MainDetailDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import RemoteSelectField from '@/components/RemoteSelectField.vue'
+import MainDetailDialog from '@/components/MainDetailDialog.vue'
 import { createCouponOrder, getCouponOrderDetail, getCouponOrderList } from '@/api/coupon-pack'
 import { getCouponPackList } from '@/api/coupon-pack'
 import { refundOrder, syncPaidOrder } from '@/api/payment'
@@ -155,11 +306,9 @@ const query = reactive({ keyword: '' })
 const filters = reactive({ status: 'all', userId: 0 })
 const form = reactive({ userId: 0, couponPackId: 0 })
 
-const pendingCount = computed(() => items.value.filter((item) => item.status === 1).length)
-const paidCount = computed(() => items.value.filter((item) => item.status === 2).length)
 const userSelectOptions = computed(() => userOptions.value.map((user) => ({ value: user.id, label: formatUserLabel(user) })))
 const couponPackSelectOptions = computed(() => couponPackOptions.value.map((pack) => ({ value: pack.id, label: formatCouponPackLabel(pack) })))
-const querySummary = computed(() => `订单号：${query.keyword || '全部'} / 状态：${filters.status === 'all' ? '全部' : statusMap[Number(filters.status)]} / 用户：${filters.userId || '全部'} / 每页 ${pageSize.value} 条`)
+const querySummary = computed(() => `订单号：${query.keyword || '全部'} · 状态：${filters.status === 'all' ? '全部' : statusMap[Number(filters.status)]} · 用户：${filters.userId || '全部'} · 每页 ${pageSize.value} 条`)
 const filteredItems = computed(() => items.value.filter((item) => (filters.status === 'all' || item.status === Number(filters.status)) && (!filters.userId || item.appUserId === filters.userId)))
 
 const formatAmount = (value: number) => `¥${Number(value || 0).toFixed(2)}`
@@ -244,31 +393,108 @@ const refundOrderAction = async (orderId: number) => {
   } catch (error) { notify.error(getErrorMessage(error, '退款失败')) } finally { refundingOrderId.value = null }
 }
 
+const notifyColumnSettingsPlaceholder = () => {
+  notify.info('列设置功能将在下一版本提供')
+}
+
 onMounted(async () => {
   await Promise.all([loadData(), loadOptions()])
 })
 </script>
 
 <style scoped>
-.order-hero { background: radial-gradient(circle at top right, rgba(234,179,8,.12), transparent 28%), linear-gradient(135deg, #ffffff 0%, #fffdf7 52%, #f5f8fb 100%); }
-.hero-side-stack { align-content: stretch; }
-.hero-side-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
-.quick-card-spotlight { min-height: 148px; background: linear-gradient(135deg, rgba(234,179,8,.08), rgba(59,130,246,.03)); border: 1px solid rgba(234,179,8,.14); }
-.quick-card.compact { min-height: 112px; }
-.quick-card-label { display: inline-flex; width: fit-content; padding: 4px 10px; border-radius: 999px; background: rgba(37,99,235,.08); color: var(--primary); font-size: 12px; font-weight: 700; }
-.order-filter-grid { grid-template-columns: minmax(280px, 1.6fr) repeat(3, minmax(160px, .7fr)); align-items: end; }
-.order-filter-grid .field-card { padding: 12px 14px; }
-.order-filter-grid .filter-field input,
-.order-filter-grid .filter-field select { height: 42px; }
-.order-summary-card { grid-column: 1 / -1; }
-.order-dialog { width: min(720px, calc(100vw - 48px)); }
-.order-detail-dialog { width: min(1080px, calc(100vw - 48px)); }
-.order-form-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
-.dialog-form>label { display: grid; gap: 8px; }
-.dialog-form>label>span { font-size: 13px; font-weight: 700; color: #344054; }
-.dialog-form input,.dialog-form select,.filter-field select { width: 100%; height: 44px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 12px; background: #fff; }
-.detail-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
-.detail-history-card { margin-top: 4px; }
-@media (max-width:1100px){ .order-filter-grid,.order-form-grid,.detail-grid,.hero-side-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); } .order-summary-card { grid-column: 1 / -1; } }
-@media (max-width:820px){ .order-filter-grid,.order-form-grid,.detail-grid,.hero-side-grid{ grid-template-columns: 1fr; } }
+.coupon-order-page :deep(.dialog-body) {
+  gap: 16px;
+}
+
+.dialog-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.dialog-field {
+  display: grid;
+  gap: 6px;
+}
+
+.dialog-field > span {
+  font-size: 13px;
+  font-weight: 600;
+  color: #344054;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.detail-cell {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fcfdff;
+  font-size: 13px;
+}
+
+.detail-label {
+  font-size: 12px;
+  color: #475467;
+  font-weight: 600;
+}
+
+.detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.detail-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background: #fafbfc;
+}
+
+.detail-section-head h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.detail-section-tip {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.detail-empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.detail-subtle {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (max-width: 1100px) {
+  .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dialog-form-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 720px) {
+  .detail-grid { grid-template-columns: 1fr; }
+}
 </style>

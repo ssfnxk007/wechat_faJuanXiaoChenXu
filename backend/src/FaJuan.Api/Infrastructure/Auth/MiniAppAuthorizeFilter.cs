@@ -56,6 +56,11 @@ public class MiniAppAuthorizeFilter(ILogger<MiniAppAuthorizeFilter> logger, ICon
         catch (Exception ex)
         {
             logger.LogWarning(ex, "MiniApp token validation failed");
+            if (attribute.Optional)
+            {
+                return Task.CompletedTask;
+            }
+
             context.Result = new UnauthorizedObjectResult(ApiResponse<object>.Fail("请重新登录", 401));
         }
 

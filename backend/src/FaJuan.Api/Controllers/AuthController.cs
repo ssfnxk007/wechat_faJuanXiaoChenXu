@@ -102,6 +102,32 @@ public class AuthController(
         }));
     }
 
+    [HttpGet("mini-session")]
+    [MiniAppAuthorize]
+    public async Task<ActionResult<ApiResponse<MiniAppSessionDto>>> GetMiniSession(CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue || userId.Value <= 0)
+        {
+            return Unauthorized(Failure<MiniAppSessionDto>("请重新登录", 401));
+        }
+
+        var user = await dbContext.AppUsers.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == userId.Value, cancellationToken);
+        if (user is null)
+        {
+            return NotFound(Failure<MiniAppSessionDto>("用户不存在", 404));
+        }
+
+        return Ok(Success(new MiniAppSessionDto
+        {
+            UserId = user.Id,
+            MiniOpenId = user.MiniOpenId,
+            Mobile = user.Mobile,
+            Nickname = user.Nickname,
+        }));
+    }
+
     [HttpPost("exchange-phone-number")]
     [MiniAppAuthorize]
     public async Task<ActionResult<ApiResponse<AuthLoginResultDto>>> ExchangePhoneNumber([FromBody] ExchangePhoneNumberRequest request, CancellationToken cancellationToken)

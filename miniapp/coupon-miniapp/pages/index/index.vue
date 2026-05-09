@@ -261,7 +261,10 @@ function handleFreeCouponEntry() {
 }
 
 onShow(() => {
-  loadHomeData()
+  loadHomeData().catch((error) => {
+    console.warn('[home] onShow load failed', error)
+    uni.showToast({ title: error?.message || '加载失败', icon: 'none' })
+  })
 })
 </script>
 

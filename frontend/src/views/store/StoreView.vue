@@ -1,223 +1,142 @@
 <template>
-  <div class="business-page page-v2 store-page-v2">
-    <section class="hero-panel store-hero">
-      <div class="hero-copy">
-        <span class="page-kicker">基础资料</span>
-        <h2>门店管理</h2>
-        <p>围绕发券、适用范围和核销执行维护门店档案，页面结构优先服务查询、结果查看和基础维护，不做展示型铺陈。</p>
-        <div class="hero-tags">
-          <span class="badge info">服务端分页</span>
-          <span class="badge success">发券 / 核销共用</span>
-          <span class="badge warning">支持状态管理</span>
+  <div class="admin-page store-page">
+    <section class="search-card">
+      <div class="search-grid">
+        <div class="field">
+          <label for="store-keyword">搜索门店</label>
+          <input
+            id="store-keyword"
+            v-model.trim="query.keyword"
+            type="text"
+            placeholder="门店编码或门店名称"
+            @keyup.enter="handleSearch"
+          />
         </div>
-      </div>
-      <div class="hero-side hero-side-grid">
-        <article class="quick-card compact">
-          <span class="quick-card-label">门店总数</span>
-          <strong>{{ totalCount }}</strong>
-          <p>服务端分页返回的门店总记录数</p>
-        </article>
-        <article class="quick-card compact">
-          <span class="quick-card-label">启用门店</span>
-          <strong>{{ enabledCount }}</strong>
-          <p>当前页中处于启用状态的门店</p>
-        </article>
-        <article class="quick-card compact">
-          <span class="quick-card-label">当前页码</span>
-          <strong>{{ pageIndex }} / {{ totalPages }}</strong>
-          <p>支持关键词检索与翻页浏览</p>
-        </article>
-        <article class="quick-card compact">
-          <span class="quick-card-label">当前检索</span>
-          <strong>{{ query.keyword || '全部' }}</strong>
-          <p>按门店编码或门店名称搜索</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="stats-grid stats-grid-v2">
-      <article class="stat-card accent-blue">
-        <span class="label">门店总数</span>
-        <strong class="stat-value">{{ totalCount }}</strong>
-        <span class="stat-footnote">服务端分页返回的门店总记录数</span>
-      </article>
-      <article class="stat-card accent-indigo">
-        <span class="label">当前页码</span>
-        <strong class="stat-value">{{ pageIndex }}</strong>
-        <span class="stat-footnote">共 {{ totalPages }} 页</span>
-      </article>
-      <article class="stat-card accent-green">
-        <span class="label">启用门店</span>
-        <strong class="stat-value">{{ enabledCount }}</strong>
-        <span class="stat-footnote">当前页启用状态统计</span>
-      </article>
-      <article class="stat-card accent-amber">
-        <span class="label">当前筛选</span>
-        <strong class="stat-value stat-value-text">{{ query.keyword || '全部' }}</strong>
-        <span class="stat-footnote">按门店编码或名称搜索</span>
-      </article>
-    </section>
-
-    <section class="card toolbar-card card-v2 operations-card">
-      <div class="toolbar-row">
-        <div class="toolbar-title">
-          <span class="section-kicker">检索与动作</span>
-          <h3>门店档案工作台</h3>
-          <p class="section-tip">先筛选和翻页，再进入门店编辑；把门店作为发券、适用范围和核销执行的共用基础资料管理。</p>
-        </div>
-        <div class="toolbar-actions">
-          <button type="button" class="ghost-button" @click="resetQuery">重置筛选</button>
-          <button type="button" class="ghost-button" @click="loadData">刷新列表</button>
-          <button v-if="canCreate" type="button" class="primary-button" @click="openCreateDialog">新增门店</button>
-        </div>
-      </div>
-
-      <div class="filter-panel-grid store-filter-grid">
-        <label class="field-card filter-field">
-          <span class="field-label">搜索门店</span>
-          <input v-model.trim="query.keyword" type="text" placeholder="搜索门店编码或门店名称" @keyup.enter="handleSearch" />
-        </label>
-        <label class="field-card filter-field compact-field">
-          <span class="field-label">分页条数</span>
-          <select v-model.number="pageSize" @change="handlePageSizeChange">
-            <option :value="10">每页 10 条</option>
-            <option :value="20">每页 20 条</option>
-            <option :value="50">每页 50 条</option>
+        <div class="field">
+          <label for="store-page-size">每页条数</label>
+          <select id="store-page-size" v-model.number="pageSize" @change="handlePageSizeChange">
+            <option :value="10">10 条</option>
+            <option :value="20">20 条</option>
+            <option :value="50">50 条</option>
           </select>
+        </div>
+      </div>
+      <div class="search-actions">
+        <button type="button" class="primary-button compact" @click="handleSearch">查询</button>
+        <button type="button" class="ghost-button compact" @click="resetQuery">重置</button>
+        <button v-if="canCreate" type="button" class="primary-button compact" @click="openCreateDialog">+ 新增门店</button>
+        <button type="button" class="ghost-button compact" @click="loadData">刷新</button>
+        <button type="button" class="ghost-button compact" @click="notifyColumnSettingsPlaceholder">列设置</button>
+      </div>
+    </section>
+
+    <section class="data-card">
+      <header class="data-card-head">
+        <div class="data-card-title">
+          <h3>门店列表</h3>
+          <span class="count-pill">共 {{ totalCount }} 条</span>
+        </div>
+        <div class="data-card-meta">{{ querySummary }}</div>
+      </header>
+
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="min-width: 56px;">ID</th>
+              <th style="min-width: 200px;">门店信息</th>
+              <th style="min-width: 120px;">联系人</th>
+              <th style="min-width: 120px;">联系电话</th>
+              <th style="min-width: 84px;">状态</th>
+              <th style="min-width: 156px;">创建时间</th>
+              <th style="min-width: 110px;">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in items" :key="item.id">
+              <td>{{ item.id }}</td>
+              <td>
+                <div class="cell-stack">
+                  <strong>{{ item.name }}</strong>
+                  <span class="muted-line cell-mono">{{ item.code }}</span>
+                </div>
+              </td>
+              <td>{{ item.contactName || '-' }}</td>
+              <td>{{ item.contactPhone || '-' }}</td>
+              <td>
+                <span :class="['status-badge', item.isEnabled ? 'success' : 'danger']">
+                  {{ item.isEnabled ? '启用' : '停用' }}
+                </span>
+              </td>
+              <td>{{ formatDate(item.createdAt) }}</td>
+              <td>
+                <button v-if="canEdit" type="button" class="cell-link" @click="openEditDialog(item)">编辑</button>
+                <button v-if="canDelete" type="button" class="cell-link danger" @click="removeItem(item)">删除</button>
+              </td>
+            </tr>
+            <tr v-if="items.length === 0" class="empty-row">
+              <td colspan="7">当前没有符合条件的门店记录</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <footer class="pager-compact">
+        <div class="pager-info">第 {{ pageIndex }} / {{ totalPages }} 页 · 共 {{ totalCount }} 条</div>
+        <div class="pager-actions">
+          <button type="button" :disabled="pageIndex <= 1" @click="goPrevPage">上一页</button>
+          <button type="button" :disabled="pageIndex >= totalPages" @click="goNextPage">下一页</button>
+        </div>
+      </footer>
+    </section>
+
+    <MainDetailDialog
+      v-if="dialogVisible"
+      :title="editingId ? '编辑门店' : '新增门店'"
+      :sub="editingId ? '维护门店基础资料并同步刷新列表' : '录入新的门店资料，纳入发券与核销适用范围'"
+      size="md"
+      @close="closeDialog"
+    >
+      <div class="dialog-form-grid">
+        <label class="dialog-field">
+          <span>门店编码</span>
+          <input v-model.trim="form.code" type="text" placeholder="请输入门店编码" />
         </label>
-        <div class="field-card summary-field">
-          <span class="field-label">当前说明</span>
-          <strong>{{ querySummary }}</strong>
-          <p>门店基础资料会被券模板适用范围、商品可售范围和核销执行链路共同复用。</p>
-        </div>
+        <label class="dialog-field">
+          <span>门店名称</span>
+          <input v-model.trim="form.name" type="text" placeholder="请输入门店名称" />
+        </label>
+        <label class="dialog-field">
+          <span>联系人</span>
+          <input v-model.trim="form.contactName" type="text" placeholder="请输入联系人" />
+        </label>
+        <label class="dialog-field">
+          <span>联系电话</span>
+          <input v-model.trim="form.contactPhone" type="text" placeholder="请输入联系电话" />
+        </label>
+        <label class="dialog-field field-span-2 checkbox-row">
+          <input v-model="form.isEnabled" type="checkbox" />
+          <span>启用门店（停用后不再参与发券适用范围与核销执行）</span>
+        </label>
       </div>
-    </section>
 
-    <section class="store-content-grid">
-      <article class="card card-v2 data-card archive-card">
-        <div class="section-head">
-          <div class="section-head-main">
-            <span class="section-kicker">门店档案</span>
-            <h3>门店列表</h3>
-            <p class="section-tip">统一查看门店编码、联系人、启用状态与创建时间，支撑券适用门店范围配置。</p>
-          </div>
-          <div class="inline-metrics">
-            <span class="badge info">总数 {{ totalCount }}</span>
-            <span class="badge warning">每页 {{ pageSize }} 条</span>
-          </div>
-        </div>
-
-        <div class="table-wrap table-wrap-v2">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>门店信息</th>
-                <th>联系人</th>
-                <th>联系电话</th>
-                <th>状态</th>
-                <th>创建时间</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in items" :key="item.id">
-                <td class="cell-strong">{{ item.id }}</td>
-                <td>
-                  <div class="table-primary-cell">
-                    <strong>{{ item.name }}</strong>
-                    <span>{{ item.code }}</span>
-                  </div>
-                </td>
-                <td>{{ item.contactName || '-' }}</td>
-                <td>{{ item.contactPhone || '-' }}</td>
-                <td>
-                  <span :class="['status-badge', item.isEnabled ? 'success' : 'danger']">
-                    {{ item.isEnabled ? '启用' : '停用' }}
-                  </span>
-                </td>
-                <td>{{ formatDate(item.createdAt) }}</td>
-                <td>
-                  <div class="table-actions">
-                    <button v-if="canEdit" type="button" class="action-button" @click="openEditDialog(item)">编辑</button>
-                    <button v-if="canDelete" type="button" class="action-button danger" @click="removeItem(item)">删除</button>
-                  </div>
-                </td>
-              </tr>
-              <tr v-if="items.length === 0">
-                <td colspan="7" class="empty-text">当前没有符合条件的门店记录</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="pager pager-v2">
-          <div class="pager-info">第 {{ pageIndex }} 页 / 共 {{ totalPages }} 页，共 {{ totalCount }} 条记录</div>
-          <div class="pager-actions">
-            <button type="button" class="ghost-button" :disabled="pageIndex <= 1" @click="goPrevPage">上一页</button>
-            <button type="button" class="ghost-button" :disabled="pageIndex >= totalPages" @click="goNextPage">下一页</button>
-          </div>
-        </div>
-      </article>
-
-      <article class="card card-v2 data-card">
-        <div class="section-head">
-          <div class="section-head-main">
-            <span class="section-kicker">维护要点</span>
-            <h3>门店资料规则</h3>
-            <p class="section-tip">把真正影响业务链路的注意点固定下来，减少来回解释成本。</p>
-          </div>
-        </div>
-        <div class="store-guide-list">
-          <div class="guide-item">
-            <strong>编码与名称都要稳定</strong>
-            <p>门店编码用于系统识别，名称用于运营查看；两者都应避免频繁变动。</p>
-          </div>
-          <div class="guide-item">
-            <strong>状态直接影响可用范围</strong>
-            <p>停用门店不应继续参与发券适用范围或门店核销执行。</p>
-          </div>
-          <div class="guide-item">
-            <strong>联系人信息便于执行对接</strong>
-            <p>联系人和电话可帮助运营、实施或门店执行人员快速核对核销或活动问题。</p>
-          </div>
-        </div>
-      </article>
-    </section>
-
-    <div v-if="dialogVisible" class="dialog-mask" @click.self="closeDialog">
-      <div class="dialog-card dialog-card-v2 store-dialog-card">
-        <div class="dialog-head">
-          <div class="dialog-head-main">
-            <span class="section-kicker">门店表单</span>
-            <h3>{{ editingId ? '编辑门店' : '新增门店' }}</h3>
-            <p>{{ editingId ? '维护门店基础资料并同步刷新列表。' : '录入新的门店资料，纳入发券与核销适用范围。' }}</p>
-          </div>
-          <button type="button" class="ghost-button" @click="closeDialog">关闭</button>
-        </div>
-
-        <div class="grid-form dialog-form store-form-grid">
-          <label><span>门店编码</span><input v-model.trim="form.code" type="text" placeholder="请输入门店编码" /></label>
-          <label><span>门店名称</span><input v-model.trim="form.name" type="text" placeholder="请输入门店名称" /></label>
-          <label><span>联系人</span><input v-model.trim="form.contactName" type="text" placeholder="请输入联系人" /></label>
-          <label><span>联系电话</span><input v-model.trim="form.contactPhone" type="text" placeholder="请输入联系电话" /></label>
-          <label class="checkbox-field checkbox-card field-span-2">
-            <input v-model="form.isEnabled" type="checkbox" />
-            <span>启用门店</span>
-          </label>
-        </div>
-
-        <div class="dialog-actions">
-          <button type="button" class="ghost-button" :disabled="submitting || deleting" @click="closeDialog">取消</button>
-          <button v-if="editingId ? canEdit : canCreate" type="button" class="primary-button" :disabled="submitting || deleting" @click="submit">{{ submitting ? '提交中...' : (editingId ? '保存修改' : '保存新增') }}</button>
-        </div>
-      </div>
-    </div>
+      <template #footer>
+        <button type="button" class="ghost-button compact" :disabled="submitting || deleting" @click="closeDialog">取消</button>
+        <button
+          v-if="editingId ? canEdit : canCreate"
+          type="button"
+          class="primary-button compact"
+          :disabled="submitting || deleting"
+          @click="submit"
+        >{{ submitting ? '提交中...' : (editingId ? '保存修改' : '保存新增') }}</button>
+      </template>
+    </MainDetailDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import MainDetailDialog from '@/components/MainDetailDialog.vue'
 import { createStore, deleteStore, getStoreList, updateStore } from '@/api/store'
 import type { SaveStoreRequest, StoreListItemDto } from '@/types/store'
 import { getErrorMessage } from '@/utils/http-error'
@@ -234,9 +153,7 @@ const editingId = ref<number | null>(null)
 const submitting = ref(false)
 const deleting = ref(false)
 
-const query = reactive({
-  keyword: '',
-})
+const query = reactive({ keyword: '' })
 
 const createEmptyForm = (): SaveStoreRequest => ({
   code: '',
@@ -251,8 +168,7 @@ const form = reactive<SaveStoreRequest>(createEmptyForm())
 const canCreate = authStorage.hasPermission('store.create')
 const canEdit = authStorage.hasPermission('store.edit')
 const canDelete = authStorage.hasPermission('store.delete')
-const enabledCount = computed(() => items.value.filter((item) => item.isEnabled).length)
-const querySummary = computed(() => `关键词：${query.keyword || '全部'} / 每页：${pageSize.value}`)
+const querySummary = computed(() => `关键词：${query.keyword || '全部'} · 每页 ${pageSize.value} 条`)
 
 const resetForm = () => {
   Object.assign(form, createEmptyForm())
@@ -353,7 +269,7 @@ const submit = async () => {
 }
 
 const removeItem = async (item: StoreListItemDto) => {
-  if (!window.confirm(`确认删除门店“${item.name}”吗？`)) return
+  if (!window.confirm(`确认删除门店"${item.name}"吗？`)) return
 
   if (items.value.length === 1 && pageIndex.value > 1) {
     pageIndex.value -= 1
@@ -373,58 +289,62 @@ const removeItem = async (item: StoreListItemDto) => {
   }
 }
 
+const notifyColumnSettingsPlaceholder = () => {
+  notify.info('列设置功能将在下一版本提供')
+}
+
 const formatDate = (value?: string) => (value ? value.replace('T', ' ').slice(0, 19) : '-')
 
 onMounted(loadData)
 </script>
 
 <style scoped>
-.store-hero {
-  background:
-    radial-gradient(circle at top right, rgba(59, 130, 246, 0.14), transparent 28%),
-    linear-gradient(135deg, #ffffff 0%, #f8fbff 52%, #f4f7fb 100%);
-}
-
-.store-filter-grid {
-  grid-template-columns: 1.4fr 0.8fr 1fr;
-}
-
-.store-content-grid {
+.dialog-form-grid {
   display: grid;
-  gap: 18px;
-  grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
-}
-
-.store-guide-list {
-  display: grid;
-  gap: 12px;
-}
-
-.store-dialog-card {
-  width: min(760px, calc(100vw - 48px));
-}
-
-.store-form-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
 }
 
-.store-form-grid label {
+.dialog-field {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
-.store-form-grid label span {
+.dialog-field > span {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   color: #344054;
 }
 
-@media (max-width: 1100px) {
-  .hero-side-grid,
-  .store-filter-grid,
-  .store-content-grid,
-  .store-form-grid {
-    grid-template-columns: 1fr;
-  }
+.dialog-field input[type='text'],
+.dialog-field input[type='number'] {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  width: 100%;
+}
+
+.checkbox-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  display: flex;
+}
+
+.checkbox-row input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.cell-link.danger {
+  margin-left: 12px;
+}
+
+@media (max-width: 720px) {
+  .dialog-form-grid { grid-template-columns: 1fr; }
 }
 </style>

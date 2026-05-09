@@ -5,7 +5,11 @@ const SESSION_STORAGE_KEY = 'coupon-miniapp:session'
 const API_BASE_URL_STORAGE_KEY = 'coupon-miniapp:api-base-url'
 const THEME_STORAGE_KEY = 'coupon-miniapp:theme-code'
 const ONBOARDING_STORAGE_KEY = 'coupon-miniapp:onboarding'
-const DEFAULT_API_BASE_URL = 'http://120.48.175.83:8081'
+const DEFAULT_API_BASE_URL = 'https://fajuan-api.wenyihai.cn'
+const LEGACY_API_BASE_URLS = [
+  'http://120.48.175.83:8081',
+  'https://120.48.175.83:8081'
+]
 
 const state = reactive({
   hydrated: false,
@@ -47,6 +51,19 @@ function normalizeDateTime(value) {
   return new Date(timestamp).toISOString()
 }
 
+function normalizeApiBaseUrl(value) {
+  const normalized = trimText(value).replace(/\/+$/, '')
+  if (!normalized) {
+    return ''
+  }
+
+  if (LEGACY_API_BASE_URLS.includes(normalized)) {
+    return DEFAULT_API_BASE_URL
+  }
+
+  return normalized
+}
+
 function persistSession() {
   uni.setStorageSync(SESSION_STORAGE_KEY, {
     userId: state.userId,
@@ -65,10 +82,13 @@ export function hydrateSessionStore() {
   }
 
   const savedSession = uni.getStorageSync(SESSION_STORAGE_KEY) || {}
-  const savedBaseUrl = trimText(uni.getStorageSync(API_BASE_URL_STORAGE_KEY))
+  const savedBaseUrl = normalizeApiBaseUrl(uni.getStorageSync(API_BASE_URL_STORAGE_KEY))
   const savedThemeCode = trimText(uni.getStorageSync(THEME_STORAGE_KEY))
 
   state.apiBaseUrl = savedBaseUrl || DEFAULT_API_BASE_URL
+  if (savedBaseUrl && savedBaseUrl !== trimText(uni.getStorageSync(API_BASE_URL_STORAGE_KEY))) {
+    uni.setStorageSync(API_BASE_URL_STORAGE_KEY, savedBaseUrl)
+  }
   state.themeCode = normalizeThemeCode(savedThemeCode) || DEFAULT_THEME_CODE
   state.userId = Number(savedSession.userId) > 0 ? Number(savedSession.userId) : null
   state.miniOpenId = trimText(savedSession.miniOpenId)
@@ -87,7 +107,7 @@ export function useSessionStore() {
 }
 
 export function setApiBaseUrl(baseUrl) {
-  const normalized = trimText(baseUrl).replace(/\/+$/, '')
+  const normalized = normalizeApiBaseUrl(baseUrl)
   state.apiBaseUrl = normalized
   uni.setStorageSync(API_BASE_URL_STORAGE_KEY, normalized)
   return state.apiBaseUrl

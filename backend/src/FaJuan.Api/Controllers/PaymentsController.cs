@@ -30,12 +30,25 @@ public class PaymentsController(
     [HttpPost("create")]
     public async Task<ActionResult<ApiResponse<CreatePaymentResultDto>>> Create([FromBody] CreatePaymentRequest request, CancellationToken cancellationToken)
     {
-        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
-
-        var order = await dbContext.CouponOrders.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.OrderId, cancellationToken);
+        var order = await dbContext.CouponOrders.FirstOrDefaultAsync(x => x.Id == request.OrderId, cancellationToken);
         if (order is null)
         {
             return BadRequest(Failure<CreatePaymentResultDto>("订单不存在"));
+        }
+
+        if (orderExpirationService.IsExpiredPendingOrder(order.Status, order.CreatedAt))
+        {
+            var resolvedStatus = await orderExpirationService.ResolveExpiredOrderAsync(order.Id, cancellationToken);
+            if (!resolvedStatus.HasValue)
+            {
+                return BadRequest(Failure<CreatePaymentResultDto>("订单不存在"));
+            }
+
+            order = await dbContext.CouponOrders.FirstOrDefaultAsync(x => x.Id == request.OrderId, cancellationToken);
+            if (order is null)
+            {
+                return BadRequest(Failure<CreatePaymentResultDto>("订单不存在"));
+            }
         }
 
         if (order.Status == CouponOrderStatus.Closed)
@@ -199,13 +212,26 @@ public class PaymentsController(
     [HttpPost("orders/{orderId:long}/sync-paid")]
     public async Task<ActionResult<ApiResponse<bool>>> SyncPaidOrder(long orderId, CancellationToken cancellationToken)
     {
-        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
-
-        var order = await dbContext.CouponOrders.AsNoTracking()
+        var order = await dbContext.CouponOrders
             .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
         if (order is null)
         {
             return NotFound(Failure<bool>("订单不存在", 404));
+        }
+
+        if (orderExpirationService.IsExpiredPendingOrder(order.Status, order.CreatedAt))
+        {
+            var resolvedStatus = await orderExpirationService.ResolveExpiredOrderAsync(order.Id, cancellationToken);
+            if (!resolvedStatus.HasValue)
+            {
+                return NotFound(Failure<bool>("订单不存在", 404));
+            }
+
+            order = await dbContext.CouponOrders.FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
+            if (order is null)
+            {
+                return NotFound(Failure<bool>("订单不存在", 404));
+            }
         }
 
         if (order.Status == CouponOrderStatus.Paid)

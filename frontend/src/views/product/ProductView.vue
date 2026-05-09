@@ -1,378 +1,260 @@
-﻿
 <template>
-  <div class="business-page page-v2 product-page">
-    <section class="hero-panel product-hero">
-      <div class="hero-copy">
-        <span class="page-kicker">商品中心</span>
-        <h2>商品管理</h2>
-        <p>维护 ERP 商品编码、销售价格、主图详情图，以及商品直购提货券的有效期配置。</p>
-        <div class="hero-tags">
-          <span class="badge info">ERP 商品映射</span>
-          <span class="badge success">直购提货券</span>
-          <span class="badge warning">有效期必填</span>
-        </div>
-      </div>
-      <div class="hero-side hero-side-grid">
-        <article class="quick-card compact">
-          <span class="quick-card-label">商品总数</span>
-          <strong>{{ totalCount }}</strong>
-          <p>当前查询范围内的商品记录数</p>
-        </article>
-        <article class="quick-card compact">
-          <span class="quick-card-label">启用商品</span>
-          <strong>{{ enabledCount }}</strong>
-          <p>当前页处于启用状态的商品</p>
-        </article>
-        <article class="quick-card compact">
-          <span class="quick-card-label">当前页码</span>
-          <strong>{{ pageIndex }} / {{ totalPages }}</strong>
-          <p>支持关键字搜索与分页浏览</p>
-        </article>
-        <article class="quick-card compact">
-          <span class="quick-card-label">平均售价</span>
-          <strong>{{ averagePriceDisplay }}</strong>
-          <p>当前页有售价商品的均价</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="stats-grid stats-grid-v2">
-      <article class="stat-card accent-blue">
-        <span class="label">商品总数</span>
-        <strong class="stat-value">{{ totalCount }}</strong>
-        <span class="stat-footnote">当前筛选结果总记录数</span>
-      </article>
-      <article class="stat-card accent-indigo">
-        <span class="label">当前页码</span>
-        <strong class="stat-value">{{ pageIndex }}</strong>
-        <span class="stat-footnote">共 {{ totalPages }} 页</span>
-      </article>
-      <article class="stat-card accent-green">
-        <span class="label">启用商品</span>
-        <strong class="stat-value">{{ enabledCount }}</strong>
-        <span class="stat-footnote">当前页启用状态统计</span>
-      </article>
-      <article class="stat-card accent-amber">
-        <span class="label">当前筛选</span>
-        <strong class="stat-value stat-value-text">{{ query.keyword || '全部商品' }}</strong>
-        <span class="stat-footnote">按商品名称、ERP 编码或 ERP ISBN 码检索</span>
-      </article>
-    </section>
-
-    <section class="card toolbar-card card-v2 operations-card">
-      <div class="toolbar-row">
-        <div class="toolbar-title">
-          <span class="section-kicker">筛选与操作</span>
-          <h3>商品档案工作台</h3>
-          <p class="section-tip">商品可直接购买，后台必须配置直购提货券有效期，主图、ERP 商品编码、ERP ISBN 码、ERP 售价、销售价格均为关键字段。</p>
-        </div>
-        <div class="toolbar-actions">
-          <button type="button" class="ghost-button" @click="resetQuery">重置筛选</button>
-          <button type="button" class="ghost-button" @click="loadData">刷新列表</button>
-          <button v-if="canCreate" type="button" class="primary-button" @click="openCreateDialog">新增商品</button>
-        </div>
-      </div>
-
-      <div class="filter-panel-grid product-filter-grid">
-        <label class="field-card filter-field">
-          <span class="field-label">搜索商品</span>
+  <div class="admin-page product-page">
+    <section class="search-card">
+      <div class="search-grid">
+        <div class="field">
+          <label for="prod-keyword">搜索商品</label>
           <input
+            id="prod-keyword"
             v-model.trim="query.keyword"
             type="text"
-            placeholder="搜索商品名称、ERP 编码或 ERP ISBN 码"
+            placeholder="商品名称、ERP 编码或 ERP ISBN 码"
             @keyup.enter="handleSearch"
           />
-        </label>
-        <label class="field-card filter-field compact-field">
-          <span class="field-label">分页条数</span>
-          <select v-model.number="pageSize" @change="handlePageSizeChange">
-            <option :value="10">每页 10 条</option>
-            <option :value="20">每页 20 条</option>
-            <option :value="50">每页 50 条</option>
-          </select>
-        </label>
-        <div class="field-card summary-field">
-          <span class="field-label">当前说明</span>
-          <strong>{{ querySummary }}</strong>
-          <p>直购提货券有效期支持固定日期范围，或购买后 N 天自然日截止。</p>
         </div>
+        <div class="field">
+          <label for="prod-page-size">每页条数</label>
+          <select id="prod-page-size" v-model.number="pageSize" @change="handlePageSizeChange">
+            <option :value="10">10 条</option>
+            <option :value="20">20 条</option>
+            <option :value="50">50 条</option>
+          </select>
+        </div>
+      </div>
+      <div class="search-actions">
+        <button type="button" class="primary-button compact" @click="handleSearch">查询</button>
+        <button type="button" class="ghost-button compact" @click="resetQuery">重置</button>
+        <button v-if="canCreate" type="button" class="primary-button compact" @click="openCreateDialog">+ 新增商品</button>
+        <button type="button" class="ghost-button compact" @click="loadData">刷新</button>
+        <button type="button" class="ghost-button compact" @click="notifyColumnSettingsPlaceholder">列设置</button>
       </div>
     </section>
 
-    <section class="card card-v2">
-      <div class="table-card-head">
-        <div>
-          <span class="section-kicker">商品列表</span>
+    <section class="data-card">
+      <header class="data-card-head">
+        <div class="data-card-title">
           <h3>商品档案</h3>
+          <span class="count-pill">共 {{ totalCount }} 条</span>
         </div>
-      </div>
+        <div class="data-card-meta">{{ querySummary }}</div>
+      </header>
 
-      <div class="table-shell">
+      <div class="data-table-wrap">
         <table class="data-table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>主图</th>
-              <th>商品信息</th>
-              <th>价格</th>
-              <th>库存</th>
-              <th>提货券有效期</th>
-              <th>状态</th>
-              <th>前台展示</th>
-              <th>创建时间</th>
-              <th>操作</th>
+              <th style="min-width: 56px;">ID</th>
+              <th style="min-width: 80px;">主图</th>
+              <th style="min-width: 240px;">商品信息</th>
+              <th style="min-width: 140px;">价格</th>
+              <th style="min-width: 64px;">库存</th>
+              <th style="min-width: 180px;">提货券有效期</th>
+              <th style="min-width: 72px;">状态</th>
+              <th style="min-width: 84px;">前台展示</th>
+              <th style="min-width: 156px;">创建时间</th>
+              <th style="min-width: 110px;">操作</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="item in items" :key="item.id">
-              <td>#{{ item.id }}</td>
+              <td>{{ item.id }}</td>
               <td>
-                <div class="product-thumb-cell">
-                  <img v-if="item.mainImageUrl" :src="normalizeFileUrl(item.mainImageUrl)" alt="商品主图" class="product-thumb" />
-                  <span v-else class="muted-text">未配置主图</span>
-                </div>
+                <img v-if="item.mainImageUrl" :src="normalizeFileUrl(item.mainImageUrl)" alt="商品主图" class="product-thumb" />
+                <span v-else class="muted-line">未配置</span>
               </td>
               <td>
-                <div class="table-primary-cell">
+                <div class="cell-stack">
                   <strong>{{ item.name }}</strong>
-                  <span>ERP 编码：{{ item.erpProductCode }}</span>
-                  <span>ERP ISBN 码：{{ item.erpIsbnCode || '-' }}</span>
-                  <span>详情图：{{ item.detailImageAssetIds.length }} 张</span>
+                  <span class="muted-line">ERP 编码：<span class="cell-mono">{{ item.erpProductCode }}</span></span>
+                  <span class="muted-line">ISBN：<span class="cell-mono">{{ item.erpIsbnCode || '-' }}</span> · 详情图 {{ item.detailImageAssetIds.length }} 张</span>
                 </div>
               </td>
               <td>
-                <div class="price-compare-cell">
-                  <strong class="sale-price-value">{{ formatPrice(item.salePrice) }}</strong>
-                  <span>ERP 售价：{{ formatPrice(item.erpOriginalPrice) }}</span>
-                  <span v-if="showPriceCompare(item)" class="discount-value">优惠 {{ formatDiscount(item.erpOriginalPrice, item.salePrice) }}</span>
+                <div class="cell-stack">
+                  <strong class="sale-price">{{ formatPrice(item.salePrice) }}</strong>
+                  <span class="muted-line">ERP：{{ formatPrice(item.erpOriginalPrice) }}</span>
+                  <span v-if="showPriceCompare(item)" class="discount-line">优惠 {{ formatDiscount(item.erpOriginalPrice, item.salePrice) }}</span>
                 </div>
               </td>
               <td>{{ formatStock(item.stockQuantity) }}</td>
               <td>
-                <span :class="item.directPurchaseValidPeriodType ? 'status-badge status-enabled' : 'status-badge status-disabled'">
+                <span :class="['status-badge', item.directPurchaseValidPeriodType ? 'success' : 'danger']">
                   {{ formatValidity(item) }}
                 </span>
               </td>
               <td>
-                <span :class="item.isEnabled ? 'status-badge status-enabled' : 'status-badge status-disabled'">
-                  {{ item.isEnabled ? '启用' : '停用' }}
-                </span>
+                <span :class="['status-badge', item.isEnabled ? 'success' : 'danger']">{{ item.isEnabled ? '启用' : '停用' }}</span>
               </td>
               <td>
-                <span :class="item.showInMiniApp === true ? 'status-badge status-enabled' : 'status-badge status-disabled'">
+                <span :class="['status-badge', item.showInMiniApp === true ? 'success' : 'warning']">
                   {{ item.showInMiniApp === true ? '展示' : (item.showInMiniApp === false ? '不展示' : '未设置') }}
                 </span>
               </td>
               <td>{{ formatDate(item.createdAt) }}</td>
               <td>
-                <div class="table-actions">
-                  <button v-if="canEdit" type="button" class="action-button" @click="openEditDialog(item)">编辑</button>
-                  <button v-if="canDelete" type="button" class="action-button danger" :disabled="deleting" @click="removeItem(item)">删除</button>
-                </div>
+                <button v-if="canEdit" type="button" class="cell-link" @click="openEditDialog(item)">编辑</button>
+                <button v-if="canDelete" type="button" class="cell-link danger" :disabled="deleting" @click="removeItem(item)">删除</button>
               </td>
             </tr>
-            <tr v-if="items.length === 0">
-              <td colspan="10">
-                <div class="empty-state compact-empty">
-                  <strong>暂无商品数据</strong>
-                  <p>可尝试调整筛选条件，或新增商品。</p>
-                </div>
-              </td>
+            <tr v-if="items.length === 0" class="empty-row">
+              <td colspan="10">暂无商品数据，可调整筛选条件或新增商品</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div class="pagination-bar">
-        <button type="button" class="ghost-button" :disabled="pageIndex <= 1" @click="goPrevPage">上一页</button>
-        <span>第 {{ pageIndex }} / {{ totalPages }} 页</span>
-        <button type="button" class="ghost-button" :disabled="pageIndex >= totalPages" @click="goNextPage">下一页</button>
-      </div>
+      <footer class="pager-compact">
+        <div class="pager-info">第 {{ pageIndex }} / {{ totalPages }} 页 · 共 {{ totalCount }} 条</div>
+        <div class="pager-actions">
+          <button type="button" :disabled="pageIndex <= 1" @click="goPrevPage">上一页</button>
+          <button type="button" :disabled="pageIndex >= totalPages" @click="goNextPage">下一页</button>
+        </div>
+      </footer>
     </section>
 
-    <div v-if="dialogVisible" class="dialog-mask" @click.self="closeDialog">
-      <div class="dialog-card dialog-card-v2 product-dialog-card">
-        <div class="dialog-head">
-          <div class="dialog-head-main">
-            <span class="section-kicker">商品档案</span>
-            <h3>{{ editingId ? '编辑商品' : '新增商品' }}</h3>
-            <p>商品可直接购买，保存时会同步对应的系统提货券模板。</p>
-          </div>
-        </div>
-
-        <div class="grid-form dialog-form product-form-grid">
-          <label>
-            <span>商品名称</span>
-            <input v-model.trim="form.name" type="text" maxlength="100" placeholder="请输入商品名称" />
-          </label>
-          <label>
-            <span>ERP 商品编码</span>
-            <input v-model.trim="form.erpProductCode" type="text" maxlength="64" placeholder="请输入 ERP 商品编码" />
-          </label>
-          <label>
-            <span>ERP ISBN 码</span>
-            <input v-model.trim="form.erpIsbnCode" type="text" maxlength="64" placeholder="请输入 ERP ISBN 码（用于前端条码展示）" />
-          </label>
-          <label>
-            <span>ERP 售价</span>
-            <input v-model.number="form.erpOriginalPrice" type="number" min="0" step="0.01" placeholder="请输入 ERP 售价" />
-          </label>
-          <label>
-            <span>销售价格</span>
-            <input v-model.number="form.salePrice" type="number" min="0" step="0.01" placeholder="请输入销售价格" />
-          </label>
-          <label>
-            <span>库存数量</span>
-            <input v-model.number="form.stockQuantity" type="number" min="0" step="1" placeholder="不填表示不限库存" />
-          </label>
-          <label>
-            <span>直购提货券有效期</span>
-            <select v-model.number="form.directPurchaseValidPeriodType" @change="handleValidPeriodTypeChange">
-              <option :value="1">固定日期范围</option>
-              <option :value="2">购买后 N 天</option>
-            </select>
-          </label>
-
-          <label v-if="form.directPurchaseValidPeriodType === 1">
-            <span>开始日期</span>
-            <input v-model="form.directPurchaseValidFrom" type="date" />
-          </label>
-          <label v-if="form.directPurchaseValidPeriodType === 1">
-            <span>结束日期</span>
-            <input v-model="form.directPurchaseValidTo" type="date" />
-          </label>
-          <label v-if="form.directPurchaseValidPeriodType === 2" class="field-span-2">
-            <span>购买后有效天数</span>
-            <input v-model.number="form.directPurchaseValidDays" type="number" min="1" step="1" placeholder="请输入有效天数，例如 7" />
-            <small class="helper-text">到期时间自动按自然日截止到 23:59:59。</small>
-          </label>
-
-          <label class="checkbox-field checkbox-card field-span-2">
-            <input v-model="form.isEnabled" type="checkbox" />
-            <span>启用商品</span>
-          </label>
-
-          <label class="checkbox-field checkbox-card field-span-2">
-            <input v-model="form.showInMiniApp" type="checkbox" />
-            <span>前台展示</span>
-            <small class="helper-text">勾选后才会出现在小程序首页推荐、商城商品列表和商品详情入口；不影响组券包使用。</small>
-          </label>
-
-          <div class="field-span-2 media-section">
-            <div class="section-inline-head">
-              <div>
-                <span class="field-label">商品主图</span>
-                <p class="helper-text">主图必填，可从 `product/shared` 素材中复用或直接上传。</p>
-              </div>
-              <div class="inline-actions">
-                <button type="button" class="ghost-button" @click="openMediaDialog('main')">选择素材</button>
-                <label class="ghost-button upload-button">
-                  上传主图
-                  <input type="file" accept="image/*" class="hidden-input" @change="handleMainUpload" />
-                </label>
-              </div>
-            </div>
-            <div v-if="selectedMainAsset" class="selected-main-preview">
-              <img :src="normalizeFileUrl(selectedMainAsset.fileUrl)" alt="商品主图" class="selected-main-image" />
-              <div class="table-primary-cell">
-                <strong>{{ selectedMainAsset.name }}</strong>
-                <span>{{ selectedMainAsset.bucketType }}</span>
-              </div>
-              <button type="button" class="ghost-button" @click="clearMainAsset">移除主图</button>
-            </div>
-            <p v-else class="helper-text">请先配置主图。</p>
-          </div>
-
-          <div class="field-span-2 media-section">
-            <div class="section-inline-head">
-              <div>
-                <span class="field-label">详情图</span>
-                <p class="helper-text">详情图可选，用于商品详情展示。</p>
-              </div>
-              <div class="inline-actions">
-                <button type="button" class="ghost-button" @click="openMediaDialog('detail')">选择素材</button>
-                <label class="ghost-button upload-button">
-                  上传详情图
-                  <input type="file" accept="image/*" multiple class="hidden-input" @change="handleDetailUpload" />
-                </label>
-              </div>
-            </div>
-            <div v-if="selectedDetailAssets.length > 0" class="selected-detail-list">
-              <div v-for="asset in selectedDetailAssets" :key="asset.id" class="selected-detail-card">
-                <img :src="normalizeFileUrl(asset.fileUrl)" :alt="asset.name" class="selected-detail-image" />
-                <div class="table-primary-cell">
-                  <strong>{{ asset.name }}</strong>
-                  <span>{{ asset.bucketType }}</span>
-                </div>
-                <button type="button" class="ghost-button" @click="removeDetailAsset(asset.id)">移除</button>
-              </div>
-            </div>
-            <p v-else class="helper-text">未配置详情图。</p>
-          </div>
-        </div>
-
-        <div class="dialog-actions">
-          <button type="button" class="ghost-button" :disabled="submitting || deleting" @click="closeDialog">取消</button>
-          <button
-            v-if="editingId ? canEdit : canCreate"
-            type="button"
-            class="primary-button"
-            :disabled="submitting || deleting"
-            @click="submit"
-          >
-            {{ submitting ? '提交中...' : (editingId ? '保存修改' : '保存新增') }}
-          </button>
-        </div>
+    <MainDetailDialog
+      v-if="dialogVisible"
+      :title="editingId ? '编辑商品' : '新增商品'"
+      sub="商品可直接购买，保存时会同步对应的系统提货券模板"
+      size="xl"
+      @close="closeDialog"
+    >
+      <div class="dialog-form-grid">
+        <label class="dialog-field">
+          <span>商品名称</span>
+          <input v-model.trim="form.name" type="text" maxlength="100" placeholder="请输入商品名称" />
+        </label>
+        <label class="dialog-field">
+          <span>ERP 商品编码</span>
+          <input v-model.trim="form.erpProductCode" type="text" maxlength="64" placeholder="请输入 ERP 商品编码" />
+        </label>
+        <label class="dialog-field">
+          <span>ERP ISBN 码</span>
+          <input v-model.trim="form.erpIsbnCode" type="text" maxlength="64" placeholder="用于前端条码展示" />
+        </label>
+        <label class="dialog-field">
+          <span>ERP 售价</span>
+          <input v-model.number="form.erpOriginalPrice" type="number" min="0" step="0.01" placeholder="请输入 ERP 售价" />
+        </label>
+        <label class="dialog-field">
+          <span>销售价格</span>
+          <input v-model.number="form.salePrice" type="number" min="0" step="0.01" placeholder="请输入销售价格" />
+        </label>
+        <label class="dialog-field">
+          <span>库存数量</span>
+          <input v-model.number="form.stockQuantity" type="number" min="0" step="1" placeholder="不填表示不限库存" />
+        </label>
+        <label class="dialog-field">
+          <span>直购提货券有效期</span>
+          <select v-model.number="form.directPurchaseValidPeriodType" @change="handleValidPeriodTypeChange">
+            <option :value="1">固定日期范围</option>
+            <option :value="2">购买后 N 天</option>
+          </select>
+        </label>
+        <label v-if="form.directPurchaseValidPeriodType === 1" class="dialog-field">
+          <span>开始日期</span>
+          <input v-model="form.directPurchaseValidFrom" type="date" />
+        </label>
+        <label v-if="form.directPurchaseValidPeriodType === 1" class="dialog-field">
+          <span>结束日期</span>
+          <input v-model="form.directPurchaseValidTo" type="date" />
+        </label>
+        <label v-if="form.directPurchaseValidPeriodType === 2" class="dialog-field field-span-2">
+          <span>购买后有效天数（自动按自然日截止到 23:59:59）</span>
+          <input v-model.number="form.directPurchaseValidDays" type="number" min="1" step="1" placeholder="请输入有效天数，例如 7" />
+        </label>
+        <label class="dialog-field checkbox-row">
+          <input v-model="form.isEnabled" type="checkbox" />
+          <span>启用商品</span>
+        </label>
+        <label class="dialog-field checkbox-row">
+          <input v-model="form.showInMiniApp" type="checkbox" />
+          <span>前台展示（小程序商城）</span>
+        </label>
       </div>
-    </div>
 
-    <div v-if="mediaDialogVisible" class="dialog-mask" @click.self="closeMediaDialog">
-      <div class="dialog-card dialog-card-v2 media-selector-dialog">
-        <div class="dialog-head">
-          <div class="dialog-head-main">
-            <span class="section-kicker">素材选择</span>
-            <h3>{{ mediaDialogMode === 'main' ? '选择商品主图' : '选择商品详情图' }}</h3>
-            <p>支持从 `product/shared` 分区素材中检索复用。</p>
+      <section class="detail-section">
+        <header class="detail-section-head">
+          <h4>商品主图（必填）</h4>
+          <div class="head-actions">
+            <button type="button" class="ghost-button compact" @click="openMediaDialog('main')">选择素材</button>
+            <label class="ghost-button compact upload-trigger">上传主图<input type="file" accept="image/*" class="hidden-input" @change="handleMainUpload" /></label>
+            <button v-if="selectedMainAsset" type="button" class="ghost-button compact" @click="clearMainAsset">移除</button>
+          </div>
+        </header>
+        <div v-if="selectedMainAsset" class="selected-main-preview">
+          <img :src="normalizeFileUrl(selectedMainAsset.fileUrl)" alt="商品主图" class="selected-main-image" />
+          <div class="cell-stack">
+            <strong>{{ selectedMainAsset.name }}</strong>
+            <span class="muted-line">{{ selectedMainAsset.bucketType }}</span>
           </div>
         </div>
-        <div class="filter-panel-grid media-filter-grid">
-          <label class="field-card filter-field">
-            <span class="field-label">搜索素材</span>
-            <input v-model.trim="mediaQuery.keyword" type="text" placeholder="输入素材名称关键字" @keyup.enter="loadMediaOptions" />
-          </label>
-          <div class="field-card summary-field">
-            <span class="field-label">素材范围</span>
-            <strong>product / shared</strong>
-            <p>商品主图与详情图都可复用 shared 素材。</p>
-          </div>
-          <div class="table-actions selector-actions">
-            <button type="button" class="ghost-button" @click="resetMediaQuery">重置</button>
-            <button type="button" class="primary-button" @click="loadMediaOptions">搜索</button>
-          </div>
-        </div>
+        <div v-else class="detail-empty">请先配置主图（可从 product / shared 素材中复用或直接上传）</div>
+      </section>
 
-        <div class="media-grid">
-          <button v-for="asset in mediaOptions" :key="asset.id" type="button" class="media-card" @click="selectMediaAsset(asset)">
-            <img :src="normalizeFileUrl(asset.fileUrl)" :alt="asset.name" class="media-card-image" />
-            <strong>{{ asset.name }}</strong>
-            <span>{{ asset.bucketType }}</span>
-          </button>
-          <div v-if="mediaOptions.length === 0" class="empty-state compact-empty media-empty">
-            <strong>暂无可选素材</strong>
-            <p>可换个关键字重试，或先上传图片。</p>
+      <section class="detail-section">
+        <header class="detail-section-head">
+          <h4>商品详情图（可选）</h4>
+          <div class="head-actions">
+            <button type="button" class="ghost-button compact" @click="openMediaDialog('detail')">选择素材</button>
+            <label class="ghost-button compact upload-trigger">上传详情图<input type="file" accept="image/*" multiple class="hidden-input" @change="handleDetailUpload" /></label>
+          </div>
+        </header>
+        <div v-if="selectedDetailAssets.length > 0" class="detail-asset-grid">
+          <div v-for="asset in selectedDetailAssets" :key="asset.id" class="detail-asset-card">
+            <img :src="normalizeFileUrl(asset.fileUrl)" :alt="asset.name" class="detail-asset-image" />
+            <div class="cell-stack">
+              <strong>{{ asset.name }}</strong>
+              <span class="muted-line">{{ asset.bucketType }}</span>
+            </div>
+            <button type="button" class="cell-link danger" @click="removeDetailAsset(asset.id)">移除</button>
           </div>
         </div>
+        <div v-else class="detail-empty">未配置详情图</div>
+      </section>
 
-        <div class="dialog-actions">
-          <button type="button" class="ghost-button" @click="closeMediaDialog">关闭</button>
-        </div>
+      <template #footer>
+        <button type="button" class="ghost-button compact" :disabled="submitting || deleting" @click="closeDialog">取消</button>
+        <button
+          v-if="editingId ? canEdit : canCreate"
+          type="button"
+          class="primary-button compact"
+          :disabled="submitting || deleting"
+          @click="submit"
+        >{{ submitting ? '提交中...' : (editingId ? '保存修改' : '保存新增') }}</button>
+      </template>
+    </MainDetailDialog>
+
+    <MainDetailDialog
+      v-if="mediaDialogVisible"
+      :title="mediaDialogMode === 'main' ? '选择商品主图' : '选择商品详情图'"
+      sub="支持从 product / shared 分区素材中检索复用"
+      size="xl"
+      @close="closeMediaDialog"
+    >
+      <div class="picker-search-row">
+        <input v-model.trim="mediaQuery.keyword" type="text" placeholder="输入素材名称关键字" @keyup.enter="loadMediaOptions" />
+        <button type="button" class="primary-button compact" @click="loadMediaOptions">搜索</button>
+        <button type="button" class="ghost-button compact" @click="resetMediaQuery">重置</button>
       </div>
-    </div>
+      <div class="media-grid">
+        <button v-for="asset in mediaOptions" :key="asset.id" type="button" class="media-card" @click="selectMediaAsset(asset)">
+          <img :src="normalizeFileUrl(asset.fileUrl)" :alt="asset.name" class="media-card-image" />
+          <strong>{{ asset.name }}</strong>
+          <span class="muted-line">{{ asset.bucketType }}</span>
+        </button>
+        <div v-if="mediaOptions.length === 0" class="detail-empty media-empty">暂无可选素材，可换关键字重试或先上传图片</div>
+      </div>
+      <template #footer>
+        <button type="button" class="ghost-button compact" @click="closeMediaDialog">关闭</button>
+      </template>
+    </MainDetailDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
+import MainDetailDialog from '@/components/MainDetailDialog.vue'
 import { createProduct, deleteProduct, getProductList, updateProduct } from '@/api/product'
 import { createMediaAsset, getMediaAssetList, uploadMediaAssetFile } from '@/api/media-asset'
 import type { MediaAssetListItemDto } from '@/types/media-asset'
@@ -426,17 +308,7 @@ const createEmptyForm = (): SaveProductRequest => ({
 
 const form = reactive<SaveProductRequest>(createEmptyForm())
 
-const enabledCount = computed(() => items.value.filter((item) => item.isEnabled).length)
-const averagePrice = computed(() => {
-  const values = items.value
-    .map((item) => toNullableNumber(item.salePrice))
-    .filter((value): value is number => typeof value === 'number' && value > 0)
-
-  if (values.length === 0) return null
-  return values.reduce((sum, value) => sum + value, 0) / values.length
-})
-const averagePriceDisplay = computed(() => (averagePrice.value === null ? '-' : `¥${averagePrice.value.toFixed(2)}`))
-const querySummary = computed(() => `关键字：${query.keyword || '全部商品'} / 每页 ${pageSize.value} 条`)
+const querySummary = computed(() => `关键字：${query.keyword || '全部商品'} · 每页 ${pageSize.value} 条`)
 
 const normalizeFileUrl = normalizeAssetUrl
 
@@ -485,6 +357,7 @@ async function loadMediaOptions() {
     notify.error(getErrorMessage(error, '加载素材列表失败'))
   }
 }
+
 async function handleSearch() {
   pageIndex.value = 1
   await loadData()
@@ -698,6 +571,7 @@ async function handleDetailUpload(event: Event) {
     target.value = ''
   }
 }
+
 function buildPayload(): SaveProductRequest {
   const payload: SaveProductRequest = {
     name: form.name.trim(),
@@ -764,7 +638,7 @@ async function submit() {
 }
 
 async function removeItem(item: ProductListItemDto) {
-  if (!window.confirm(`确认删除商品“${item.name}”吗？`)) return
+  if (!window.confirm(`确认删除商品"${item.name}"吗？`)) return
   if (items.value.length === 1 && pageIndex.value > 1) pageIndex.value -= 1
   if (deleting.value) return
 
@@ -778,6 +652,10 @@ async function removeItem(item: ProductListItemDto) {
   } finally {
     deleting.value = false
   }
+}
+
+function notifyColumnSettingsPlaceholder() {
+  notify.info('列设置功能将在下一版本提供')
 }
 
 function formatDate(value?: string | null) {
@@ -821,43 +699,205 @@ onMounted(loadData)
 </script>
 
 <style scoped>
-.product-hero { background: radial-gradient(circle at top right, rgba(59,130,246,.14), transparent 28%), linear-gradient(135deg, #ffffff 0%, #f8fbff 52%, #f4f7fb 100%); }
-.product-filter-grid,.media-filter-grid { grid-template-columns: 1.4fr .8fr 1fr; }
-.product-thumb-cell { display: flex; align-items: center; }
-.product-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 12px; border: 1px solid var(--line); background: #fff; }
-.product-dialog-card { width: min(980px, calc(100vw - 48px)); }
-.product-form-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
-.price-compare-cell { display: grid; gap: 4px; }
-.sale-price-value { color: var(--primary); font-weight: 700; }
-.discount-value { color: #f59e0b; font-size: 12px; font-weight: 600; }
-.dialog-form input,.dialog-form select { width: 100%; min-height: 44px; padding: 10px 14px; border: 1px solid var(--line-strong); border-radius: 12px; background: #fff; }
-.field-span-2 { grid-column: span 2; }
-.media-section { display: grid; gap: 12px; }
-.section-inline-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
-.inline-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-.helper-text { color: var(--muted); font-size: 12px; }
-.upload-button { position: relative; overflow: hidden; cursor: pointer; }
-.hidden-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-.selected-main-preview { display: grid; grid-template-columns: 120px minmax(0,1fr) auto; gap: 14px; align-items: center; }
-.selected-main-image,.selected-detail-image,.media-card-image { width: 120px; height: 120px; object-fit: cover; border-radius: 16px; border: 1px solid var(--line); background: #fff; }
-.selected-detail-list { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
-.selected-detail-card { display: grid; grid-template-columns: 120px minmax(0,1fr) auto; gap: 12px; align-items: center; padding: 12px; border-radius: 16px; border: 1px solid var(--line); background: #fff; }
-.media-selector-dialog { width: min(1080px, calc(100vw - 48px)); }
-.selector-actions { justify-content: flex-end; align-items: stretch; }
-.media-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 14px; }
-.media-card { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 16px; background: #fff; text-align: left; }
-.media-card strong { font-size: 14px; }
-.media-card span { color: var(--muted); font-size: 12px; }
-.media-empty { grid-column: 1 / -1; }
-
-@media (max-width: 1100px) {
-  .hero-side-grid,.product-filter-grid,.media-filter-grid,.product-form-grid,.selected-detail-list,.media-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
-  .selected-main-preview,.selected-detail-card { grid-template-columns: 1fr; }
+.dialog-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 12px 14px;
 }
 
-@media (max-width: 820px) {
-  .hero-side-grid,.product-filter-grid,.media-filter-grid,.product-form-grid,.selected-detail-list,.media-grid { grid-template-columns: 1fr; }
-  .field-span-2 { grid-column: span 1; }
-  .section-inline-head { flex-direction: column; }
+.dialog-field {
+  display: grid;
+  gap: 6px;
+}
+
+.dialog-field > span {
+  font-size: 13px;
+  font-weight: 600;
+  color: #344054;
+}
+
+.dialog-field input[type='text'],
+.dialog-field input[type='number'],
+.dialog-field input[type='date'],
+.dialog-field select {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  width: 100%;
+}
+
+.checkbox-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  display: flex;
+}
+
+.checkbox-row input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.cell-link.danger {
+  margin-left: 12px;
+}
+
+.product-thumb {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.sale-price {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.discount-line {
+  color: #b45309;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.head-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.upload-trigger {
+  position: relative;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hidden-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.selected-main-preview {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px 14px;
+  align-items: center;
+  background: #fafbfc;
+  border-top: 1px solid var(--line);
+}
+
+.selected-main-image {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.detail-asset-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px 14px;
+}
+
+.detail-asset-card {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fcfdff;
+}
+
+.detail-asset-image {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.picker-search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.picker-search-row input {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  width: 100%;
+}
+
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.media-card {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.media-card:hover {
+  border-color: var(--primary);
+  background: #f8fbff;
+}
+
+.media-card-image {
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: #e2e8f0;
+}
+
+.media-card strong {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.media-empty {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1100px) {
+  .dialog-form-grid { grid-template-columns: 1fr; }
+  .detail-asset-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 720px) {
+  .selected-main-preview { grid-template-columns: 1fr; }
+  .detail-asset-card { grid-template-columns: 1fr; }
 }
 </style>

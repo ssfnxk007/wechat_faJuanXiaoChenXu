@@ -1,301 +1,389 @@
 <template>
-  <div class="business-page page-v2 coupon-template-page">
-    <section class="hero-panel template-hero">
-      <div class="hero-copy">
-        <span class="page-kicker">发券运营</span>
-        <h2>券模板管理</h2>
-        <p>统一维护新人券、无门槛券、指定商品券与满减券规则，支持封面素材设置、商品范围配置与有效期管理。</p>
-        <div class="hero-tags">
-          <span class="badge info">模板规则归档</span>
-          <span class="badge success">支持封面素材</span>
-          <span class="badge warning">支持商品与门店范围</span>
+  <div class="admin-page coupon-template-page">
+    <section class="search-card">
+      <div class="search-grid">
+        <div class="field">
+          <label for="ct-keyword">模板名称</label>
+          <input
+            id="ct-keyword"
+            v-model.trim="query.keyword"
+            type="text"
+            placeholder="输入模板名称后回车搜索"
+            @keyup.enter="handleSearch"
+          />
         </div>
-      </div>
-      <div class="hero-side hero-side-stack">
-        <article class="quick-card quick-card-spotlight">
-          <span class="quick-card-label">模板总数</span>
-          <strong>{{ totalCount }}</strong>
-          <p>当前查询范围内的券模板记录数量。</p>
-        </article>
-        <div class="hero-side-grid">
-          <article class="quick-card compact">
-            <span class="quick-card-label">启用模板</span>
-            <strong>{{ enabledCount }}</strong>
-            <p>当前页面可参与发放的模板数量。</p>
-          </article>
-          <article class="quick-card compact">
-            <span class="quick-card-label">新人券</span>
-            <strong>{{ newUserTemplateCount }}</strong>
-            <p>仅允许单用户领取一次。</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="stats-grid stats-grid-v2">
-      <article class="stat-card accent-blue"><span class="label">模板总数</span><strong class="stat-value">{{ totalCount }}</strong><span class="stat-footnote">当前筛选范围内记录数</span></article>
-      <article class="stat-card accent-indigo"><span class="label">当前页码</span><strong class="stat-value">{{ pageIndex }}</strong><span class="stat-footnote">共 {{ totalPages }} 页</span></article>
-      <article class="stat-card accent-green"><span class="label">启用模板</span><strong class="stat-value">{{ enabledCount }}</strong><span class="stat-footnote">当前页启用状态统计</span></article>
-      <article class="stat-card accent-amber"><span class="label">新人券模板</span><strong class="stat-value">{{ newUserTemplateCount }}</strong><span class="stat-footnote">仅允许单次领取</span></article>
-    </section>
-
-    <section class="card toolbar-card card-v2 operations-card">
-      <div class="toolbar-row">
-        <div class="toolbar-title">
-          <span class="section-kicker">业务操作台</span>
-          <h3>模板筛选与管理动作</h3>
-          <p class="section-tip">按模板名称快速定位配置档案，统一进行新增、编辑、删除和分页浏览。</p>
-        </div>
-        <div class="toolbar-actions">
-          <button type="button" class="ghost-button" @click="resetQuery">重置筛选</button>
-          <button type="button" class="ghost-button" @click="loadData">刷新列表</button>
-          <button v-if="canCreate" type="button" class="primary-button" @click="openCreateDialog">新增券模板</button>
-        </div>
-      </div>
-
-      <div class="filter-panel-grid">
-        <label class="field-card filter-field">
-          <span class="field-label">模板名称</span>
-          <input v-model.trim="query.keyword" type="text" placeholder="输入模板名称后回车搜索" @keyup.enter="handleSearch" />
-        </label>
-        <label class="field-card filter-field compact-field">
-          <span class="field-label">分页条数</span>
-          <select v-model.number="pageSize" @change="handlePageSizeChange">
-            <option :value="10">每页 10 条</option>
-            <option :value="20">每页 20 条</option>
-            <option :value="50">每页 50 条</option>
+        <div class="field">
+          <label for="ct-page-size">每页条数</label>
+          <select id="ct-page-size" v-model.number="pageSize" @change="handlePageSizeChange">
+            <option :value="10">10 条</option>
+            <option :value="20">20 条</option>
+            <option :value="50">50 条</option>
           </select>
-        </label>
-        <div class="field-card summary-field">
-          <span class="field-label">当前筛选</span>
-          <strong>{{ querySummary }}</strong>
-          <p>指定商品券将通过商品选择器配置，不再要求手工输入商品编号。</p>
         </div>
+      </div>
+      <div class="search-actions">
+        <button type="button" class="primary-button compact" @click="handleSearch">查询</button>
+        <button type="button" class="ghost-button compact" @click="resetQuery">重置</button>
+        <button v-if="canCreate" type="button" class="primary-button compact" @click="openCreateDialog">+ 新增券模板</button>
+        <button type="button" class="ghost-button compact" @click="loadData">刷新</button>
+        <button type="button" class="ghost-button compact" @click="notifyColumnSettingsPlaceholder">列设置</button>
       </div>
     </section>
 
-    <section class="card card-v2 data-card archive-card">
-      <div class="section-head">
-        <div class="section-head-main">
-          <span class="section-kicker">模板档案</span>
+    <section class="data-card">
+      <header class="data-card-head">
+        <div class="data-card-title">
           <h3>券模板列表</h3>
-          <p class="section-tip">展示封面、模板类型、有效期、优惠力度、商品范围和启用状态。</p>
+          <span class="count-pill">共 {{ totalCount }} 条</span>
         </div>
-      </div>
+        <div class="data-card-meta">{{ querySummary }}</div>
+      </header>
 
-      <div class="table-wrap table-wrap-v2">
-        <table class="table">
+      <div class="data-table-wrap">
+        <table class="data-table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>封面</th>
-              <th>模板名称</th>
-              <th>有效期</th>
-              <th>优惠规则</th>
-              <th>分发模式</th>
-              <th>商品范围</th>
-              <th>状态</th>
-              <th>创建时间</th>
-              <th>操作</th>
+              <th style="min-width: 56px;">ID</th>
+              <th style="min-width: 80px;">封面</th>
+              <th style="min-width: 220px;">模板名称</th>
+              <th style="min-width: 200px;">有效期</th>
+              <th style="min-width: 160px;">优惠规则</th>
+              <th style="min-width: 130px;">分发模式</th>
+              <th style="min-width: 180px;">商品范围</th>
+              <th style="min-width: 84px;">状态</th>
+              <th style="min-width: 156px;">创建时间</th>
+              <th style="min-width: 110px;">操作</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="item in items" :key="item.id">
-              <td class="cell-strong">{{ item.id }}</td>
+              <td>{{ item.id }}</td>
               <td>
-                <div class="cover-thumb-cell">
-                  <img v-if="item.imageUrl" :src="normalizeAssetUrl(item.imageUrl)" :alt="item.name" class="cover-thumb" />
-                  <div v-else class="cover-thumb cover-thumb-empty">无图</div>
-                </div>
+                <img v-if="item.imageUrl" :src="normalizeAssetUrl(item.imageUrl)" :alt="item.name" class="cover-thumb" />
+                <div v-else class="cover-thumb cover-thumb-empty">无图</div>
               </td>
               <td>
-                <div class="table-primary-cell">
+                <div class="cell-stack">
                   <strong>{{ item.name }}</strong>
-                  <div class="template-meta-row">
-                    <span class="badge info">{{ typeMap[item.templateType] || '-' }}</span>
-                    <span v-if="item.isNewUserOnly" class="badge warning">新人专享</span>
-                    <span :class="['badge', item.isAllStores ? 'success' : 'warning']">{{ item.isAllStores ? '全部门店可用' : '指定门店可用' }}</span>
+                  <div class="meta-tag-row">
+                    <span class="status-badge info">{{ typeMap[item.templateType] || '-' }}</span>
+                    <span v-if="item.isNewUserOnly" class="status-badge warning">新人</span>
+                    <span :class="['status-badge', item.isAllStores ? 'success' : 'warning']">{{ item.isAllStores ? '全店' : '指定店' }}</span>
                   </div>
-                  <span>{{ formatStoreIds(item) }}</span>
+                  <span class="muted-line">{{ formatStoreIds(item) }}</span>
                 </div>
               </td>
-              <td><div class="table-primary-cell"><strong>{{ formatValidity(item) }}</strong><span>{{ validPeriodTypeMap[item.validPeriodType] || '-' }}</span></div></td>
-              <td><div class="table-primary-cell"><strong>{{ formatDiscount(item) }}</strong><span>每用户限领 {{ item.perUserLimit }} 张</span></div></td>
               <td>
-                <div class="table-primary-cell">
-                  <strong>
-                    <span class="badge" :class="`tag-mode-${item.distributionMode}`">{{ distributionModeLabel(item.distributionMode) }}</span>
-                  </strong>
-                  <span v-if="item.distributionMode === 1 && item.salePrice != null" class="price-badge">售价 ¥{{ item.salePrice.toFixed(2) }}</span>
-                  <span v-else>按分发模式决定入口</span>
+                <div class="cell-stack">
+                  <strong>{{ formatValidity(item) }}</strong>
+                  <span class="muted-line">{{ validPeriodTypeMap[item.validPeriodType] || '-' }}</span>
                 </div>
               </td>
-              <td><div class="table-primary-cell"><strong>{{ formatProductIds(item.productIds) }}</strong><span>{{ item.remark || '未设置补充说明' }}</span></div></td>
-              <td><span :class="['status-badge', item.isEnabled ? 'success' : 'danger']">{{ item.isEnabled ? '启用' : '停用' }}</span></td>
+              <td>
+                <div class="cell-stack">
+                  <strong>{{ formatDiscount(item) }}</strong>
+                  <span class="muted-line">每用户限领 {{ item.perUserLimit }} 张</span>
+                </div>
+              </td>
+              <td>
+                <div class="cell-stack">
+                  <span :class="['status-badge', `mode-${item.distributionMode}`]">{{ distributionModeLabel(item.distributionMode) }}</span>
+                  <span v-if="item.distributionMode === 1 && item.salePrice != null" class="muted-line">售价 ¥{{ item.salePrice.toFixed(2) }}</span>
+                  <span v-else class="muted-line">按分发模式决定入口</span>
+                </div>
+              </td>
+              <td>
+                <div class="cell-stack">
+                  <strong>{{ formatProductIds(item.productIds) }}</strong>
+                  <span class="muted-line">{{ item.remark || '未设置补充说明' }}</span>
+                </div>
+              </td>
+              <td>
+                <span :class="['status-badge', item.isEnabled ? 'success' : 'danger']">{{ item.isEnabled ? '启用' : '停用' }}</span>
+              </td>
               <td>{{ formatDate(item.createdAt) }}</td>
-              <td><div class="table-actions"><button v-if="canEdit" type="button" class="action-button" @click="openEditDialog(item)">编辑</button><button v-if="canDelete" type="button" class="action-button danger" @click="removeItem(item)">删除</button></div></td>
+              <td>
+                <button v-if="canEdit" type="button" class="cell-link" @click="openEditDialog(item)">编辑</button>
+                <button v-if="canDelete" type="button" class="cell-link danger" @click="removeItem(item)">删除</button>
+              </td>
             </tr>
-            <tr v-if="items.length === 0"><td colspan="10" class="empty-text">当前没有符合条件的券模板</td></tr>
+            <tr v-if="items.length === 0" class="empty-row">
+              <td colspan="10">当前没有符合条件的券模板</td>
+            </tr>
           </tbody>
         </table>
       </div>
 
-      <div class="pager pager-v2"><div class="pager-info">第 {{ pageIndex }} 页 / 共 {{ totalPages }} 页，共 {{ totalCount }} 条记录</div><div class="pager-actions"><button type="button" class="ghost-button" :disabled="pageIndex <= 1" @click="goPrevPage">上一页</button><button type="button" :disabled="pageIndex >= totalPages" @click="goNextPage">下一页</button></div></div>
+      <footer class="pager-compact">
+        <div class="pager-info">第 {{ pageIndex }} / {{ totalPages }} 页 · 共 {{ totalCount }} 条</div>
+        <div class="pager-actions">
+          <button type="button" :disabled="pageIndex <= 1" @click="goPrevPage">上一页</button>
+          <button type="button" :disabled="pageIndex >= totalPages" @click="goNextPage">下一页</button>
+        </div>
+      </footer>
     </section>
 
-    <div v-if="dialogVisible" class="dialog-mask" @click.self="closeDialog">
-      <div class="dialog-card dialog-card-v2 template-dialog">
-        <div class="dialog-head"><div class="dialog-head-main"><span class="section-kicker">模板表单</span><h3>{{ editingId ? '编辑券模板' : '新增券模板' }}</h3><p>{{ editingId ? '调整已有模板的投放规则与有效期设置。' : '建立新的发券模板，支持后续发放、领取和核销。' }}</p></div></div>
+    <MainDetailDialog
+      v-if="dialogVisible"
+      :title="editingId ? '编辑券模板' : '新增券模板'"
+      :sub="editingId ? '调整已有模板的投放规则与有效期设置' : '建立新的发券模板，支持后续发放、领取和核销'"
+      size="xl"
+      @close="closeDialog"
+    >
+      <div class="dialog-form-grid">
+        <label class="dialog-field">
+          <span>模板名称</span>
+          <input v-model.trim="form.name" type="text" placeholder="例如：新人欢迎礼券" />
+        </label>
+        <label class="dialog-field">
+          <span>模板类型</span>
+          <select v-model.number="form.templateType">
+            <option :value="1">新人券</option>
+            <option :value="2">无门槛券</option>
+            <option :value="3">指定商品券</option>
+            <option :value="4">满减券</option>
+          </select>
+        </label>
+        <label class="dialog-field">
+          <span>有效期类型</span>
+          <select v-model.number="form.validPeriodType">
+            <option :value="1">固定日期范围</option>
+            <option :value="2">领取后 N 天有效</option>
+          </select>
+        </label>
+        <label class="dialog-field">
+          <span>分发模式</span>
+          <select v-model.number="form.distributionMode" @change="onDistributionModeChange">
+            <option v-for="option in DISTRIBUTION_MODE_OPTIONS" :key="option.value" :value="option.value">{{ option.label }}</option>
+          </select>
+        </label>
+        <label v-if="form.distributionMode === 1" class="dialog-field">
+          <span>售价（元）<em class="required-hint">*</em></span>
+          <input v-model.number="form.salePrice" type="number" min="0.01" step="0.01" placeholder="仅单张售卖模式填写" />
+        </label>
+        <label class="dialog-field">
+          <span>优惠金额</span>
+          <input v-model.number="form.discountAmount" type="number" min="0" step="0.01" placeholder="例如：5" />
+        </label>
+        <label class="dialog-field">
+          <span>门槛金额</span>
+          <input v-model.number="form.thresholdAmount" type="number" min="0" step="0.01" placeholder="满减券可填写门槛" />
+        </label>
+        <label class="dialog-field">
+          <span>每用户限领</span>
+          <input v-model.number="form.perUserLimit" type="number" min="1" step="1" />
+        </label>
+        <label v-if="form.validPeriodType === 2" class="dialog-field">
+          <span>领取后有效天数</span>
+          <input v-model.number="form.validDays" type="number" min="1" step="1" />
+        </label>
+        <label v-if="form.validPeriodType === 1" class="dialog-field">
+          <span>开始时间</span>
+          <input v-model="validFromLocal" type="datetime-local" />
+        </label>
+        <label v-if="form.validPeriodType === 1" class="dialog-field">
+          <span>结束时间</span>
+          <input v-model="validToLocal" type="datetime-local" />
+        </label>
+        <label class="dialog-field field-span-2">
+          <span>备注说明</span>
+          <input v-model.trim="form.remark" type="text" placeholder="用于补充适用门店、活动场景等说明" />
+        </label>
+        <label class="dialog-field checkbox-row">
+          <input v-model="form.isNewUserOnly" type="checkbox" />
+          <span>仅限新人领取一次</span>
+        </label>
+        <label class="dialog-field checkbox-row">
+          <input v-model="form.isAllStores" type="checkbox" />
+          <span>全部门店可用</span>
+        </label>
+        <label class="dialog-field checkbox-row">
+          <input v-model="form.isEnabled" type="checkbox" />
+          <span>启用模板</span>
+        </label>
+      </div>
 
-        <div class="grid-form dialog-form template-form-grid">
-          <label><span>模板名称</span><input v-model.trim="form.name" type="text" placeholder="例如：新人欢迎礼券" /></label>
-          <label><span>模板类型</span><select v-model.number="form.templateType"><option :value="1">新人券</option><option :value="2">无门槛券</option><option :value="3">指定商品券</option><option :value="4">满减券</option></select></label>
-          <label><span>有效期类型</span><select v-model.number="form.validPeriodType"><option :value="1">固定日期范围</option><option :value="2">领取后 N 天有效</option></select></label>
-          <label class="field-card">
-            <span class="field-label">分发模式</span>
-            <select v-model.number="form.distributionMode" @change="onDistributionModeChange">
-              <option v-for="option in DISTRIBUTION_MODE_OPTIONS" :key="option.value" :value="option.value">{{ option.label }}</option>
-            </select>
-          </label>
-          <label v-if="form.distributionMode === 1" class="field-card">
-            <span class="field-label">售价（元）<span class="required-hint">*</span></span>
-            <input v-model.number="form.salePrice" type="number" min="0.01" step="0.01" placeholder="仅单张售卖模式填写" />
-          </label>
-          <label><span>优惠金额</span><input v-model.number="form.discountAmount" type="number" min="0" step="0.01" placeholder="例如：5" /></label>
-          <label><span>门槛金额</span><input v-model.number="form.thresholdAmount" type="number" min="0" step="0.01" placeholder="满减券可填写门槛" /></label>
-          <label><span>每用户限领</span><input v-model.number="form.perUserLimit" type="number" min="1" step="1" /></label>
-          <label v-if="form.validPeriodType === 2"><span>领取后有效天数</span><input v-model.number="form.validDays" type="number" min="1" step="1" /></label>
-          <label v-if="form.validPeriodType === 1"><span>开始时间</span><input v-model="validFromLocal" type="datetime-local" /></label>
-          <label v-if="form.validPeriodType === 1"><span>结束时间</span><input v-model="validToLocal" type="datetime-local" /></label>
-
-          <div class="field-span-3 selector-field-card media-selector-card">
-            <div class="selector-field-head">
-              <span>封面素材</span>
-              <div class="toolbar-actions selector-actions">
-                <button type="button" class="ghost-button" @click="openMediaDialog">选择素材</button>
-                <label class="ghost-button upload-trigger">上传图片<input type="file" accept="image/*" class="file-input-hidden" @change="handleImageUpload" /></label>
-                <button type="button" class="ghost-button" @click="clearImageAsset">清空</button>
-              </div>
-            </div>
-            <div v-if="selectedImageAsset" class="selected-media-card">
-              <img :src="normalizeAssetUrl(selectedImageAsset.fileUrl)" :alt="selectedImageAsset.name" class="selected-media-image" />
-              <div class="table-primary-cell"><strong>{{ selectedImageAsset.name }}</strong><span>素材ID {{ selectedImageAsset.id }}</span></div>
-            </div>
-            <p v-else class="helper-text">未设置封面素材，可从素材库选择或直接上传图片。</p>
+      <section class="detail-section">
+        <header class="detail-section-head">
+          <h4>封面素材</h4>
+          <div class="head-actions">
+            <button type="button" class="ghost-button compact" @click="openMediaDialog">选择素材</button>
+            <label class="ghost-button compact upload-trigger">上传图片<input type="file" accept="image/*" class="file-input-hidden" @change="handleImageUpload" /></label>
+            <button v-if="selectedImageAsset" type="button" class="ghost-button compact" @click="clearImageAsset">清空</button>
           </div>
-
-          <div v-if="form.templateType === 3" class="field-span-3 selector-field-card">
-            <div class="selector-field-head">
-              <span>适用商品</span>
-              <button type="button" class="ghost-button" @click="openProductDialog">选择商品</button>
-            </div>
-            <div v-if="selectedProducts.length > 0" class="selected-product-list">
-              <span v-for="product in selectedProducts" :key="product.id" class="selected-product-chip">
-                {{ product.name }}
-                <button type="button" @click="removeSelectedProduct(product.id)">移除</button>
-              </span>
-            </div>
-            <p v-else class="helper-text">当前还未选择商品。指定商品券请通过商品选择器完成配置。</p>
+        </header>
+        <div v-if="selectedImageAsset" class="selected-media-card">
+          <img :src="normalizeAssetUrl(selectedImageAsset.fileUrl)" :alt="selectedImageAsset.name" class="selected-media-image" />
+          <div class="cell-stack">
+            <strong>{{ selectedImageAsset.name }}</strong>
+            <span class="muted-line">素材 ID {{ selectedImageAsset.id }}</span>
           </div>
+        </div>
+        <div v-else class="detail-empty">未设置封面素材，可从素材库选择或直接上传图片</div>
+      </section>
 
-          <div v-if="!form.isAllStores" class="field-span-3 selector-field-card">
-            <div class="selector-field-head">
-              <span>适用门店</span>
-              <button type="button" class="ghost-button" @click="openStoreDialog">选择门店</button>
-            </div>
-            <div v-if="selectedStores.length > 0" class="selected-product-list">
-              <span v-for="store in selectedStores" :key="store.id" class="selected-product-chip">
-                {{ store.name }} / {{ store.code || `ID ${store.id}` }}
-                <button type="button" @click="removeSelectedStore(store.id)">移除</button>
-              </span>
-            </div>
-            <p v-else class="helper-text">指定门店可用时，必须至少选择一个门店。</p>
+      <section v-if="form.templateType === 3" class="detail-section">
+        <header class="detail-section-head">
+          <h4>适用商品</h4>
+          <div class="head-actions">
+            <button type="button" class="ghost-button compact" @click="openProductDialog">选择商品</button>
           </div>
-
-          <label class="field-span-3"><span>备注说明</span><input v-model.trim="form.remark" type="text" placeholder="用于补充适用门店、活动场景等说明" /></label>
-          <label class="checkbox-field checkbox-card"><input v-model="form.isNewUserOnly" type="checkbox" /><span>仅限新人领取一次</span></label>
-          <label class="checkbox-field checkbox-card"><input v-model="form.isAllStores" type="checkbox" /><span>全部门店可用</span></label>
-          <label class="checkbox-field checkbox-card"><input v-model="form.isEnabled" type="checkbox" /><span>启用模板</span></label>
+        </header>
+        <div v-if="selectedProducts.length > 0" class="chip-row">
+          <span v-for="product in selectedProducts" :key="product.id" class="chip">
+            {{ product.name }}
+            <button type="button" @click="removeSelectedProduct(product.id)">×</button>
+          </span>
         </div>
+        <div v-else class="detail-empty">当前还未选择商品。指定商品券请通过商品选择器完成配置</div>
+      </section>
 
-        <div class="dialog-actions"><button type="button" class="ghost-button" :disabled="submitting || deleting" @click="closeDialog">取消</button><button v-if="editingId ? canEdit : canCreate" type="button" class="primary-button" :disabled="submitting || deleting" @click="submit">{{ submitting ? '提交中...' : (editingId ? '保存修改' : '保存新增') }}</button></div>
+      <section v-if="!form.isAllStores" class="detail-section">
+        <header class="detail-section-head">
+          <h4>适用门店</h4>
+          <div class="head-actions">
+            <button type="button" class="ghost-button compact" @click="openStoreDialog">选择门店</button>
+          </div>
+        </header>
+        <div v-if="selectedStores.length > 0" class="chip-row">
+          <span v-for="store in selectedStores" :key="store.id" class="chip">
+            {{ store.name }} / {{ store.code || `ID ${store.id}` }}
+            <button type="button" @click="removeSelectedStore(store.id)">×</button>
+          </span>
+        </div>
+        <div v-else class="detail-empty">指定门店可用时，必须至少选择一个门店</div>
+      </section>
+
+      <template #footer>
+        <button type="button" class="ghost-button compact" :disabled="submitting || deleting" @click="closeDialog">取消</button>
+        <button
+          v-if="editingId ? canEdit : canCreate"
+          type="button"
+          class="primary-button compact"
+          :disabled="submitting || deleting"
+          @click="submit"
+        >{{ submitting ? '提交中...' : (editingId ? '保存修改' : '保存新增') }}</button>
+      </template>
+    </MainDetailDialog>
+
+    <MainDetailDialog
+      v-if="productDialogVisible"
+      title="商品选择器"
+      sub="支持按商品名称或 ERP 编码搜索并勾选适用商品"
+      size="xl"
+      @close="closeProductDialog"
+    >
+      <div class="picker-search-row">
+        <input v-model.trim="productQuery.keyword" type="text" placeholder="输入商品名称或 ERP 编码后回车搜索" @keyup.enter="loadProductOptions" />
+        <button type="button" class="primary-button compact" @click="loadProductOptions">搜索</button>
+        <button type="button" class="ghost-button compact" @click="resetProductQuery">重置</button>
       </div>
-    </div>
-
-    <div v-if="productDialogVisible" class="dialog-mask" @click.self="closeProductDialog">
-      <div class="dialog-card dialog-card-v2 product-selector-dialog">
-        <div class="dialog-head"><div class="dialog-head-main"><span class="section-kicker">选择商品</span><h3>商品选择器</h3><p>支持按商品名称或 ERP 编码搜索并勾选适用商品。</p></div></div>
-        <div class="filter-panel-grid product-search-grid">
-          <label class="field-card filter-field"><span class="field-label">搜索商品</span><input v-model.trim="productQuery.keyword" type="text" placeholder="输入商品名称或 ERP 编码后回车搜索" @keyup.enter="loadProductOptions" /></label>
-          <div class="field-card summary-field"><span class="field-label">当前结果</span><strong>{{ productOptions.length }} 项</strong><p>勾选结果会自动回填到模板商品范围。</p></div>
-          <div class="toolbar-actions selector-actions"><button type="button" class="ghost-button" @click="loadProductOptions">搜索</button><button type="button" class="ghost-button" @click="resetProductQuery">重置</button></div>
-        </div>
-        <div class="table-wrap table-wrap-v2">
-          <table class="table">
-            <thead><tr><th>选择</th><th>ID</th><th>商品名称</th><th>ERP 编码</th><th>状态</th></tr></thead>
-            <tbody>
-              <tr v-for="product in productOptions" :key="product.id">
-                <td><input :checked="isProductSelected(product.id)" type="checkbox" @change="toggleProductSelection(product)" /></td>
-                <td class="cell-strong">{{ product.id }}</td>
-                <td>{{ product.name }}</td>
-                <td>{{ product.erpProductCode }}</td>
-                <td><span :class="['status-badge', product.isEnabled ? 'success' : 'danger']">{{ product.isEnabled ? '启用' : '停用' }}</span></td>
-              </tr>
-              <tr v-if="productOptions.length === 0"><td colspan="5" class="empty-text">暂无可选商品</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="dialog-actions"><button type="button" class="primary-button" @click="closeProductDialog">完成选择</button></div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 60px;">选择</th>
+              <th style="width: 56px;">ID</th>
+              <th>商品名称</th>
+              <th>ERP 编码</th>
+              <th>状态</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="product in productOptions" :key="product.id">
+              <td><input :checked="isProductSelected(product.id)" type="checkbox" @change="toggleProductSelection(product)" /></td>
+              <td>{{ product.id }}</td>
+              <td>{{ product.name }}</td>
+              <td class="cell-mono">{{ product.erpProductCode }}</td>
+              <td>
+                <span :class="['status-badge', product.isEnabled ? 'success' : 'danger']">{{ product.isEnabled ? '启用' : '停用' }}</span>
+              </td>
+            </tr>
+            <tr v-if="productOptions.length === 0" class="empty-row">
+              <td colspan="5">暂无可选商品</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-    </div>
+      <template #footer>
+        <button type="button" class="primary-button compact" @click="closeProductDialog">完成选择</button>
+      </template>
+    </MainDetailDialog>
 
-    <div v-if="mediaDialogVisible" class="dialog-mask" @click.self="closeMediaDialog">
-      <div class="dialog-card dialog-card-v2 product-selector-dialog">
-        <div class="dialog-head"><div class="dialog-head-main"><span class="section-kicker">封面素材</span><h3>选择图片素材</h3><p>从素材库选择可用图片，作为券模板封面展示。</p></div></div>
-        <div class="filter-panel-grid product-search-grid">
-          <label class="field-card filter-field"><span class="field-label">搜索素材</span><input v-model.trim="mediaQuery.keyword" type="text" placeholder="输入素材名称后回车搜索" @keyup.enter="loadMediaOptions" /></label>
-          <div class="field-card summary-field"><span class="field-label">当前结果</span><strong>{{ mediaOptions.length }} 项</strong><p>优先展示图片类素材，可直接点击选择。</p></div>
-          <div class="toolbar-actions selector-actions"><button type="button" class="ghost-button" @click="loadMediaOptions">搜索</button><button type="button" class="ghost-button" @click="resetMediaQuery">重置</button></div>
-        </div>
-        <div class="media-grid">
-          <button v-for="asset in mediaOptions" :key="asset.id" type="button" class="media-card" @click="selectMediaAsset(asset)"><img :src="normalizeAssetUrl(asset.fileUrl)" :alt="asset.name" class="media-card-image" /><strong>{{ asset.name }}</strong><span>{{ asset.bucketType }}</span></button>
-          <div v-if="mediaOptions.length === 0" class="empty-text media-empty">当前没有可选素材</div>
-        </div>
-        <div class="dialog-actions"><button type="button" class="primary-button" @click="closeMediaDialog">关闭</button></div>
+    <MainDetailDialog
+      v-if="mediaDialogVisible"
+      title="选择封面素材"
+      sub="从素材库选择可用图片，作为券模板封面展示"
+      size="xl"
+      @close="closeMediaDialog"
+    >
+      <div class="picker-search-row">
+        <input v-model.trim="mediaQuery.keyword" type="text" placeholder="输入素材名称后回车搜索" @keyup.enter="loadMediaOptions" />
+        <button type="button" class="primary-button compact" @click="loadMediaOptions">搜索</button>
+        <button type="button" class="ghost-button compact" @click="resetMediaQuery">重置</button>
       </div>
-    </div>
+      <div class="media-grid">
+        <button v-for="asset in mediaOptions" :key="asset.id" type="button" class="media-card" @click="selectMediaAsset(asset)">
+          <img :src="normalizeAssetUrl(asset.fileUrl)" :alt="asset.name" class="media-card-image" />
+          <strong>{{ asset.name }}</strong>
+          <span class="muted-line">{{ asset.bucketType }}</span>
+        </button>
+        <div v-if="mediaOptions.length === 0" class="detail-empty media-empty">当前没有可选素材</div>
+      </div>
+      <template #footer>
+        <button type="button" class="ghost-button compact" @click="closeMediaDialog">关闭</button>
+      </template>
+    </MainDetailDialog>
 
-    <div v-if="storeDialogVisible" class="dialog-mask" @click.self="closeStoreDialog">
-      <div class="dialog-card dialog-card-v2 product-selector-dialog">
-        <div class="dialog-head"><div class="dialog-head-main"><span class="section-kicker">选择门店</span><h3>门店选择器</h3><p>支持按门店名称或 ERP 门店编号搜索并勾选适用门店。</p></div></div>
-        <div class="filter-panel-grid product-search-grid">
-          <label class="field-card filter-field"><span class="field-label">搜索门店</span><input v-model.trim="storeQuery.keyword" type="text" placeholder="输入门店名称或编号后回车搜索" @keyup.enter="loadStoreOptions" /></label>
-          <div class="field-card summary-field"><span class="field-label">当前结果</span><strong>{{ storeOptions.length }} 项</strong><p>勾选结果会自动回填到模板门店范围。</p></div>
-          <div class="toolbar-actions selector-actions"><button type="button" class="ghost-button" @click="loadStoreOptions">搜索</button><button type="button" class="ghost-button" @click="resetStoreQuery">重置</button></div>
-        </div>
-        <div class="table-wrap table-wrap-v2">
-          <table class="table">
-            <thead><tr><th>选择</th><th>ID</th><th>门店名称</th><th>ERP 门店编号</th><th>状态</th></tr></thead>
-            <tbody>
-              <tr v-for="store in storeOptions" :key="store.id">
-                <td><input :checked="isStoreSelected(store.id)" type="checkbox" @change="toggleStoreSelection(store)" /></td>
-                <td class="cell-strong">{{ store.id }}</td>
-                <td>{{ store.name }}</td>
-                <td>{{ store.code }}</td>
-                <td><span :class="['status-badge', store.isEnabled ? 'success' : 'danger']">{{ store.isEnabled ? '启用' : '停用' }}</span></td>
-              </tr>
-              <tr v-if="storeOptions.length === 0"><td colspan="5" class="empty-text">暂无可选门店</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="dialog-actions"><button type="button" class="primary-button" @click="closeStoreDialog">完成选择</button></div>
+    <MainDetailDialog
+      v-if="storeDialogVisible"
+      title="门店选择器"
+      sub="支持按门店名称或 ERP 门店编号搜索并勾选适用门店"
+      size="xl"
+      @close="closeStoreDialog"
+    >
+      <div class="picker-search-row">
+        <input v-model.trim="storeQuery.keyword" type="text" placeholder="输入门店名称或编号后回车搜索" @keyup.enter="loadStoreOptions" />
+        <button type="button" class="primary-button compact" @click="loadStoreOptions">搜索</button>
+        <button type="button" class="ghost-button compact" @click="resetStoreQuery">重置</button>
       </div>
-    </div>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 60px;">选择</th>
+              <th style="width: 56px;">ID</th>
+              <th>门店名称</th>
+              <th>ERP 门店编号</th>
+              <th>状态</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="store in storeOptions" :key="store.id">
+              <td><input :checked="isStoreSelected(store.id)" type="checkbox" @change="toggleStoreSelection(store)" /></td>
+              <td>{{ store.id }}</td>
+              <td>{{ store.name }}</td>
+              <td class="cell-mono">{{ store.code }}</td>
+              <td>
+                <span :class="['status-badge', store.isEnabled ? 'success' : 'danger']">{{ store.isEnabled ? '启用' : '停用' }}</span>
+              </td>
+            </tr>
+            <tr v-if="storeOptions.length === 0" class="empty-row">
+              <td colspan="5">暂无可选门店</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <template #footer>
+        <button type="button" class="primary-button compact" @click="closeStoreDialog">完成选择</button>
+      </template>
+    </MainDetailDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import MainDetailDialog from '@/components/MainDetailDialog.vue'
 import { createCouponTemplate, deleteCouponTemplate, getCouponTemplateList, updateCouponTemplate } from '@/api/coupon-template'
 import { createMediaAsset, getMediaAssetList, uploadMediaAssetFile } from '@/api/media-asset'
 import { getProductList } from '@/api/product'
@@ -377,9 +465,7 @@ const canCreate = authStorage.hasPermission('coupon-template.create')
 const canEdit = authStorage.hasPermission('coupon-template.edit')
 const canDelete = authStorage.hasPermission('coupon-template.delete')
 
-const enabledCount = computed(() => items.value.filter((item) => item.isEnabled).length)
-const newUserTemplateCount = computed(() => items.value.filter((item) => item.isNewUserOnly).length)
-const querySummary = computed(() => `关键词：${query.keyword || '全部模板'} / 每页 ${pageSize.value} 条`)
+const querySummary = computed(() => `关键词：${query.keyword || '全部模板'} · 每页 ${pageSize.value} 条`)
 
 watch(validFromLocal, (value) => { form.validFrom = toServerDateTime(value) })
 watch(validToLocal, (value) => { form.validTo = toServerDateTime(value) })
@@ -642,7 +728,7 @@ const submit = async () => {
 }
 
 const removeItem = async (item: CouponTemplateListItemDto) => {
-  if (!window.confirm(`确认删除券模板“${item.name}”吗？`)) return
+  if (!window.confirm(`确认删除券模板"${item.name}"吗？`)) return
   if (deleting.value) return
   deleting.value = true
   try {
@@ -657,36 +743,225 @@ const removeItem = async (item: CouponTemplateListItemDto) => {
   }
 }
 
+const notifyColumnSettingsPlaceholder = () => {
+  notify.info('列设置功能将在下一版本提供')
+}
+
 onMounted(loadData)
 </script>
 
 <style scoped>
-.template-hero { background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.14), transparent 28%), linear-gradient(135deg, #ffffff 0%, #f7faff 54%, #f3f6fb 100%); }
-.hero-side-stack { align-content: stretch; }
-.quick-card-spotlight { min-height: 148px; background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(59, 130, 246, 0.02)); border: 1px solid rgba(59, 130, 246, 0.16); }
-.filter-panel-grid { display: grid; grid-template-columns: 1.4fr 0.8fr 1fr; gap: 14px; }
-.cover-thumb-cell { display: flex; align-items: center; }
-.cover-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: 12px; border: 1px solid var(--line); background: #fff; }
-.cover-thumb-empty { display: grid; place-items: center; color: var(--muted); font-size: 12px; }
-.template-meta-row { display: flex; flex-wrap: wrap; gap: 8px; }
-.template-dialog { width: min(920px, calc(100vw - 48px)); }
-.template-form-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.dialog-form input,.dialog-form select { width: 100%; height: 44px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 12px; background: #fff; }
-.selected-product-list { display: flex; flex-wrap: wrap; gap: 10px; }
-.selected-product-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 12px; border-radius: 999px; background: rgba(37,99,235,.08); color: var(--primary); }
-.selected-product-chip button { height: 24px; min-width: auto; padding: 0 10px; border-radius: 999px; border: 1px solid rgba(37,99,235,.16); background: #fff; color: var(--primary); }
-.price-badge { color: #b45309; font-weight: 600; }
-.tag-mode-0 { background: rgba(22, 163, 74, 0.12); color: #166534; }
-.tag-mode-1 { background: rgba(37, 99, 235, 0.12); color: #1d4ed8; }
-.tag-mode-2 { background: rgba(217, 119, 6, 0.12); color: #b45309; }
-.required-hint { color: #dc2626; margin-left: 4px; }
-.media-selector-card { gap: 12px; }
-.selected-media-card { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 16px; border: 1px solid rgba(226,232,240,.96); background: linear-gradient(180deg, #fff 0%, #fbfdff 100%); }
-.selected-media-image,.media-card-image { width: 120px; height: 120px; object-fit: cover; border-radius: 16px; border: 1px solid var(--line); background: #fff; }
-.file-input-hidden { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-.product-selector-dialog { width: min(980px, calc(100vw - 48px)); }
-.product-search-grid { grid-template-columns: 1.4fr 1fr auto; align-items: end; }
-.selector-actions { justify-content: flex-end; }
-@media (max-width:1100px){ .filter-panel-grid,.template-form-grid,.hero-side-grid,.product-search-grid,.media-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width:820px){ .filter-panel-grid,.template-form-grid,.hero-side-grid,.product-search-grid,.media-grid{ grid-template-columns: 1fr; } .selected-media-card { flex-direction: column; align-items: flex-start; } }
+.dialog-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dialog-field {
+  display: grid;
+  gap: 6px;
+}
+
+.dialog-field > span {
+  font-size: 13px;
+  font-weight: 600;
+  color: #344054;
+}
+
+.dialog-field input[type='text'],
+.dialog-field input[type='number'],
+.dialog-field input[type='datetime-local'],
+.dialog-field select {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  width: 100%;
+}
+
+.checkbox-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  display: flex;
+}
+
+.checkbox-row input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.required-hint {
+  color: #dc2626;
+  margin-left: 4px;
+  font-style: normal;
+}
+
+.cell-link.danger {
+  margin-left: 12px;
+}
+
+.cover-thumb {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.cover-thumb-empty {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.meta-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 2px 0;
+}
+
+.status-badge.mode-0 { background: #e8f5ee; color: #166534; }
+.status-badge.mode-1 { background: #e8f1ff; color: #1d4ed8; }
+.status-badge.mode-2 { background: #fef6e7; color: #b45309; }
+
+.head-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.upload-trigger {
+  position: relative;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-input-hidden {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.selected-media-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border-top: 1px solid var(--line);
+  background: #fafbfc;
+}
+
+.selected-media-image {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 14px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.chip button {
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.picker-search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.picker-search-row input {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  width: 100%;
+}
+
+.media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.media-card {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.media-card:hover {
+  border-color: var(--primary);
+  background: #f8fbff;
+}
+
+.media-card-image {
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: #e2e8f0;
+}
+
+.media-card strong {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.media-empty {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1100px) {
+  .dialog-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 720px) {
+  .dialog-form-grid { grid-template-columns: 1fr; }
+  .selected-media-card { flex-direction: column; align-items: flex-start; }
+}
 </style>

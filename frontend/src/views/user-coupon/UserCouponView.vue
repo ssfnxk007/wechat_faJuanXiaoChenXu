@@ -1,520 +1,339 @@
 <template>
-  <div class="business-page page-v2 user-coupon-page">
-    <section class="hero-panel user-coupon-hero">
-      <div class="hero-copy">
-        <span class="page-kicker">发券运营</span>
-        <h2>用户券中心</h2>
-        <p>统一查看发券结果、券码状态、有效期与核销轨迹，并支持手动发券、批量导入发券和二维码展示。</p>
-        <div class="hero-tags">
-          <span class="badge info">公开领取与定向发放统一归档</span>
-          <span class="badge success">支持二维码核销展示</span>
-          <span class="badge warning">支持 CSV 批量导入</span>
-        </div>
-      </div>
-      <div class="hero-side hero-side-stack">
-        <article class="quick-card quick-card-spotlight">
-          <span class="quick-card-label">当前记录</span>
-          <strong>{{ totalCount }}</strong>
-          <p>当前筛选条件下的用户券归档数，便于运营快速定位发券结果。</p>
-        </article>
-        <div class="hero-side-grid">
-          <article class="quick-card compact">
-            <span class="quick-card-label">待使用</span>
-            <strong>{{ unusedCount }}</strong>
-            <p>已发放且未核销</p>
-          </article>
-          <article class="quick-card compact">
-            <span class="quick-card-label">已核销</span>
-            <strong>{{ usedCount }}</strong>
-            <p>已完成核销处理</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <div class="stats-grid stats-grid-v2">
-      <article class="stat-card accent-blue">
-        <span class="label">用户券总数</span>
-        <strong class="stat-value">{{ totalCount }}</strong>
-        <span class="stat-footnote">当前查询范围内的发券结果</span>
-      </article>
-      <article class="stat-card accent-indigo">
-        <span class="label">当前页码</span>
-        <strong class="stat-value">{{ pageIndex }}</strong>
-        <span class="stat-footnote">共 {{ totalPages }} 页</span>
-      </article>
-      <article class="stat-card accent-green">
-        <span class="label">待使用</span>
-        <strong class="stat-value">{{ unusedCount }}</strong>
-        <span class="stat-footnote">当前页可用于核销的券</span>
-      </article>
-      <article class="stat-card accent-amber">
-        <span class="label">已过期 / 已失效</span>
-        <strong class="stat-value">{{ expiredCount }}</strong>
-        <span class="stat-footnote">需重点关注的失效记录</span>
-      </article>
-    </div>
-
-    <section class="card toolbar-card card-v2 operations-card">
-      <div class="toolbar-row">
-        <div class="toolbar-title">
-          <span class="section-kicker">检索与动作</span>
-          <h3>用户券查询台</h3>
-          <p class="section-tip">按用户或券码快速定位记录，并在同一入口完成发券动作与结果核对。</p>
-        </div>
-        <div class="toolbar-actions">
-          <button type="button" class="ghost-button" @click="loadData">刷新列表</button>
-          <button v-if="canGrant" type="button" class="primary-button" @click="openGrantDialog">手动发券</button>
-          <button v-if="canGrant" type="button" class="ghost-button" @click="openImportDialog">导入发券</button>
-        </div>
-      </div>
-
-      <div class="filter-panel-grid user-coupon-filter-grid">
-        <label class="field-card filter-field compact-field">
-          <span class="field-label">用户</span>
-          <select v-model.number="query.userId" @change="handleSearch">
+  <div class="admin-page user-coupon-page">
+    <section class="search-card">
+      <div class="search-grid">
+        <div class="field">
+          <label for="uc-user">用户</label>
+          <select id="uc-user" v-model.number="query.userId" @change="handleSearch">
             <option :value="0">全部用户</option>
             <option v-for="user in userOptions" :key="user.id" :value="user.id">{{ formatUserLabel(user) }}</option>
           </select>
-        </label>
-        <label class="field-card filter-field">
-          <span class="field-label">券码</span>
-          <input v-model.trim="query.couponCode" type="text" placeholder="输入券码后回车检索" @keyup.enter="handleSearch" />
-        </label>
-        <label class="field-card filter-field compact-field">
-          <span class="field-label">分页条数</span>
-          <select v-model.number="pageSize" @change="handlePageSizeChange">
-            <option :value="10">每页 10 条</option>
-            <option :value="20">每页 20 条</option>
-            <option :value="50">每页 50 条</option>
+        </div>
+        <div class="field">
+          <label for="uc-code">券码</label>
+          <input id="uc-code" v-model.trim="query.couponCode" type="text" placeholder="输入券码后回车检索" @keyup.enter="handleSearch" />
+        </div>
+        <div class="field">
+          <label for="uc-page-size">每页条数</label>
+          <select id="uc-page-size" v-model.number="pageSize" @change="handlePageSizeChange">
+            <option :value="10">10 条</option>
+            <option :value="20">20 条</option>
+            <option :value="50">50 条</option>
           </select>
-        </label>
-        <div class="field-card summary-field">
-          <span class="field-label">当前筛选</span>
-          <strong>{{ querySummary }}</strong>
-          <p>支持直接打开二维码与券详情，便于与门店核销岗位联动核对。</p>
         </div>
+      </div>
+      <div class="search-actions">
+        <button type="button" class="primary-button compact" @click="handleSearch">查询</button>
+        <button type="button" class="ghost-button compact" @click="resetQuery">重置</button>
+        <button v-if="canGrant" type="button" class="primary-button compact" @click="openGrantDialog">手动发券</button>
+        <button v-if="canGrant" type="button" class="ghost-button compact" @click="openImportDialog">CSV 导入</button>
+        <button type="button" class="ghost-button compact" @click="loadData">刷新</button>
+        <button type="button" class="ghost-button compact" @click="notifyColumnSettingsPlaceholder">列设置</button>
       </div>
     </section>
 
-    <section class="operation-grid">
-      <article class="card card-v2 action-entry-card">
-        <div class="entry-head">
-          <span class="section-kicker">人工处理</span>
-          <h3>手动发券</h3>
-          <p class="section-tip">按用户 ID 批量发放指定模板，适用于活动补发、运营定向投放与现场处理。</p>
+    <section class="data-card">
+      <header class="data-card-head">
+        <div class="data-card-title">
+          <h3>用户券档案</h3>
+          <span class="count-pill">共 {{ totalCount }} 条</span>
         </div>
-        <div class="entry-metrics">
-          <div>
-            <strong>{{ lastGrantSummary }}</strong>
-            <span>最近一次发券结果</span>
-          </div>
-          <button v-if="canGrant" type="button" class="primary-button" @click="openGrantDialog">立即发券</button>
-        </div>
-      </article>
+        <div class="data-card-meta">{{ querySummary }}</div>
+      </header>
 
-      <article class="card card-v2 action-entry-card">
-        <div class="entry-head">
-          <span class="section-kicker">批量处理</span>
-          <h3>CSV 导入发券</h3>
-          <p class="section-tip">支持按用户 ID、手机号、小程序 OpenId、公众号 OpenId 批量导入匹配发券。</p>
-        </div>
-        <div class="entry-metrics">
-          <div>
-            <strong>{{ lastImportSummary }}</strong>
-            <span>最近一次导入结果</span>
-          </div>
-          <button v-if="canGrant" type="button" class="ghost-button" @click="openImportDialog">打开导入面板</button>
-        </div>
-      </article>
-
-      <article class="card card-v2 action-entry-card">
-        <div class="entry-head">
-          <span class="section-kicker">重点关注</span>
-          <h3>异常与失效记录</h3>
-          <p class="section-tip">把运营最需要追的风险项单独拎出来，避免只盯着发券成功而忽略后续履约问题。</p>
-        </div>
-        <div class="entry-metrics">
-          <div>
-            <strong>已过期 / 已失效 {{ expiredCount }}</strong>
-            <span>建议优先回查失效原因、核销沟通和补发策略。</span>
-          </div>
-        </div>
-      </article>
-    </section>
-
-    <section class="card card-v2 data-card archive-card">
-      <div class="section-head">
-        <div class="section-head-main">
-          <span class="section-kicker">发券档案</span>
-          <h3>用户券列表</h3>
-          <p class="section-tip">集中展示用户券状态、有效期与券码，可直接查看二维码、详情与核销记录。</p>
-        </div>
-        <div class="inline-metrics">
-          <span class="badge info">当前页 {{ items.length }} 条</span>
-          <span class="badge warning">每页 {{ pageSize }} 条</span>
-        </div>
-      </div>
-
-      <div class="table-wrap table-wrap-v2">
-        <table class="table">
+      <div class="data-table-wrap">
+        <table class="data-table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>用户与模板</th>
-              <th>券码</th>
-              <th>状态</th>
-              <th>有效期</th>
-              <th>领取时间</th>
-              <th>操作</th>
+              <th style="min-width: 56px;">ID</th>
+              <th style="min-width: 200px;">用户 / 模板</th>
+              <th style="min-width: 200px;">券码</th>
+              <th style="min-width: 84px;">状态</th>
+              <th style="min-width: 200px;">有效期</th>
+              <th style="min-width: 156px;">领取时间</th>
+              <th style="min-width: 64px;">操作</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="item in items" :key="item.id">
-              <td class="cell-strong">{{ item.id }}</td>
+              <td>{{ item.id }}</td>
               <td>
-                <div class="table-primary-cell">
+                <div class="cell-stack">
                   <strong>用户 #{{ item.appUserId }}</strong>
-                  <span>模板 #{{ item.couponTemplateId }}</span>
+                  <span class="muted-line">模板 #{{ item.couponTemplateId }}</span>
                 </div>
               </td>
               <td class="cell-mono">{{ item.couponCode }}</td>
               <td>
                 <span :class="['status-badge', statusClassMap[item.status] ?? 'warning']">
-                  {{ statusMap[item.status] ?? '未知状态' }}
+                  {{ statusMap[item.status] ?? '未知' }}
                 </span>
               </td>
               <td>
-                <div class="table-primary-cell">
+                <div class="cell-stack">
                   <strong>{{ formatDate(item.effectiveAt) }}</strong>
-                  <span>至 {{ formatDate(item.expireAt) }}</span>
+                  <span class="muted-line">至 {{ formatDate(item.expireAt) }}</span>
                 </div>
               </td>
               <td>{{ formatDate(item.receivedAt) }}</td>
               <td>
-                <div class="table-actions">
-                  <button type="button" class="action-button" @click="openDetailDialog(item)">详情</button>
-                  <button type="button" class="action-button" @click="openQrDialog(item)">二维码</button>
-                  <button type="button" class="action-button" @click="copyCouponCode(item.couponCode)">复制券码</button>
-                </div>
+                <button type="button" class="cell-link" @click="openDetailDialog(item)">编辑</button>
               </td>
             </tr>
-            <tr v-if="items.length === 0">
-              <td colspan="7" class="empty-text">当前没有符合条件的用户券记录</td>
+            <tr v-if="items.length === 0" class="empty-row">
+              <td colspan="7">当前没有符合条件的用户券记录</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div class="pager pager-v2">
-        <div class="pager-info">第 {{ pageIndex }} 页 / 共 {{ totalPages }} 页，共 {{ totalCount }} 条记录</div>
+      <footer class="pager-compact">
+        <div class="pager-info">第 {{ pageIndex }} / {{ totalPages }} 页 · 共 {{ totalCount }} 条</div>
         <div class="pager-actions">
-          <button type="button" class="ghost-button" :disabled="pageIndex <= 1" @click="goPrevPage">上一页</button>
+          <button type="button" :disabled="pageIndex <= 1" @click="goPrevPage">上一页</button>
           <button type="button" :disabled="pageIndex >= totalPages" @click="goNextPage">下一页</button>
         </div>
-      </div>
+      </footer>
     </section>
 
-    <div v-if="grantDialogVisible" class="dialog-mask" @click.self="closeGrantDialog">
-      <div class="dialog-card dialog-card-v2 user-coupon-dialog">
-        <div class="dialog-head">
-          <div class="dialog-head-main">
-            <span class="section-kicker">人工发券</span>
-            <h3>手动发券</h3>
-            <p>选择券模板与目标用户，系统将按每用户数量进行批量发放。</p>
+    <MainDetailDialog
+      v-if="grantDialogVisible"
+      title="手动发券"
+      sub="选择券模板与目标用户，系统将按每用户数量进行批量发放。"
+      size="lg"
+      @close="closeGrantDialog"
+    >
+      <div class="dialog-form-grid">
+        <label class="dialog-field">
+          <span>券模板</span>
+          <RemoteSelectField
+            v-model="grantForm.couponTemplateId"
+            v-model:keyword="selectorQuery.templateKeyword"
+            placeholder="输入模板名称后搜索"
+            empty-label="请选择券模板"
+            :options="couponTemplateSelectOptions"
+            @search="searchTemplates"
+          />
+        </label>
+        <label class="dialog-field">
+          <span>每用户发放张数</span>
+          <input v-model.number="grantForm.quantityPerUser" type="number" min="1" step="1" />
+        </label>
+        <label class="dialog-field field-span-2">
+          <span>用户检索</span>
+          <div class="search-inline">
+            <input v-model.trim="grantUserKeyword" type="text" placeholder="按手机号、昵称、OpenId 搜索用户" @keyup.enter="searchUsers" />
+            <button type="button" class="ghost-button compact" @click="searchUsers">搜索</button>
           </div>
+        </label>
+        <div class="field-span-2 selector-block">
+          <div class="selector-block-head">
+            <span>选择发券用户</span>
+            <strong>已选 {{ selectedGrantUserIds.length }} 人</strong>
+          </div>
+          <div v-if="filteredGrantUserOptions.length > 0" class="user-pick-grid">
+            <button
+              v-for="user in filteredGrantUserOptions"
+              :key="user.id"
+              type="button"
+              :class="['user-pick-card', { active: selectedGrantUserIds.includes(user.id) }]"
+              @click="toggleGrantUser(user.id)"
+            >
+              <strong>{{ formatUserLabel(user) }}</strong>
+              <span class="muted-line">{{ user.miniOpenId || '未绑定小程序 OpenId' }}</span>
+            </button>
+          </div>
+          <div v-else class="detail-empty">没有匹配的用户</div>
         </div>
+      </div>
 
-        <div class="grid-form dialog-form user-coupon-form-grid">
-          <label>
-            <span>券模板</span>
-            <RemoteSelectField v-model="grantForm.couponTemplateId" v-model:keyword="selectorQuery.templateKeyword" placeholder="输入模板名称后搜索" empty-label="请选择券模板" :options="couponTemplateSelectOptions" @search="searchTemplates" />
-          </label>
-          <label>
-            <span>每用户发放张数</span>
-            <input v-model.number="grantForm.quantityPerUser" type="number" min="1" step="1" />
-          </label>
-          <label class="field-span-2">
-            <span>用户检索</span>
-            <div class="search-inline"><input v-model.trim="grantUserKeyword" type="text" placeholder="按手机号、昵称、OpenId 搜索用户" @keyup.enter="searchUsers" /><button type="button" class="ghost-button" @click="searchUsers">搜索</button></div>
-          </label>
-          <div class="field-span-2 selector-field-card">
-            <div class="selector-field-head">
-              <span>选择发券用户</span>
-              <strong>已选 {{ selectedGrantUserIds.length }} 人</strong>
-            </div>
-            <div v-if="filteredGrantUserOptions.length > 0" class="selection-grid user-selection-grid">
-              <button
-                v-for="user in filteredGrantUserOptions"
-                :key="user.id"
-                type="button"
-                :class="['selection-card', { active: selectedGrantUserIds.includes(user.id) }]"
-                @click="toggleGrantUser(user.id)"
-              >
-                <strong>{{ formatUserLabel(user) }}</strong>
-                <span>{{ user.miniOpenId || '未绑定小程序 OpenId' }}</span>
-              </button>
-            </div>
-            <div v-else class="empty-text">没有匹配的用户</div>
-          </div>
-        </div>
-
-        <div v-if="grantResult" class="result-board">
-          <div class="result-board-summary">
-            <strong>发券结果</strong>
-            <span>成功 {{ grantResult.successCount }} / 失败 {{ grantResult.failureCount }}</span>
-          </div>
-          <div class="result-board-list">
-            <article v-for="item in grantResult.items" :key="`${item.appUserId}-${item.message}`" class="result-item-card">
+      <section v-if="grantResult" class="detail-section">
+        <header class="detail-section-head">
+          <h4>发券结果</h4>
+          <span class="detail-section-tip">成功 {{ grantResult.successCount }} / 失败 {{ grantResult.failureCount }}</span>
+        </header>
+        <div class="result-list">
+          <article v-for="item in grantResult.items" :key="`${item.appUserId}-${item.message}`" class="result-row">
+            <div class="result-row-main">
               <strong>用户 #{{ item.appUserId }}</strong>
               <span :class="['status-badge', item.success ? 'success' : 'danger']">{{ item.success ? '成功' : '失败' }}</span>
-              <p>{{ item.message }}</p>
-              <small>发放数量：{{ item.grantedCount }}</small>
-            </article>
-          </div>
+            </div>
+            <div class="muted-line">{{ item.message }} · 发放数量 {{ item.grantedCount }}</div>
+          </article>
         </div>
+      </section>
 
-        <div class="dialog-actions">
-          <button type="button" class="ghost-button" :disabled="grantSubmitting" @click="closeGrantDialog">关闭</button>
-          <button type="button" class="primary-button" :disabled="grantSubmitting" @click="submitGrant">{{ grantSubmitting ? '发券中...' : '确认发券' }}</button>
-        </div>
+      <template #footer>
+        <button type="button" class="ghost-button compact" :disabled="grantSubmitting" @click="closeGrantDialog">关闭</button>
+        <button type="button" class="primary-button compact" :disabled="grantSubmitting" @click="submitGrant">
+          {{ grantSubmitting ? '发券中...' : '确认发券' }}
+        </button>
+      </template>
+    </MainDetailDialog>
+
+    <MainDetailDialog
+      v-if="importDialogVisible"
+      title="CSV 导入发券"
+      sub="可导入用户 ID、手机号、小程序 OpenId、公众号 OpenId 等标识完成批量发券。"
+      size="lg"
+      @close="closeImportDialog"
+    >
+      <div class="dialog-form-grid">
+        <label class="dialog-field">
+          <span>券模板</span>
+          <RemoteSelectField
+            v-model="importForm.couponTemplateId"
+            v-model:keyword="selectorQuery.templateKeyword"
+            placeholder="输入模板名称后搜索"
+            empty-label="请选择券模板"
+            :options="couponTemplateSelectOptions"
+            @search="searchTemplates"
+          />
+        </label>
+        <label class="dialog-field">
+          <span>每用户发放张数</span>
+          <input v-model.number="importForm.quantityPerUser" type="number" min="1" step="1" />
+        </label>
+        <label class="dialog-field field-span-2">
+          <span>CSV 文件</span>
+          <input type="file" accept=".csv" @change="handleImportFileChange" />
+        </label>
       </div>
-    </div>
 
-    <div v-if="importDialogVisible" class="dialog-mask" @click.self="closeImportDialog">
-      <div class="dialog-card dialog-card-v2 user-coupon-dialog">
-        <div class="dialog-head">
-          <div class="dialog-head-main">
-            <span class="section-kicker">批量导入</span>
-            <h3>CSV 导入发券</h3>
-            <p>可导入用户 ID、手机号、小程序 OpenId、公众号 OpenId 等标识完成批量发券。</p>
-          </div>
-          <button type="button" class="ghost-button" @click="downloadImportTemplate">下载模板</button>
-        </div>
-
-        <div class="grid-form dialog-form user-coupon-form-grid">
-          <label>
-            <span>券模板</span>
-            <RemoteSelectField v-model="importForm.couponTemplateId" v-model:keyword="selectorQuery.templateKeyword" placeholder="输入模板名称后搜索" empty-label="请选择券模板" :options="couponTemplateSelectOptions" @search="searchTemplates" />
-            <span>每用户发放张数</span>
-            <input v-model.number="importForm.quantityPerUser" type="number" min="1" step="1" />
-          </label>
-          <label class="field-span-2 file-field">
-            <span>CSV 文件</span>
-            <input type="file" accept=".csv" @change="handleImportFileChange" />
-          </label>
-        </div>
-
-        <div class="helper-card">
-          <strong>导入模板字段建议</strong>
-          <p>推荐首行包含以下任一标识列：<code>appUserId</code>、<code>mobile</code>、<code>miniOpenId</code>、<code>officialOpenId</code>。</p>
-          <p>可选附带 <code>couponTemplateId</code> 与 <code>quantityPerUser</code>；若未填写则以本次表单参数为准。</p>
-        </div>
-
-        <div v-if="importResult" class="result-board">
-          <div class="result-board-summary">
-            <strong>导入结果</strong>
-            <span>成功 {{ importResult.successCount }} / 失败 {{ importResult.failureCount }}</span>
-          </div>
-          <div class="import-result-grid">
-            <div class="result-panel">
-              <strong>总行数</strong>
-              <div>{{ importResult.totalRows }}</div>
-            </div>
-            <div class="result-panel">
-              <strong>识别用户数</strong>
-              <div>{{ importResult.parsedUserCount }}</div>
-            </div>
-            <div class="result-panel">
-              <strong>模板 ID</strong>
-              <div>{{ importResult.couponTemplateId }}</div>
-            </div>
-            <div class="result-panel">
-              <strong>发放数量</strong>
-              <div>{{ importResult.quantityPerUser }}</div>
-            </div>
-          </div>
-          <div v-if="importResult.invalidRows.length > 0" class="invalid-rows">
-            <div class="invalid-title">无效数据行</div>
-            <ul>
-              <li v-for="row in importResult.invalidRows" :key="row">{{ row }}</li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="dialog-actions">
-          <button type="button" class="ghost-button" :disabled="importSubmitting" @click="closeImportDialog">关闭</button>
-          <button type="button" class="primary-button" :disabled="importSubmitting" @click="submitImport">{{ importSubmitting ? '导入中...' : '开始导入' }}</button>
-        </div>
+      <div class="helper-card">
+        <strong>导入模板字段建议</strong>
+        <div>推荐首行包含以下任一标识列：<code>appUserId</code>、<code>mobile</code>、<code>miniOpenId</code>、<code>officialOpenId</code>。</div>
+        <div>可选附带 <code>couponTemplateId</code> 与 <code>quantityPerUser</code>；若未填写则以本次表单参数为准。</div>
+        <div><button type="button" class="cell-link" @click="downloadImportTemplate">下载示例模板</button></div>
       </div>
-    </div>
 
-    <div v-if="qrDialogVisible" class="dialog-mask" @click.self="closeQrDialog">
-      <div class="dialog-card dialog-card-v2 qr-dialog-card">
-        <div class="dialog-head">
-          <div class="dialog-head-main">
-            <span class="section-kicker">二维码</span>
-            <h3>用户券二维码</h3>
-            <p>ERP 可扫描用户出示的二维码，并调用核销接口完成处理。</p>
-          </div>
-        </div>
-
-        <div class="qr-panel">
-          <img v-if="qrCodeDataUrl" :src="qrCodeDataUrl" alt="用户券二维码" class="qr-image" />
-          <div class="qr-code-text cell-mono">{{ selectedCoupon?.couponCode || '-' }}</div>
-          <div class="qr-meta-grid">
-            <div class="result-panel">
-              <strong>用户</strong>
-              <div>#{{ selectedCoupon?.appUserId ?? '-' }}</div>
-            </div>
-            <div class="result-panel">
-              <strong>模板</strong>
-              <div>#{{ selectedCoupon?.couponTemplateId ?? '-' }}</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="dialog-actions">
-          <button type="button" class="ghost-button" @click="copyCouponCode(selectedCoupon?.couponCode || '')">复制券码</button>
-          <button type="button" class="primary-button" @click="closeQrDialog">关闭</button>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="detailDialogVisible" class="dialog-mask" @click.self="closeDetailDialog">
-      <div class="dialog-card dialog-card-v2 user-coupon-detail-dialog">
-        <div class="dialog-head">
-          <div class="dialog-head-main">
-            <span class="section-kicker">券详情</span>
-            <h3>用户券明细</h3>
-            <p>查看模板信息、优惠规则、领取时间、有效期与核销轨迹。</p>
-          </div>
-        </div>
-
+      <section v-if="importResult" class="detail-section">
+        <header class="detail-section-head">
+          <h4>导入结果</h4>
+          <span class="detail-section-tip">成功 {{ importResult.successCount }} / 失败 {{ importResult.failureCount }}</span>
+        </header>
         <div class="detail-grid">
-          <div class="result-panel">
-            <strong>状态</strong>
-            <div>
-              <span :class="['status-badge', statusClassMap[detailCoupon?.status || 0] ?? 'warning']">
-                {{ statusMap[detailCoupon?.status || 0] ?? '-' }}
-              </span>
-            </div>
-          </div>
-          <div class="result-panel">
-            <strong>模板名称</strong>
-            <div>{{ detailCoupon?.couponTemplateName || '-' }}</div>
-          </div>
-          <div class="result-panel">
-            <strong>券类型</strong>
-            <div>{{ templateTypeMap[detailCoupon?.templateType || 0] || '-' }}</div>
-          </div>
-          <div class="result-panel">
-            <strong>模板状态</strong>
-            <div>
-              <span :class="['status-badge', detailCoupon?.templateEnabled ? 'success' : 'danger']">
-                {{ detailCoupon?.templateEnabled ? '启用' : '停用' }}
-              </span>
-            </div>
-          </div>
-          <div class="result-panel">
-            <strong>有效期规则</strong>
-            <div>{{ validPeriodTypeMap[detailCoupon?.validPeriodType || 0] || '-' }}</div>
-          </div>
-          <div class="result-panel">
-            <strong>券码</strong>
-            <div class="cell-mono">{{ detailCoupon?.couponCode || '-' }}</div>
-          </div>
-          <div class="result-panel">
-            <strong>优惠金额</strong>
-            <div>{{ formatMoney(detailCoupon?.discountAmount) }}</div>
-          </div>
-          <div class="result-panel">
-            <strong>门槛金额</strong>
-            <div>{{ formatMoney(detailCoupon?.thresholdAmount) }}</div>
-          </div>
-          <div class="result-panel">
-            <strong>每用户限领</strong>
-            <div>{{ detailCoupon?.perUserLimit ?? '-' }}</div>
-          </div>
-          <div class="result-panel">
-            <strong>新人券</strong>
-            <div>{{ detailCoupon?.isNewUserOnly ? '是' : '否' }}</div>
-          </div>
-          <div class="result-panel">
-            <strong>门店范围</strong>
-            <div>{{ detailCoupon?.isAllStores ? '全部门店可用' : '指定门店可用' }}</div>
-          </div>
-          <div class="result-panel">
-            <strong>领取时间</strong>
-            <div>{{ formatDate(detailCoupon?.receivedAt) }}</div>
-          </div>
-          <div class="result-panel">
-            <strong>生效时间</strong>
-            <div>{{ formatDate(detailCoupon?.effectiveAt) }}</div>
-          </div>
-          <div class="result-panel">
-            <strong>失效时间</strong>
-            <div>{{ formatDate(detailCoupon?.expireAt) }}</div>
-          </div>
-          <div v-if="canEditExpireAt" class="result-panel">
-            <strong>修改到期日期</strong>
-            <div class="inline-edit-field">
-              <input v-model="detailForm.expireDate" type="date" />
-            </div>
-          </div>
-          <div class="result-panel">
-            <strong>固定有效期</strong>
-            <div>{{ formatDate(detailCoupon?.validFrom) }} ~ {{ formatDate(detailCoupon?.validTo) }}</div>
-          </div>
-          <div class="result-panel">
-            <strong>领后有效天数</strong>
-            <div>{{ detailCoupon?.validDays ?? '-' }}</div>
-          </div>
-          <div class="result-panel field-span-3">
-            <strong>模板备注</strong>
-            <div>{{ detailCoupon?.templateRemark || '-' }}</div>
-          </div>
+          <div class="detail-cell"><span class="detail-label">总行数</span><div>{{ importResult.totalRows }}</div></div>
+          <div class="detail-cell"><span class="detail-label">识别用户数</span><div>{{ importResult.parsedUserCount }}</div></div>
+          <div class="detail-cell"><span class="detail-label">模板 ID</span><div>{{ importResult.couponTemplateId }}</div></div>
+          <div class="detail-cell"><span class="detail-label">发放数量</span><div>{{ importResult.quantityPerUser }}</div></div>
         </div>
-
-        <div class="card toolbar-card detail-history-card">
-          <div class="toolbar-title">
-            <span class="section-kicker">核销轨迹</span>
-            <h3>核销记录</h3>
-            <p class="section-tip">查看该券是否被核销、在哪个门店核销、由谁处理及设备信息。</p>
-          </div>
-
-          <div v-if="writeOffRecords.length === 0" class="empty-text">暂无核销记录</div>
-          <div v-else class="table-wrap">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>核销时间</th>
-                  <th>门店</th>
-                  <th>操作人</th>
-                  <th>设备号</th>
-                  <th>券码</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="record in writeOffRecords" :key="record.id">
-                  <td>{{ formatDate(record.writeOffAt) }}</td>
-                  <td>{{ record.storeName || `门店#${record.storeId}` }}</td>
-                  <td>{{ record.operatorName || '-' }}</td>
-                  <td>{{ record.deviceCode || '-' }}</td>
-                  <td class="cell-mono">{{ record.couponCode }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+        <div v-if="importResult.invalidRows.length > 0" class="invalid-rows">
+          <div class="invalid-title">无效数据行</div>
+          <ul>
+            <li v-for="row in importResult.invalidRows" :key="row">{{ row }}</li>
+          </ul>
         </div>
+      </section>
 
-        <div class="dialog-actions">
-          <button type="button" class="ghost-button" @click="openQrDialog(selectedCoupon!)">查看二维码</button>
-          <button v-if="canEditExpireAt" type="button" class="ghost-button" :disabled="expireAtSubmitting" @click="submitExpireAt">{{ expireAtSubmitting ? '保存中...' : '保存到期日期' }}</button>
-          <button type="button" class="primary-button" @click="closeDetailDialog">关闭</button>
+      <template #footer>
+        <button type="button" class="ghost-button compact" :disabled="importSubmitting" @click="closeImportDialog">关闭</button>
+        <button type="button" class="primary-button compact" :disabled="importSubmitting" @click="submitImport">
+          {{ importSubmitting ? '导入中...' : '开始导入' }}
+        </button>
+      </template>
+    </MainDetailDialog>
+
+    <MainDetailDialog
+      v-if="qrDialogVisible"
+      title="用户券二维码"
+      sub="ERP 可扫描用户出示的二维码，并调用核销接口完成处理。"
+      size="sm"
+      @close="closeQrDialog"
+    >
+      <div class="qr-panel">
+        <img v-if="qrCodeDataUrl" :src="qrCodeDataUrl" alt="用户券二维码" class="qr-image" />
+        <div class="qr-code-text cell-mono">{{ selectedCoupon?.couponCode || '-' }}</div>
+        <div class="qr-meta-grid">
+          <div class="detail-cell"><span class="detail-label">用户</span><div>#{{ selectedCoupon?.appUserId ?? '-' }}</div></div>
+          <div class="detail-cell"><span class="detail-label">模板</span><div>#{{ selectedCoupon?.couponTemplateId ?? '-' }}</div></div>
         </div>
       </div>
-    </div>
+
+      <template #footer>
+        <button type="button" class="ghost-button compact" @click="copyCouponCode(selectedCoupon?.couponCode || '')">复制券码</button>
+        <button type="button" class="primary-button compact" @click="closeQrDialog">关闭</button>
+      </template>
+    </MainDetailDialog>
+
+    <MainDetailDialog
+      v-if="detailDialogVisible"
+      title="用户券明细"
+      sub="模板信息、优惠规则、领取时间、有效期与核销轨迹"
+      size="xl"
+      @close="closeDetailDialog"
+    >
+      <div v-if="detailCoupon" class="detail-grid">
+        <div class="detail-cell"><span class="detail-label">状态</span>
+          <div><span :class="['status-badge', statusClassMap[detailCoupon.status] ?? 'warning']">{{ statusMap[detailCoupon.status] ?? '-' }}</span></div>
+        </div>
+        <div class="detail-cell"><span class="detail-label">模板名称</span><div>{{ detailCoupon.couponTemplateName || '-' }}</div></div>
+        <div class="detail-cell"><span class="detail-label">券类型</span><div>{{ templateTypeMap[detailCoupon.templateType] || '-' }}</div></div>
+        <div class="detail-cell"><span class="detail-label">模板状态</span>
+          <div><span :class="['status-badge', detailCoupon.templateEnabled ? 'success' : 'danger']">{{ detailCoupon.templateEnabled ? '启用' : '停用' }}</span></div>
+        </div>
+        <div class="detail-cell"><span class="detail-label">有效期规则</span><div>{{ validPeriodTypeMap[detailCoupon.validPeriodType] || '-' }}</div></div>
+        <div class="detail-cell"><span class="detail-label">券码</span><div class="cell-mono">{{ detailCoupon.couponCode || '-' }}</div></div>
+        <div class="detail-cell"><span class="detail-label">优惠金额</span><div>{{ formatMoney(detailCoupon.discountAmount) }}</div></div>
+        <div class="detail-cell"><span class="detail-label">门槛金额</span><div>{{ formatMoney(detailCoupon.thresholdAmount) }}</div></div>
+        <div class="detail-cell"><span class="detail-label">每用户限领</span><div>{{ detailCoupon.perUserLimit ?? '-' }}</div></div>
+        <div class="detail-cell"><span class="detail-label">新人券</span><div>{{ detailCoupon.isNewUserOnly ? '是' : '否' }}</div></div>
+        <div class="detail-cell"><span class="detail-label">门店范围</span><div>{{ detailCoupon.isAllStores ? '全部门店可用' : '指定门店可用' }}</div></div>
+        <div class="detail-cell"><span class="detail-label">领取时间</span><div>{{ formatDate(detailCoupon.receivedAt) }}</div></div>
+        <div class="detail-cell"><span class="detail-label">生效时间</span><div>{{ formatDate(detailCoupon.effectiveAt) }}</div></div>
+        <div class="detail-cell"><span class="detail-label">失效时间</span><div>{{ formatDate(detailCoupon.expireAt) }}</div></div>
+        <div v-if="canEditExpireAt" class="detail-cell">
+          <span class="detail-label">修改到期日期</span>
+          <input v-model="detailForm.expireDate" type="date" class="inline-edit-input" />
+        </div>
+        <div class="detail-cell"><span class="detail-label">固定有效期</span><div>{{ formatDate(detailCoupon.validFrom) }} ~ {{ formatDate(detailCoupon.validTo) }}</div></div>
+        <div class="detail-cell"><span class="detail-label">领后有效天数</span><div>{{ detailCoupon.validDays ?? '-' }}</div></div>
+        <div class="detail-cell field-span-3"><span class="detail-label">模板备注</span><div>{{ detailCoupon.templateRemark || '-' }}</div></div>
+      </div>
+
+      <section class="detail-section">
+        <header class="detail-section-head">
+          <h4>核销轨迹</h4>
+          <span class="detail-section-tip">该券是否被核销、在哪个门店核销、由谁处理及设备信息</span>
+        </header>
+        <div v-if="writeOffRecords.length === 0" class="detail-empty">暂无核销记录</div>
+        <div v-else class="data-table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>核销时间</th>
+                <th>门店</th>
+                <th>操作人</th>
+                <th>设备号</th>
+                <th>券码</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="record in writeOffRecords" :key="record.id">
+                <td>{{ formatDate(record.writeOffAt) }}</td>
+                <td>{{ record.storeName || `门店#${record.storeId}` }}</td>
+                <td>{{ record.operatorName || '-' }}</td>
+                <td>{{ record.deviceCode || '-' }}</td>
+                <td class="cell-mono">{{ record.couponCode }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <template #footer>
+        <button type="button" class="ghost-button compact" @click="copyCouponCode(detailCoupon?.couponCode || '')">复制券码</button>
+        <button type="button" class="ghost-button compact" @click="openQrFromDetail">查看二维码</button>
+        <button
+          v-if="canEditExpireAt"
+          type="button"
+          class="primary-button compact"
+          :disabled="expireAtSubmitting"
+          @click="submitExpireAt"
+        >{{ expireAtSubmitting ? '保存中...' : '保存到期日期' }}</button>
+        <button type="button" class="ghost-button compact" @click="closeDetailDialog">关闭</button>
+      </template>
+    </MainDetailDialog>
   </div>
 </template>
 
@@ -522,6 +341,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import QRCode from 'qrcode'
 import RemoteSelectField from '@/components/RemoteSelectField.vue'
+import MainDetailDialog from '@/components/MainDetailDialog.vue'
 import {
   getUserCouponDetail,
   getUserCouponList,
@@ -620,15 +440,12 @@ const validPeriodTypeMap: Record<number, string> = {
 const canGrant = authStorage.hasPermission('user-coupon.grant')
 const canEditExpireAt = canGrant
 
-const unusedCount = computed(() => items.value.filter((item) => item.status === 1).length)
-const usedCount = computed(() => items.value.filter((item) => item.status === 2).length)
-const expiredCount = computed(() => items.value.filter((item) => item.status === 3 || item.status === 4).length)
 const couponTemplateSelectOptions = computed(() => couponTemplateOptions.value.map((template) => ({ value: template.id, label: formatTemplateLabel(template) })))
 
 const querySummary = computed(() => {
   const user = query.userId ? formatUserLabel(userOptions.value.find((item) => item.id === query.userId) || { id: query.userId, miniOpenId: '', createdAt: '' }) : '全部用户'
   const code = query.couponCode ? `券码 ${query.couponCode}` : '全部券码'
-  return `${user} / ${code} / 每页 ${pageSize.value} 条`
+  return `${user} · ${code} · 每页 ${pageSize.value} 条`
 })
 
 const filteredGrantUserOptions = computed(() => {
@@ -639,16 +456,6 @@ const filteredGrantUserOptions = computed(() => {
     const text = [item.mobile, item.nickname, item.miniOpenId, String(item.id)].filter(Boolean).join(' ').toLowerCase()
     return text.includes(keyword)
   }).slice(0, 48)
-})
-
-const lastGrantSummary = computed(() => {
-  if (!grantResult.value) return '尚未执行手动发券'
-  return `成功 ${grantResult.value.successCount}，失败 ${grantResult.value.failureCount}`
-})
-
-const lastImportSummary = computed(() => {
-  if (!importResult.value) return '尚未执行导入发券'
-  return `成功 ${importResult.value.successCount}，失败 ${importResult.value.failureCount}`
 })
 
 const formatDate = (value?: string) => (value ? value.replace('T', ' ').slice(0, 19) : '-')
@@ -697,6 +504,15 @@ const loadData = async () => {
 const handleSearch = async () => {
   pageIndex.value = 1
   await loadData()
+}
+
+const resetQuery = async () => {
+  query.userId = 0
+  query.couponCode = ''
+  pageSize.value = 10
+  pageIndex.value = 1
+  await loadData()
+  notify.info('已重置筛选条件')
 }
 
 const handlePageSizeChange = async () => {
@@ -840,6 +656,11 @@ const openQrDialog = async (item: UserCouponListItemDto) => {
   }
 }
 
+const openQrFromDetail = async () => {
+  if (!selectedCoupon.value) return
+  await openQrDialog(selectedCoupon.value)
+}
+
 const closeQrDialog = () => {
   qrDialogVisible.value = false
   qrCodeDataUrl.value = ''
@@ -901,6 +722,10 @@ const copyCouponCode = async (couponCode: string) => {
   }
 }
 
+const notifyColumnSettingsPlaceholder = () => {
+  notify.info('列设置功能将在下一版本提供')
+}
+
 onMounted(async () => {
   try {
     await Promise.all([loadCouponTemplateOptions(), loadUserOptions()])
@@ -913,165 +738,164 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.user-coupon-page {
-  gap: 22px;
-}
-
-.user-coupon-hero {
-  background:
-    radial-gradient(circle at top right, rgba(22, 163, 74, 0.12), transparent 28%),
-    linear-gradient(135deg, #ffffff 0%, #f8fcff 52%, #f3f7fb 100%);
-}
-
-.hero-side-stack {
-  align-content: stretch;
-}
-
-.hero-side-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.quick-card-spotlight {
-  min-height: 148px;
-  background: linear-gradient(135deg, rgba(22, 163, 74, 0.08), rgba(59, 130, 246, 0.03));
-  border: 1px solid rgba(22, 163, 74, 0.14);
-}
-
-.quick-card.compact {
-  min-height: 112px;
-}
-
-.quick-card-label {
-  display: inline-flex;
-  width: fit-content;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(37, 99, 235, 0.08);
-  color: var(--primary);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.operations-card {
-  gap: 18px;
-}
-
-.operation-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.filter-panel-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+.user-coupon-page :deep(.dialog-body) {
   gap: 14px;
 }
 
-.user-coupon-filter-grid {
-  grid-template-columns: 0.8fr 1.2fr 0.8fr 1.2fr;
-}
-
-.archive-card {
-  gap: 18px;
-}
-
-.user-coupon-dialog {
-  width: min(920px, calc(100vw - 48px));
-}
-
-.user-coupon-detail-dialog {
-  width: min(1080px, calc(100vw - 48px));
-}
-
-.user-coupon-form-grid {
+.dialog-form-grid {
+  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
 }
 
-.dialog-form input,
-.dialog-form select,
-.dialog-form textarea {
-  width: 100%;
-  padding: 12px 14px;
+.dialog-field {
+  display: grid;
+  gap: 6px;
+}
+
+.dialog-field > span {
+  font-size: 13px;
+  font-weight: 600;
+  color: #344054;
+}
+
+.dialog-field input[type='number'],
+.dialog-field input[type='text'],
+.dialog-field input[type='date'],
+.dialog-field input[type='file'],
+.dialog-field select {
+  height: 32px;
+  padding: 0 10px;
   border: 1px solid var(--line-strong);
-  border-radius: 12px;
+  border-radius: 6px;
   background: #fff;
-  resize: vertical;
+  font-size: 13px;
+  width: 100%;
 }
 
-.dialog-form input,
-.dialog-form select {
-  height: 44px;
-  padding: 0 14px;
-}
-
-.file-field input {
+.dialog-field input[type='file'] {
   height: auto;
-  padding: 10px 12px;
+  padding: 6px 8px;
 }
 
-.result-item-card {
+.search-inline {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.search-inline input {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  width: 100%;
+}
+
+.selector-block {
   display: grid;
   gap: 8px;
-  padding: 14px;
-  border-radius: 16px;
-  border: 1px solid rgba(226, 232, 240, 0.96);
-  background: #fff;
 }
 
-.result-item-card p,
-.result-item-card small {
-  margin: 0;
+.selector-block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: #344054;
 }
 
-.import-result-grid,
-.qr-meta-grid {
+.selector-block-head strong {
+  font-size: 12px;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.user-pick-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  max-height: 220px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.user-pick-card {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  font-size: 13px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.user-pick-card:hover {
+  border-color: var(--primary);
+  background: #f8fbff;
+}
+
+.user-pick-card.active {
+  border-color: var(--primary);
+  background: rgba(37, 99, 235, 0.06);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+.result-list {
+  display: grid;
+  gap: 8px;
+  padding: 10px 14px;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.result-row {
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fcfdff;
+}
+
+.result-row-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.invalid-rows {
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+  background: #fef6e7;
+  font-size: 12px;
+  color: #b45309;
 }
 
 .invalid-rows ul {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   padding-left: 18px;
 }
 
 .invalid-title {
   font-weight: 700;
-  color: #344054;
-}
-
-.detail-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.inline-edit-field input {
-  width: 100%;
-  min-height: 40px;
-  padding: 8px 12px;
-  border: 1px solid var(--line-strong);
-  border-radius: 10px;
-  background: #fff;
-}
-
-.detail-history-card {
-  margin-top: 4px;
-}
-
-.qr-dialog-card {
-  width: min(460px, calc(100vw - 48px));
+  color: #b45309;
 }
 
 .qr-panel {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-  padding: 8px 0;
+  gap: 12px;
+  padding: 4px 0;
 }
 
 .qr-image {
@@ -1083,36 +907,34 @@ onMounted(async () => {
 .qr-code-text {
   word-break: break-all;
   text-align: center;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.qr-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.inline-edit-input {
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
 }
 
 @media (max-width: 1100px) {
-  .operation-grid,
-  .detail-grid,
-  .result-board-list,
-  .selection-grid,
-  .user-coupon-filter-grid,
-  .hero-side-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  .user-pick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dialog-form-grid { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 820px) {
-  .operation-grid,
-  .detail-grid,
-  .result-board-list,
-  .selection-grid,
-  .user-coupon-filter-grid,
-  .user-coupon-form-grid,
-  .import-result-grid,
-  .qr-meta-grid,
-  .hero-side-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .entry-metrics,
-  .result-board-summary {
-    align-items: flex-start;
-    flex-direction: column;
-  }
+@media (max-width: 720px) {
+  .user-pick-grid { grid-template-columns: 1fr; }
+  .qr-meta-grid { grid-template-columns: 1fr; }
 }
 </style>

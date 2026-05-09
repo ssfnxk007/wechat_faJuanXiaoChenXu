@@ -31,6 +31,15 @@ export async function fetchWeChatStatus() {
   return response
 }
 
+export async function verifyMiniProgramSession() {
+  const response = await request({
+    url: '/api/auth/mini-session',
+    skipAuthIntercept: true
+  })
+
+  return response.data || {}
+}
+
 export async function ensureMiniProgramLogin(options = {}) {
   const session = useSessionStore()
   hydrateOnboardingState()
@@ -65,16 +74,28 @@ export async function ensureMiniProgramLogin(options = {}) {
     })
 
     updateSession(response.data || {})
+    if (!useSessionStore().token || !useSessionStore().userId) {
+      throw new Error(response?.raw?.message || '微信登录失败')
+    }
+
+    const verifiedSession = await verifyMiniProgramSession()
+    updateSession(verifiedSession)
+    if (!useSessionStore().token || !useSessionStore().userId) {
+      throw new Error('微信登录成功，但会话校验失败')
+    }
+
     patchSessionStatus({
       loginStatus: 'ready',
       loginMessage: ''
     })
   } catch (error) {
     console.warn('[coupon-miniapp][mini-login]', error)
+    clearSession()
     patchSessionStatus({
       loginStatus: 'error',
       loginMessage: error.message || '微信登录失败'
     })
+    throw (error instanceof Error ? error : new Error('微信登录失败'))
   }
   // #endif
 

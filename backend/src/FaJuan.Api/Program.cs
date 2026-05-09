@@ -1,4 +1,6 @@
 ﻿using System.Text;
+using System.Net;
+using System.Net.Sockets;
 using FaJuan.Api.Application.Orders;
 using FaJuan.Api.Application.Erp;
 using FaJuan.Api.Application.UserCoupons;
@@ -38,6 +40,7 @@ builder.Services.AddCors(options =>
                 "https://localhost:5180",
                 "http://127.0.0.1:5180",
                 "https://127.0.0.1:5180",
+                "https://fajuan-admin.wenyihai.cn",
                 "https://xcx.bookso.cn")
             .AllowAnyHeader()
             .AllowAnyMethod();
@@ -83,13 +86,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("Default"),
-        sqlOptions =>
-        {
-            // The current deployment database behaves like SQL Server 2008 R2, so force legacy-compatible SQL generation.
-            sqlOptions.UseCompatibilityLevel(100);
-        }));
+{
+    var connectionString = builder.Configuration.GetConnectionString("Default")
+                           ?? throw new InvalidOperationException("ConnectionStrings:Default 未配置");
+    var mysqlVersion = builder.Configuration["Database:MySqlServerVersion"]
+                       ?? throw new InvalidOperationException("Database:MySqlServerVersion 未配置");
+
+    options.UseMySql(connectionString, new MySqlServerVersion(Version.Parse(mysqlVersion)));
+});
 
 builder.Services.AddHealthChecks();
 builder.Services.AddScoped<ErpCouponService>();
@@ -109,7 +113,11 @@ builder.Services.AddHttpClient<WeChatMiniProgramService>()
                                  | System.Net.DecompressionMethods.Brotli,
     });
 builder.Services.AddScoped<WeChatPaySettingsProvider>();
-builder.Services.AddHttpClient<WeChatPayService>();
+builder.Services.AddHttpClient<WeChatPayService>(client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(15);
+    })
+    .ConfigurePrimaryHttpMessageHandler(CreateIpv4PreferredHttpHandler);
 
 var app = builder.Build();
 
@@ -151,5 +159,41 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/healthz");
 app.Run();
+
+static SocketsHttpHandler CreateIpv4PreferredHttpHandler()
+{
+    return new SocketsHttpHandler
+    {
+        UseProxy = false,
+        AutomaticDecompression = DecompressionMethods.GZip
+                                 | DecompressionMethods.Deflate
+                                 | DecompressionMethods.Brotli,
+        ConnectCallback = async (context, cancellationToken) =>
+        {
+            var addresses = await Dns.GetHostAddressesAsync(context.DnsEndPoint.Host, cancellationToken);
+            var orderedAddresses = addresses
+                .OrderBy(address => address.AddressFamily == AddressFamily.InterNetwork ? 0 : 1)
+                .ToArray();
+
+            Exception? lastException = null;
+            foreach (var address in orderedAddresses)
+            {
+                var socket = new Socket(address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                try
+                {
+                    await socket.ConnectAsync(address, context.DnsEndPoint.Port, cancellationToken);
+                    return new NetworkStream(socket, ownsSocket: true);
+                }
+                catch (Exception ex)
+                {
+                    lastException = ex;
+                    socket.Dispose();
+                }
+            }
+
+            throw lastException ?? new SocketException((int)SocketError.HostNotFound);
+        }
+    };
+}
 
 public partial class Program;

@@ -1,9 +1,10 @@
 {
   "ConnectionStrings": {
-    "Default": "Server=YOUR_DB_HOST,1433;Database=FaJuanDb;User Id=YOUR_DB_USER;Password=YOUR_DB_PASSWORD;TrustServerCertificate=True;"
+    "Default": "Server=36.133.206.110;Port=3306;Database=fajuan_db;User=fajuan_user;Password=PrA338ARE475fibb;CharSet=utf8mb4;"
   },
   "Database": {
-    "AutoMigrate": false
+    "AutoMigrate": false,
+    "MySqlServerVersion": "5.7.43"
   },
   "WeChatMiniProgram": {
     "AppId": "wx92e01ecc74c0772e",

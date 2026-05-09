@@ -1,273 +1,239 @@
 <template>
-  <div class="business-page page-v2 banner-page">
-    <section class="hero-panel banner-hero">
-      <div class="hero-copy">
-        <span class="page-kicker">首页运营</span>
-        <h2>轮播图管理</h2>
-        <p>轮播图跳转改为后台结构化配置，不再手填外链。可选择券、券包、商品详情或活动页，系统自动生成小程序内部链接。</p>
-        <div class="hero-tags">
-          <span class="badge info">图片上传</span>
-          <span class="badge success">素材复用</span>
-          <span class="badge warning">内部跳转</span>
+  <div class="admin-page banner-page">
+    <section class="search-card">
+      <div class="search-grid">
+        <div class="field">
+          <label for="banner-keyword">搜索标题</label>
+          <input
+            id="banner-keyword"
+            v-model.trim="query.keyword"
+            type="text"
+            placeholder="请输入轮播图标题"
+            @keyup.enter="handleSearch"
+          />
         </div>
-      </div>
-      <div class="hero-side hero-side-grid">
-        <article class="quick-card compact">
-          <span class="quick-card-label">轮播总数</span>
-          <strong>{{ totalCount }}</strong>
-          <p>当前筛选范围内的轮播图记录数。</p>
-        </article>
-        <article class="quick-card compact">
-          <span class="quick-card-label">启用中</span>
-          <strong>{{ enabledCount }}</strong>
-          <p>会显示在小程序首页的轮播图。</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="card toolbar-card card-v2 operations-card">
-      <div class="toolbar-row">
-        <div class="toolbar-title">
-          <span class="section-kicker">业务操作台</span>
-          <h3>筛选与维护</h3>
-          <p class="section-tip">支持按标题搜索，并在弹窗中完成图片选择、上传和内部跳转目标配置。</p>
-        </div>
-        <div class="toolbar-actions">
-          <button type="button" class="ghost-button" @click="resetQuery">重置筛选</button>
-          <button type="button" class="ghost-button" @click="loadData">刷新列表</button>
-          <button
-            type="button"
-            class="primary-button"
-            :disabled="!canCreate"
-            :title="canCreate ? '' : '当前账号缺少 banner.create 权限'"
-            @click="openCreateDialog"
-          >
-            {{ canCreate ? '新增轮播图' : '无新增权限：banner.create' }}
-          </button>
-        </div>
-      </div>
-
-      <div class="filter-panel-grid banner-filter-grid">
-        <label class="field-card filter-field">
-          <span class="field-label">搜索标题</span>
-          <input v-model.trim="query.keyword" type="text" placeholder="请输入轮播图标题" @keyup.enter="handleSearch" />
-        </label>
-        <label class="field-card filter-field compact-field">
-          <span class="field-label">分页条数</span>
-          <select v-model.number="pageSize" @change="handlePageSizeChange">
-            <option :value="10">每页 10 条</option>
-            <option :value="20">每页 20 条</option>
-            <option :value="50">每页 50 条</option>
+        <div class="field">
+          <label for="banner-page-size">每页条数</label>
+          <select id="banner-page-size" v-model.number="pageSize" @change="handlePageSizeChange">
+            <option :value="10">10 条</option>
+            <option :value="20">20 条</option>
+            <option :value="50">50 条</option>
           </select>
-        </label>
-        <div class="field-card summary-field">
-          <span class="field-label">当前筛选</span>
-          <strong>{{ querySummary }}</strong>
-          <p>轮播图只支持小程序内部业务跳转，不支持 H5 外链。</p>
         </div>
+      </div>
+      <div class="search-actions">
+        <button type="button" class="primary-button compact" @click="handleSearch">查询</button>
+        <button type="button" class="ghost-button compact" @click="resetQuery">重置</button>
+        <button
+          type="button"
+          class="primary-button compact"
+          :disabled="!canCreate"
+          :title="canCreate ? '' : '当前账号缺少 banner.create 权限'"
+          @click="openCreateDialog"
+        >+ 新增轮播图</button>
+        <button type="button" class="ghost-button compact" @click="loadData">刷新</button>
+        <button type="button" class="ghost-button compact" @click="notifyColumnSettingsPlaceholder">列设置</button>
       </div>
     </section>
 
-    <section class="card card-v2 data-card">
-      <div class="section-head">
-        <div class="section-head-main">
-          <span class="section-kicker">列表概览</span>
+    <section class="data-card">
+      <header class="data-card-head">
+        <div class="data-card-title">
           <h3>轮播图列表</h3>
-          <p class="section-tip">系统会自动生成内部 linkUrl，便于首页轮播点击跳转。</p>
+          <span class="count-pill">共 {{ totalCount }} 条</span>
         </div>
-      </div>
+        <div class="data-card-meta">{{ querySummary }}</div>
+      </header>
 
-      <div class="table-wrap table-wrap-v2">
-        <table class="table">
+      <div class="data-table-wrap">
+        <table class="data-table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>图片</th>
-              <th>标题</th>
-              <th>跳转类型</th>
-              <th>目标链接</th>
-              <th>排序</th>
-              <th>状态</th>
-              <th>创建时间</th>
-              <th>操作</th>
+              <th style="min-width: 56px;">ID</th>
+              <th style="min-width: 120px;">图片</th>
+              <th style="min-width: 200px;">标题</th>
+              <th style="min-width: 110px;">跳转类型</th>
+              <th style="min-width: 240px;">目标链接</th>
+              <th style="min-width: 64px;">排序</th>
+              <th style="min-width: 84px;">状态</th>
+              <th style="min-width: 156px;">创建时间</th>
+              <th style="min-width: 110px;">操作</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="item in items" :key="item.id">
-              <td class="cell-strong">{{ item.id }}</td>
+              <td>{{ item.id }}</td>
               <td>
-                <div class="banner-preview" :style="item.imageUrl ? { backgroundImage: `url(${normalizeFileUrl(item.imageUrl)})` } : {}"></div>
+                <div class="banner-thumb" :style="item.imageUrl ? { backgroundImage: `url(${normalizeFileUrl(item.imageUrl)})` } : {}"></div>
               </td>
               <td>
-                <div class="table-primary-cell">
+                <div class="cell-stack">
                   <strong>{{ item.title }}</strong>
-                  <span>素材 ID：{{ item.imageAssetId }}</span>
+                  <span class="muted-line">素材 ID：{{ item.imageAssetId }}</span>
                 </div>
               </td>
               <td>{{ describeLink(item.linkUrl).typeLabel }}</td>
-              <td class="link-cell">{{ item.linkUrl || '-' }}</td>
+              <td class="link-cell cell-mono">{{ item.linkUrl || '-' }}</td>
               <td>{{ item.sort }}</td>
               <td>
                 <span :class="['status-badge', item.isEnabled ? 'success' : 'danger']">{{ item.isEnabled ? '启用' : '停用' }}</span>
               </td>
               <td>{{ formatDate(item.createdAt) }}</td>
               <td>
-                <div class="table-actions">
-                  <button type="button" class="action-button" :disabled="!canEdit" :title="canEdit ? '' : '当前账号缺少 banner.edit 权限'" @click="openEditDialog(item)">
-                    {{ canEdit ? '编辑' : '无编辑权限' }}
-                  </button>
-                  <button type="button" class="action-button danger" :disabled="!canDelete" :title="canDelete ? '' : '当前账号缺少 banner.delete 权限'" @click="removeItem(item)">
-                    {{ canDelete ? '删除' : '无删除权限' }}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  class="cell-link"
+                  :disabled="!canEdit"
+                  :title="canEdit ? '' : '当前账号缺少 banner.edit 权限'"
+                  @click="openEditDialog(item)"
+                >编辑</button>
+                <button
+                  type="button"
+                  class="cell-link danger"
+                  :disabled="!canDelete"
+                  :title="canDelete ? '' : '当前账号缺少 banner.delete 权限'"
+                  @click="removeItem(item)"
+                >删除</button>
               </td>
             </tr>
-            <tr v-if="items.length === 0">
-              <td colspan="9" class="empty-text">暂无轮播图数据</td>
+            <tr v-if="items.length === 0" class="empty-row">
+              <td colspan="9">暂无轮播图数据</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <div class="pager pager-v2">
-        <div class="pager-info">第 {{ pageIndex }} 页 / 共 {{ totalPages }} 页，共 {{ totalCount }} 条记录</div>
+      <footer class="pager-compact">
+        <div class="pager-info">第 {{ pageIndex }} / {{ totalPages }} 页 · 共 {{ totalCount }} 条</div>
         <div class="pager-actions">
-          <button type="button" class="ghost-button" :disabled="pageIndex <= 1" @click="goPrevPage">上一页</button>
-          <button type="button" class="ghost-button" :disabled="pageIndex >= totalPages" @click="goNextPage">下一页</button>
+          <button type="button" :disabled="pageIndex <= 1" @click="goPrevPage">上一页</button>
+          <button type="button" :disabled="pageIndex >= totalPages" @click="goNextPage">下一页</button>
         </div>
-      </div>
+      </footer>
     </section>
 
-    <div v-if="dialogVisible" class="dialog-mask" @click.self="closeDialog">
-      <div class="dialog-card dialog-card-v2 banner-dialog">
-        <div class="dialog-head">
-          <div class="dialog-head-main">
-            <span class="section-kicker">轮播编辑</span>
-            <h3>{{ editingId ? '编辑轮播图' : '新增轮播图' }}</h3>
-            <p>跳转目标通过类型和对象选择自动生成，不需要手动填写链接。</p>
-          </div>
-          <button type="button" class="ghost-button" @click="closeDialog">关闭</button>
-        </div>
+    <MainDetailDialog
+      v-if="dialogVisible"
+      :title="editingId ? '编辑轮播图' : '新增轮播图'"
+      sub="跳转目标通过类型和对象选择自动生成，不需要手动填写链接"
+      size="xl"
+      @close="closeDialog"
+    >
+      <div class="dialog-form-grid">
+        <label class="dialog-field field-span-2">
+          <span>轮播图标题</span>
+          <input v-model.trim="form.title" type="text" placeholder="请输入轮播图标题" />
+        </label>
+        <label class="dialog-field">
+          <span>排序值（越大越靠前）</span>
+          <input v-model.number="form.sort" type="number" min="0" placeholder="0" />
+        </label>
+        <label class="dialog-field checkbox-row">
+          <input v-model="form.isEnabled" type="checkbox" />
+          <span>启用轮播图</span>
+        </label>
 
-        <div class="grid-form dialog-form">
-          <label class="field-card field-span-2">
-            <span class="field-label">轮播图标题</span>
-            <input v-model.trim="form.title" type="text" placeholder="请输入轮播图标题" />
-          </label>
+        <label class="dialog-field field-span-2">
+          <span>跳转类型</span>
+          <select v-model="linkForm.type" @change="handleLinkTypeChange">
+            <option value="coupon">券模板详情</option>
+            <option value="pack">券包详情</option>
+            <option value="product">商品详情</option>
+            <option value="activity">活动页</option>
+          </select>
+        </label>
 
-          <label class="field-card">
-            <span class="field-label">排序值</span>
-            <input v-model.number="form.sort" type="number" min="0" placeholder="越大越靠前" />
-          </label>
+        <label v-if="linkForm.type === 'activity'" class="dialog-field field-span-2">
+          <span>活动页</span>
+          <select v-model="linkForm.activityKey">
+            <option v-for="option in activityOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+          </select>
+        </label>
 
-          <label class="field-card checkbox-field align-end">
-            <input v-model="form.isEnabled" type="checkbox" />
-            <span>启用轮播图</span>
-          </label>
+        <label v-else class="dialog-field field-span-2">
+          <span>跳转对象</span>
+          <RemoteSelectField
+            v-model="linkForm.targetId"
+            v-model:keyword="targetQuery.keyword"
+            :placeholder="targetPlaceholder"
+            :empty-label="targetEmptyLabel"
+            :options="targetOptions"
+            @search="loadTargetOptions"
+          />
+        </label>
 
-          <label class="field-card field-span-2">
-            <span class="field-label">跳转类型</span>
-            <select v-model="linkForm.type" @change="handleLinkTypeChange">
-              <option value="coupon">券模板详情</option>
-              <option value="pack">券包详情</option>
-              <option value="product">商品详情</option>
-              <option value="activity">活动页</option>
-            </select>
-          </label>
-
-          <label v-if="linkForm.type === 'activity'" class="field-card field-span-2">
-            <span class="field-label">活动页</span>
-            <select v-model="linkForm.activityKey">
-              <option v-for="option in activityOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-            </select>
-          </label>
-
-          <label v-else class="field-card field-span-2">
-            <span class="field-label">跳转对象</span>
-            <RemoteSelectField
-              v-model="linkForm.targetId"
-              v-model:keyword="targetQuery.keyword"
-              :placeholder="targetPlaceholder"
-              :empty-label="targetEmptyLabel"
-              :options="targetOptions"
-              @search="loadTargetOptions"
-            />
-          </label>
-
-          <div class="field-card field-span-2 summary-field route-preview-card">
-            <span class="field-label">生成后的跳转地址</span>
-            <strong>{{ generatedLinkUrl || '请先选择跳转对象' }}</strong>
-            <p>{{ generatedLinkDescription }}</p>
-          </div>
-
-          <div class="field-card field-span-2 asset-picker-card">
-            <div class="asset-picker-head">
-              <span class="field-label">轮播图片</span>
-              <div class="toolbar-actions compact-actions">
-                <button type="button" class="ghost-button" @click="triggerUpload">上传图片</button>
-                <button type="button" class="ghost-button" @click="openMediaDialog">选择素材</button>
-                <button v-if="selectedAsset" type="button" class="ghost-button" @click="clearSelectedAsset">清空</button>
-              </div>
-            </div>
-            <p class="asset-picker-tip">推荐上传透明底 PNG（只保留主体元素，如钱包/礼盒/红包），banner 背景色由小程序主题决定。也支持 JPG / GIF / WebP，但带背景的图可能出现色差。</p>
-            <input ref="fileInputRef" type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden-file-input" @change="handleFileChange" />
-
-            <div v-if="selectedAsset" class="selected-asset-card">
-              <img :src="normalizeFileUrl(selectedAsset.fileUrl)" :alt="selectedAsset.name" class="selected-asset-image" />
-              <div class="selected-asset-meta">
-                <strong>{{ selectedAsset.name }}</strong>
-                <span>素材 ID：{{ selectedAsset.id }}</span>
-                <span>素材分区：{{ selectedAsset.bucketType }}</span>
-              </div>
-            </div>
-            <div v-else class="empty-asset-state">请上传图片或选择已有素材，推荐透明底 PNG。</div>
-          </div>
-        </div>
-
-        <div class="dialog-actions">
-          <button type="button" class="ghost-button" @click="closeDialog">取消</button>
-          <button type="button" :disabled="submitting" @click="submit">{{ submitting ? '提交中...' : (editingId ? '保存修改' : '保存新增') }}</button>
+        <div class="detail-cell field-span-2">
+          <span class="detail-label">生成后的跳转地址</span>
+          <div class="cell-mono">{{ generatedLinkUrl || '请先选择跳转对象' }}</div>
+          <div class="muted-line">{{ generatedLinkDescription }}</div>
         </div>
       </div>
-    </div>
 
-    <div v-if="mediaDialogVisible" class="dialog-mask" @click.self="closeMediaDialog">
-      <div class="dialog-card dialog-card-v2 media-dialog">
-        <div class="dialog-head">
-          <div class="dialog-head-main">
-            <span class="section-kicker">素材选择</span>
-            <h3>选择轮播素材</h3>
-            <p>仅可选择 `banner / shared` 分区素材。</p>
+      <section class="detail-section">
+        <header class="detail-section-head">
+          <h4>轮播图片</h4>
+          <span class="detail-section-tip">推荐透明底 PNG（只保留主体元素），banner 背景色由小程序主题决定</span>
+        </header>
+        <div class="asset-picker-body">
+          <div class="asset-picker-toolbar">
+            <button type="button" class="primary-button compact" @click="triggerUpload">上传图片</button>
+            <button type="button" class="ghost-button compact" @click="openMediaDialog">选择素材</button>
+            <button v-if="selectedAsset" type="button" class="ghost-button compact" @click="clearSelectedAsset">清空</button>
           </div>
-          <button type="button" class="ghost-button" @click="closeMediaDialog">关闭</button>
-        </div>
+          <input ref="fileInputRef" type="file" accept="image/jpeg,image/png,image/gif,image/webp" class="hidden-file-input" @change="handleFileChange" />
 
-        <div class="filter-panel-grid banner-filter-grid compact-media-grid">
-          <label class="field-card filter-field field-span-2">
-            <span class="field-label">素材搜索</span>
-            <input v-model.trim="mediaQuery.keyword" type="text" placeholder="请输入素材名称" @keyup.enter="loadMediaOptions" />
-          </label>
-          <div class="toolbar-actions selector-actions">
-            <button type="button" class="ghost-button" @click="loadMediaOptions">搜索</button>
+          <div v-if="selectedAsset" class="selected-asset-card">
+            <img :src="normalizeFileUrl(selectedAsset.fileUrl)" :alt="selectedAsset.name" class="selected-asset-image" />
+            <div class="selected-asset-meta">
+              <strong>{{ selectedAsset.name }}</strong>
+              <span class="muted-line">素材 ID：{{ selectedAsset.id }}</span>
+              <span class="muted-line">素材分区：{{ selectedAsset.bucketType }}</span>
+            </div>
           </div>
+          <div v-else class="detail-empty">请上传图片或选择已有素材，推荐透明底 PNG</div>
         </div>
+      </section>
 
-        <div class="media-grid">
-          <button v-for="asset in mediaOptions" :key="asset.id" type="button" class="media-card" @click="selectMediaAsset(asset)">
-            <img :src="normalizeFileUrl(asset.fileUrl)" :alt="asset.name" class="media-card-image" />
-            <strong>{{ asset.name }}</strong>
-            <span>{{ asset.bucketType }} / ID {{ asset.id }}</span>
-          </button>
-          <div v-if="mediaOptions.length === 0" class="empty-text media-empty">暂无可选素材</div>
-        </div>
+      <template #footer>
+        <button type="button" class="ghost-button compact" @click="closeDialog">取消</button>
+        <button type="button" class="primary-button compact" :disabled="submitting" @click="submit">
+          {{ submitting ? '提交中...' : (editingId ? '保存修改' : '保存新增') }}
+        </button>
+      </template>
+    </MainDetailDialog>
+
+    <MainDetailDialog
+      v-if="mediaDialogVisible"
+      title="选择轮播素材"
+      sub="仅可选择 banner / shared 分区素材"
+      size="xl"
+      @close="closeMediaDialog"
+    >
+      <div class="media-search-row">
+        <input v-model.trim="mediaQuery.keyword" type="text" placeholder="请输入素材名称" @keyup.enter="loadMediaOptions" />
+        <button type="button" class="primary-button compact" @click="loadMediaOptions">搜索</button>
       </div>
-    </div>
+
+      <div class="media-grid">
+        <button v-for="asset in mediaOptions" :key="asset.id" type="button" class="media-card" @click="selectMediaAsset(asset)">
+          <img :src="normalizeFileUrl(asset.fileUrl)" :alt="asset.name" class="media-card-image" />
+          <strong>{{ asset.name }}</strong>
+          <span class="muted-line">{{ asset.bucketType }} / ID {{ asset.id }}</span>
+        </button>
+        <div v-if="mediaOptions.length === 0" class="detail-empty media-empty">暂无可选素材</div>
+      </div>
+
+      <template #footer>
+        <button type="button" class="ghost-button compact" @click="closeMediaDialog">关闭</button>
+      </template>
+    </MainDetailDialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import RemoteSelectField, { type RemoteSelectOption } from '@/components/RemoteSelectField.vue'
+import MainDetailDialog from '@/components/MainDetailDialog.vue'
 import { getBannerList, createBanner, updateBanner, deleteBanner } from '@/api/banner'
 import { createMediaAsset, getMediaAssetList, uploadMediaAssetFile } from '@/api/media-asset'
 import { getCouponTemplateList } from '@/api/coupon-template'
@@ -338,8 +304,7 @@ const canCreate = authStorage.hasPermission('banner.create')
 const canEdit = authStorage.hasPermission('banner.edit')
 const canDelete = authStorage.hasPermission('banner.delete')
 
-const enabledCount = computed(() => items.value.filter((item) => item.isEnabled).length)
-const querySummary = computed(() => `${query.keyword || '全部标题'} / 每页 ${pageSize.value} 条`)
+const querySummary = computed(() => `${query.keyword || '全部标题'} · 每页 ${pageSize.value} 条`)
 const targetPlaceholder = computed(() => {
   if (linkForm.type === 'coupon') return '搜索券模板名称'
   if (linkForm.type === 'pack') return '搜索券包名称'
@@ -623,7 +588,7 @@ async function submit() {
 }
 
 async function removeItem(item: BannerListItemDto) {
-  if (!window.confirm(`确认删除轮播图“${item.title}”吗？`)) {
+  if (!window.confirm(`确认删除轮播图"${item.title}"吗？`)) {
     return
   }
   try {
@@ -652,6 +617,7 @@ async function resetQuery() {
   pageSize.value = 10
   pageIndex.value = 1
   await loadData()
+  notify.info('已重置筛选条件')
 }
 
 async function handlePageSizeChange() {
@@ -671,6 +637,10 @@ async function goNextPage() {
   await loadData()
 }
 
+const notifyColumnSettingsPlaceholder = () => {
+  notify.info('列设置功能将在下一版本提供')
+}
+
 watch(() => linkForm.type, async () => {
   if (linkForm.type !== 'activity') {
     await loadTargetOptions()
@@ -681,14 +651,56 @@ onMounted(loadData)
 </script>
 
 <style scoped>
-.banner-filter-grid {
-  grid-template-columns: minmax(0, 1fr) 180px minmax(260px, 320px);
+.dialog-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
 }
 
-.banner-preview {
-  width: 132px;
-  height: 76px;
-  border-radius: 16px;
+.dialog-field {
+  display: grid;
+  gap: 6px;
+}
+
+.dialog-field > span {
+  font-size: 13px;
+  font-weight: 600;
+  color: #344054;
+}
+
+.dialog-field input[type='text'],
+.dialog-field input[type='number'],
+.dialog-field select {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  width: 100%;
+}
+
+.checkbox-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  display: flex;
+}
+
+.checkbox-row input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.cell-link.danger {
+  margin-left: 12px;
+}
+
+.banner-thumb {
+  width: 96px;
+  height: 56px;
+  border-radius: 6px;
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   background-size: cover;
   background-position: center;
@@ -696,47 +708,20 @@ onMounted(loadData)
 
 .link-cell {
   max-width: 280px;
-  color: #64748b;
   word-break: break-all;
+  font-size: 12px;
+  color: #475467;
 }
 
-.banner-dialog,
-.media-dialog {
-  width: min(980px, calc(100vw - 36px));
-}
-
-.route-preview-card strong {
-  color: #0f172a;
-  word-break: break-all;
-}
-
-.asset-picker-card {
+.asset-picker-body {
+  padding: 12px 14px;
   display: grid;
-  gap: 16px;
-}
-
-.asset-picker-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   gap: 12px;
 }
 
-.asset-picker-tip {
-  margin: 0;
-  padding: 10px 14px;
-  font-size: 12px;
-  line-height: 1.6;
-  color: #b45309;
-  background: #fffbeb;
-  border: 1px solid #fde68a;
-  border-radius: 12px;
-}
-
-.compact-actions,
-.selector-actions {
+.asset-picker-toolbar {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 .hidden-file-input {
@@ -745,81 +730,87 @@ onMounted(loadData)
 
 .selected-asset-card {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  gap: 16px;
-  padding: 16px;
-  background: #f8fafc;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 18px;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 14px;
+  padding: 12px;
+  background: #fafbfc;
+  border: 1px solid var(--line);
+  border-radius: 6px;
 }
 
-.selected-asset-image,
-.media-card-image {
+.selected-asset-image {
   width: 100%;
-  height: 132px;
+  height: 116px;
   object-fit: cover;
-  border-radius: 14px;
+  border-radius: 6px;
   background: #e2e8f0;
 }
 
 .selected-asset-meta {
   display: grid;
-  gap: 8px;
-  color: #475569;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text);
+  align-content: start;
 }
 
-.empty-asset-state {
-  padding: 24px;
-  text-align: center;
-  color: #64748b;
-  border: 1px dashed rgba(148, 163, 184, 0.6);
-  border-radius: 18px;
-}
-
-.compact-media-grid {
+.media-search-row {
+  display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  margin-bottom: 18px;
+  gap: 8px;
+}
+
+.media-search-row input {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
 }
 
 .media-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
+  gap: 12px;
 }
 
 .media-card {
   display: grid;
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 18px;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
   background: #fff;
   text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.media-card:hover {
+  border-color: var(--primary);
+  background: #f8fbff;
+}
+
+.media-card-image {
+  width: 100%;
+  height: 116px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: #e2e8f0;
 }
 
 .media-card strong {
-  color: #0f172a;
+  font-size: 13px;
+  color: var(--text);
 }
 
-.media-card span,
 .media-empty {
-  color: #64748b;
-}
-
-.align-end {
-  justify-content: flex-end;
+  grid-column: 1 / -1;
 }
 
 @media (max-width: 960px) {
-  .banner-filter-grid,
-  .compact-media-grid,
-  .selected-asset-card {
-    grid-template-columns: 1fr;
-  }
-
-  .asset-picker-head {
-    flex-direction: column;
-    align-items: stretch;
-  }
+  .dialog-form-grid { grid-template-columns: 1fr; }
+  .selected-asset-card { grid-template-columns: 1fr; }
 }
 </style>

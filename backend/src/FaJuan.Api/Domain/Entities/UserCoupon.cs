@@ -21,6 +21,5 @@ public class UserCoupon
     public DateTime ExpireAt { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-    [Timestamp]
-    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+    public DateTime RowVersion { get; set; }
 }

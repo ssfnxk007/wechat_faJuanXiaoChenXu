@@ -147,11 +147,17 @@ async function handleRefresh() {
 }
 
 onShow(() => {
-  loadMallData()
+  loadMallData().catch((error) => {
+    console.warn('[mall] onShow load failed', error)
+    uni.showToast({ title: error?.message || '加载失败', icon: 'none' })
+  })
 })
 
 onReachBottom(() => {
-  loadGoods(false)
+  loadGoods(false).catch((error) => {
+    console.warn('[mall] load more failed', error)
+    uni.showToast({ title: error?.message || '加载失败', icon: 'none' })
+  })
 })
 
 const goPackDetail = (id) => {
