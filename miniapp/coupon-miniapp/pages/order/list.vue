@@ -157,7 +157,10 @@ const {
 } = useListPagination(ordersFetcher, { pageSize: 10 })
 
 onShow(() => {
-  reload()
+  reload().catch((error) => {
+    console.warn('[order-list] onShow reload failed', error)
+    uni.showToast({ title: error?.message || '加载失败', icon: 'none' })
+  })
 })
 
 const statusTabs = computed(() => {

@@ -65,6 +65,50 @@ public class OrderExpirationService(
             && createdAt <= DateTime.Now.AddMinutes(-PendingPaymentTimeoutMinutes);
     }
 
+    public async Task<CouponOrderStatus?> ResolveExpiredOrderAsync(long orderId, CancellationToken cancellationToken = default)
+    {
+        var order = await dbContext.CouponOrders
+            .FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
+        if (order is null)
+        {
+            return null;
+        }
+
+        if (!IsExpiredPendingOrder(order.Status, order.CreatedAt))
+        {
+            return order.Status;
+        }
+
+        var transaction = await dbContext.PaymentTransactions
+            .Where(x => x.CouponOrderId == order.Id && x.Status == PaymentStatus.Pending)
+            .OrderByDescending(x => x.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (transaction is not null)
+        {
+            var paymentResolution = await ResolvePaymentBeforeClosingAsync(transaction, cancellationToken);
+            if (paymentResolution == ExpiredPaymentResolution.Paid)
+            {
+                return CouponOrderStatus.Paid;
+            }
+
+            if (paymentResolution == ExpiredPaymentResolution.SkipClosing)
+            {
+                return order.Status;
+            }
+        }
+
+        order.Status = CouponOrderStatus.Closed;
+        if (transaction is not null)
+        {
+            transaction.Status = PaymentStatus.Failed;
+            transaction.RawCallback = $"order-auto-closed:pending-payment-timeout-{PendingPaymentTimeoutMinutes}-minutes";
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return CouponOrderStatus.Closed;
+    }
+
     private async Task<ExpiredPaymentResolution> ResolvePaymentBeforeClosingAsync(PaymentTransaction transaction, CancellationToken cancellationToken)
     {
         var payStatus = await weChatPayService.GetStatusAsync(cancellationToken);
@@ -76,12 +120,12 @@ public class OrderExpirationService(
         var queryResult = await weChatPayService.QueryTransactionByOutTradeNoAsync(transaction.PaymentNo, cancellationToken);
         if (!queryResult.Success || queryResult.Result is null)
         {
-            return ExpiredPaymentResolution.SkipClosing;
+            return ExpiredPaymentResolution.Close;
         }
 
         if (!string.Equals(queryResult.Result.OutTradeNo, transaction.PaymentNo, StringComparison.Ordinal))
         {
-            return ExpiredPaymentResolution.SkipClosing;
+            return ExpiredPaymentResolution.Close;
         }
 
         if (string.Equals(queryResult.Result.TradeState, "SUCCESS", StringComparison.OrdinalIgnoreCase))

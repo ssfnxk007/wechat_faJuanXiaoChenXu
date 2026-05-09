@@ -6,11 +6,11 @@
 
     <view class="profile-hero cm-card">
       <view class="profile-avatar">{{ avatarText }}</view>
-      <view class="profile-meta">
-        <text class="profile-name">{{ profileName }}</text>
-        <text class="profile-id">{{ profileSubtitle }}</text>
-      </view>
-      <view class="profile-badge">已登录</view>
+    <view class="profile-meta">
+      <text class="profile-name">{{ profileName }}</text>
+      <text class="profile-id">{{ profileSubtitle }}</text>
+    </view>
+      <view class="profile-badge">{{ profileBadgeText }}</view>
     </view>
 
     <view class="profile-stats cm-card">
@@ -39,29 +39,88 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import SectionHeader from '@/components/SectionHeader.vue'
 import CmPullRefresh from '@/components/CmPullRefresh.vue'
 import { useTheme } from '@/composables/use-theme'
 import { useSessionStore } from '@/store/session'
+import { ensureMiniProgramLogin } from '@/api/auth'
 
 const session = useSessionStore()
 const { themeClass } = useTheme()
 const refreshing = ref(false)
+const loginRefreshing = ref(false)
+
+async function ensureProfileLogin() {
+  if (loginRefreshing.value) {
+    return
+  }
+
+  if (session.userId && session.token) {
+    return
+  }
+
+  loginRefreshing.value = true
+  try {
+    await ensureMiniProgramLogin()
+  } catch (error) {
+    console.warn('[profile] ensure login failed', error)
+  } finally {
+    loginRefreshing.value = false
+  }
+}
 
 async function handleRefresh() {
   if (refreshing.value) return
   refreshing.value = true
-  await new Promise((resolve) => setTimeout(resolve, 700))
-  uni.showToast({ title: '已刷新', icon: 'none' })
-  refreshing.value = false
+  try {
+    await ensureProfileLogin()
+    await new Promise((resolve) => setTimeout(resolve, 700))
+    uni.showToast({ title: '已刷新', icon: 'none' })
+  } finally {
+    refreshing.value = false
+  }
 }
 const profileName = computed(() => session.nickname || '微信用户')
 const profileSubtitle = computed(() => {
   if (session.userId) {
     return `用户编号 ${session.userId}`
   }
+  if (session.loginMessage) {
+    return session.loginMessage
+  }
   return '登录后自动建档'
 })
+const profileBadgeText = computed(() => {
+  if (session.userId && session.token) {
+    return '已登录'
+  }
+  if (session.loginStatus === 'error') {
+    return '登录异常'
+  }
+  if (session.loginStatus === 'checking') {
+    return '登录中'
+  }
+  return '未登录'
+})
+const stats = computed(() => ([
+  {
+    label: '授权状态',
+    value: session.userId && session.token ? '已开通' : '未开通'
+  },
+  {
+    label: '手机号',
+    value: session.mobile ? '已绑定' : '未绑定'
+  },
+  {
+    label: '微信状态',
+    value: session.wechatConfigured
+      ? (session.loginStatus === 'ready'
+          ? '正常'
+          : (session.loginStatus === 'error' ? '异常' : '检查中'))
+      : '未配置'
+  }
+]))
 const avatarText = computed(() => {
   const name = String(profileName.value || '').trim()
   return name ? name.slice(0, 2).toUpperCase() : '微信'
@@ -86,6 +145,12 @@ const menus = [
   { title: '核销记录', desc: '历史记录', route: '/pages/verify-record/index' },
   { title: '规则说明', desc: '使用规则', route: '/pages/rules/index' }
 ]
+
+onShow(() => {
+  ensureProfileLogin().catch((error) => {
+    console.warn('[profile] onShow ensure login failed', error)
+  })
+})
 </script>
 
 <style lang="scss" scoped>

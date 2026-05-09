@@ -207,7 +207,10 @@ function goMall() {
 }
 
 onShow(() => {
-  loadCoupons()
+  loadCoupons().catch((error) => {
+    console.warn('[coupon-list] onShow load failed', error)
+    uni.showToast({ title: error?.message || '加载失败', icon: 'none' })
+  })
 })
 
 async function handleRefresh() {

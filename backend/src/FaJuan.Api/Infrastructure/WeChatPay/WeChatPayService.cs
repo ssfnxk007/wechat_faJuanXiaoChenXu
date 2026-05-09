@@ -68,40 +68,51 @@ public class WeChatPayService(HttpClient httpClient, WeChatPaySettingsProvider s
         request.Headers.TryAddWithoutValidation("User-Agent", WeChatPayUserAgent);
         request.Content = new StringContent(body, Encoding.UTF8, "application/json");
 
-        using var response = await httpClient.SendAsync(request, cancellationToken);
-        var payload = await response.Content.ReadAsStringAsync(cancellationToken);
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            return (false, $"微信支付下单失败: {payload}", null);
+            using var response = await httpClient.SendAsync(request, cancellationToken);
+            var payload = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return (false, $"微信支付下单失败: {payload}", null);
+            }
+
+            var prepayResponse = JsonSerializer.Deserialize<WeChatJsapiPrepayResponse>(payload, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            });
+
+            if (string.IsNullOrWhiteSpace(prepayResponse?.PrepayId))
+            {
+                return (false, "微信支付未返回 prepay_id", null);
+            }
+
+            var payTimeStamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
+            var payNonce = Guid.NewGuid().ToString("N");
+            var packageValue = $"prepay_id={prepayResponse.PrepayId}";
+            var paySign = SignMiniProgramPay(opts.AppId, opts.PrivateKeyPem, payTimeStamp, payNonce, packageValue);
+
+            return (true, "下单成功", new CreatePaymentResultDto
+            {
+                PaymentNo = outTradeNo,
+                Amount = amount,
+                IsMock = false,
+                PrepayId = prepayResponse.PrepayId,
+                TimeStamp = payTimeStamp,
+                NonceStr = payNonce,
+                PackageValue = packageValue,
+                SignType = "RSA",
+                PaySign = paySign,
+            });
         }
-
-        var prepayResponse = JsonSerializer.Deserialize<WeChatJsapiPrepayResponse>(payload, new JsonSerializerOptions
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            PropertyNameCaseInsensitive = true,
-        });
-
-        if (string.IsNullOrWhiteSpace(prepayResponse?.PrepayId))
-        {
-            return (false, "微信支付未返回 prepay_id", null);
+            return (false, "微信支付下单超时，请稍后重试", null);
         }
-
-        var payTimeStamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString();
-        var payNonce = Guid.NewGuid().ToString("N");
-        var packageValue = $"prepay_id={prepayResponse.PrepayId}";
-        var paySign = SignMiniProgramPay(opts.AppId, opts.PrivateKeyPem, payTimeStamp, payNonce, packageValue);
-
-        return (true, "下单成功", new CreatePaymentResultDto
+        catch (HttpRequestException ex)
         {
-            PaymentNo = outTradeNo,
-            Amount = amount,
-            IsMock = false,
-            PrepayId = prepayResponse.PrepayId,
-            TimeStamp = payTimeStamp,
-            NonceStr = payNonce,
-            PackageValue = packageValue,
-            SignType = "RSA",
-            PaySign = paySign,
-        });
+            return (false, $"微信支付网络请求失败: {ex.Message}", null);
+        }
     }
 
     public async Task<WeChatTransactionResource?> TryDecryptCallbackAsync(string requestBody, CancellationToken cancellationToken = default)
@@ -165,24 +176,35 @@ public class WeChatPayService(HttpClient httpClient, WeChatPaySettingsProvider s
         request.Headers.TryAddWithoutValidation("Accept", "application/json");
         request.Headers.TryAddWithoutValidation("User-Agent", WeChatPayUserAgent);
 
-        using var response = await httpClient.SendAsync(request, cancellationToken);
-        var payload = await response.Content.ReadAsStringAsync(cancellationToken);
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            return (false, $"微信支付查单失败: {payload}", null);
+            using var response = await httpClient.SendAsync(request, cancellationToken);
+            var payload = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return (false, $"微信支付查单失败: {payload}", null);
+            }
+
+            var result = JsonSerializer.Deserialize<WeChatTransactionResource>(payload, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            });
+
+            if (result is null)
+            {
+                return (false, "微信支付查单返回解析失败", null);
+            }
+
+            return (true, "微信支付查单成功", result);
         }
-
-        var result = JsonSerializer.Deserialize<WeChatTransactionResource>(payload, new JsonSerializerOptions
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            PropertyNameCaseInsensitive = true,
-        });
-
-        if (result is null)
-        {
-            return (false, "微信支付查单返回解析失败", null);
+            return (false, "微信支付查单超时，请稍后重试", null);
         }
-
-        return (true, "微信支付查单成功", result);
+        catch (HttpRequestException ex)
+        {
+            return (false, $"微信支付查单网络请求失败: {ex.Message}", null);
+        }
     }
 
     public async Task<bool> VerifyCallbackSignatureAsync(string serial, string timestamp, string nonce, string signature, string body, CancellationToken cancellationToken = default)
@@ -251,24 +273,35 @@ public class WeChatPayService(HttpClient httpClient, WeChatPaySettingsProvider s
         request.Headers.TryAddWithoutValidation("User-Agent", WeChatPayUserAgent);
         request.Content = new StringContent(body, Encoding.UTF8, "application/json");
 
-        using var response = await httpClient.SendAsync(request, cancellationToken);
-        var payload = await response.Content.ReadAsStringAsync(cancellationToken);
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            return (false, $"微信退款申请失败: {payload}", null);
+            using var response = await httpClient.SendAsync(request, cancellationToken);
+            var payload = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                return (false, $"微信退款申请失败: {payload}", null);
+            }
+
+            var refundResponse = JsonSerializer.Deserialize<WeChatRefundResponse>(payload, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            });
+
+            if (refundResponse is null)
+            {
+                return (false, "微信退款返回解析失败", null);
+            }
+
+            return (true, "退款申请成功", refundResponse);
         }
-
-        var refundResponse = JsonSerializer.Deserialize<WeChatRefundResponse>(payload, new JsonSerializerOptions
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            PropertyNameCaseInsensitive = true,
-        });
-
-        if (refundResponse is null)
-        {
-            return (false, "微信退款返回解析失败", null);
+            return (false, "微信退款请求超时，请稍后重试", null);
         }
-
-        return (true, "退款申请成功", refundResponse);
+        catch (HttpRequestException ex)
+        {
+            return (false, $"微信退款网络请求失败: {ex.Message}", null);
+        }
     }
 
     private async Task<RSA?> LoadPlatformCertificateAsync(string serial, WeChatPaySettingsSnapshot opts, CancellationToken cancellationToken)

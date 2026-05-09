@@ -1,127 +1,83 @@
 <template>
-  <div class="business-page page-v2 writeoff-page-v2">
-    <section class="hero-panel writeoff-hero">
-      <div class="hero-copy">
-        <span class="page-kicker">执行工作台</span>
-        <h2>核销中心</h2>
-        <p>把 ERP 核销入口、输入表单、结果反馈和操作说明放进同一工作台，减少大段说明对执行动作的干扰。</p>
-        <div class="hero-tags">
-          <span class="badge info">ERP 核销</span>
-          <span class="badge success">门店 / 商品联动</span>
-          <span class="badge warning">支持补录</span>
+  <div class="admin-page writeoff-page">
+    <section class="search-card">
+      <div class="search-grid">
+        <div class="field">
+          <label for="wo-code">券码</label>
+          <input id="wo-code" v-model.trim="form.couponCode" type="text" placeholder="输入或扫描券码" />
+        </div>
+        <div class="field">
+          <label for="wo-store">门店</label>
+          <RemoteSelectField
+            v-model="form.storeId"
+            v-model:keyword="selectorQuery.storeKeyword"
+            placeholder="搜索门店名称 / 编码"
+            empty-label="请选择门店"
+            :options="storeSelectOptions"
+            @search="searchStores"
+          />
+        </div>
+        <div class="field">
+          <label for="wo-product">商品</label>
+          <RemoteSelectField
+            v-model="selectedProductId"
+            v-model:keyword="selectorQuery.productKeyword"
+            placeholder="搜索商品名称 / ERP 编码"
+            empty-label="非指定商品券可留空"
+            :options="productSelectOptions"
+            @search="searchProducts"
+          />
+        </div>
+        <div class="field">
+          <label for="wo-operator">操作人</label>
+          <input id="wo-operator" v-model.trim="form.operatorName" type="text" placeholder="输入操作人" />
+        </div>
+        <div class="field">
+          <label for="wo-device">设备号</label>
+          <input id="wo-device" v-model.trim="form.deviceCode" type="text" placeholder="输入设备号" />
         </div>
       </div>
-      <div class="hero-side hero-side-grid">
-        <article class="quick-card compact">
-          <span class="quick-card-label">执行状态</span>
-          <strong>{{ result ? '已返回' : '待处理' }}</strong>
-          <p>执行后立即展示结果与命中信息</p>
-        </article>
-        <article class="quick-card compact">
-          <span class="quick-card-label">当前门店</span>
-          <strong>{{ currentStoreName }}</strong>
-          <p>用于确认本次核销所属门店</p>
-        </article>
-        <article class="quick-card compact">
-          <span class="quick-card-label">当前商品</span>
-          <strong>{{ currentProductName }}</strong>
-          <p>指定商品券核销时带入商品编号</p>
-        </article>
-        <article class="quick-card compact">
-          <span class="quick-card-label">核销模式</span>
-          <strong>ERP</strong>
-          <p>扫码后调用接口并回写业务系统</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="card toolbar-card card-v2 operations-card">
-      <div class="toolbar-row">
-        <div class="toolbar-title">
-          <span class="section-kicker">核销输入</span>
-          <h3>执行参数</h3>
-          <p class="section-tip">优先展示门店、商品、券码与操作人输入，不让说明性内容盖过执行入口。</p>
-        </div>
-        <div class="toolbar-actions">
-          <button type="button" class="ghost-button" :disabled="submitting" @click="resetForm">重置表单</button>
-          <button type="button" class="ghost-button" :disabled="submitting" @click="fillDemo">快速填充</button>
-          <button v-if="canExecute" type="button" class="primary-button" :disabled="submitting" @click="submit">{{ submitting ? '核销中...' : '执行核销' }}</button>
-        </div>
-      </div>
-
-      <div class="filter-panel-grid writeoff-filter-grid">
-        <label class="field-card filter-field">
-          <span class="field-label">券码</span>
-          <input v-model.trim="form.couponCode" type="text" placeholder="输入券码" />
-        </label>
-        <label class="field-card filter-field field-with-selector">
-          <span class="field-label">门店</span>
-          <RemoteSelectField v-model="form.storeId" v-model:keyword="selectorQuery.storeKeyword" placeholder="搜索门店名称 / 编码" empty-label="请选择门店" :options="storeSelectOptions" @search="searchStores" />
-        </label>
-        <label class="field-card filter-field field-with-selector">
-          <span class="field-label">商品</span>
-          <RemoteSelectField v-model="selectedProductId" v-model:keyword="selectorQuery.productKeyword" placeholder="搜索商品名称 / ERP 编码" empty-label="全部商品或非指定商品券" :options="productSelectOptions" @search="searchProducts" />
-        </label>
-        <label class="field-card filter-field">
-          <span class="field-label">操作人</span>
-          <input v-model.trim="form.operatorName" type="text" placeholder="输入操作人" />
-        </label>
-        <label class="field-card filter-field">
-          <span class="field-label">设备号</span>
-          <input v-model.trim="form.deviceCode" type="text" placeholder="输入设备号" />
-        </label>
-        <div class="field-card summary-field">
-          <span class="field-label">标准流程</span>
-          <strong>扫码 → 带参调用 → 返回结果</strong>
-          <p>门店、商品、操作人、设备号建议全部留痕，便于 ERP 对账与追踪。</p>
-        </div>
+      <div class="search-actions">
+        <button v-if="canExecute" type="button" class="primary-button compact" :disabled="submitting" @click="submit">
+          {{ submitting ? '核销中...' : '执行核销' }}
+        </button>
+        <button type="button" class="ghost-button compact" :disabled="submitting" @click="resetForm">重置</button>
+        <button type="button" class="ghost-button compact" :disabled="submitting" @click="fillDemo">快速填充</button>
       </div>
     </section>
 
-    <section class="writeoff-content-grid">
-      <article class="card card-v2 data-card">
-        <div class="section-head">
-          <div class="section-head-main">
-            <span class="section-kicker">结果回看</span>
-            <h3>核销结果</h3>
-            <p class="section-tip">成功后直接展示结果消息与关键 ID，方便复制给 ERP 或运营侧追查。</p>
+    <section class="data-card">
+      <header class="data-card-head">
+        <div class="data-card-title">
+          <h3>核销结果</h3>
+          <span :class="['count-pill', result ? '' : 'count-pill-pending']">{{ result ? '已返回' : '待执行' }}</span>
+        </div>
+        <div class="data-card-meta">门店：{{ currentStoreName }} · 商品：{{ currentProductName }}</div>
+      </header>
+      <div class="result-body">
+        <div v-if="result" class="result-card">
+          <strong class="result-message">{{ result.message }}</strong>
+          <div class="result-meta-grid">
+            <div class="result-meta-cell">
+              <span class="result-meta-label">用户券 ID</span>
+              <span class="cell-mono">{{ result.userCouponId }}</span>
+            </div>
+            <div class="result-meta-cell">
+              <span class="result-meta-label">券码</span>
+              <span class="cell-mono">{{ result.couponCode }}</span>
+            </div>
+            <div class="result-meta-cell">
+              <span class="result-meta-label">用户 ID</span>
+              <span class="cell-mono">{{ result.appUserId }}</span>
+            </div>
+            <div class="result-meta-cell">
+              <span class="result-meta-label">模板 ID</span>
+              <span class="cell-mono">{{ result.couponTemplateId }}</span>
+            </div>
           </div>
         </div>
-        <div v-if="result" class="result-panel writeoff-result-panel">
-          <strong>{{ result.message }}</strong>
-          <div class="inline-metrics">
-            <span class="badge success">用户券ID：{{ result.userCouponId }}</span>
-            <span class="badge info">券码：{{ result.couponCode }}</span>
-            <span class="badge warning">用户ID：{{ result.appUserId }}</span>
-            <span class="badge info">模板ID：{{ result.couponTemplateId }}</span>
-          </div>
-        </div>
-        <div v-else class="empty-text">尚未执行核销，请先填写上方表单并执行。</div>
-      </article>
-
-      <article class="card card-v2 data-card">
-        <div class="section-head">
-          <div class="section-head-main">
-            <span class="section-kicker">执行说明</span>
-            <h3>接入与人工补录规则</h3>
-            <p class="section-tip">说明区下沉到侧栏卡片，只保留一线执行真正需要的信息。</p>
-          </div>
-        </div>
-        <div class="writeoff-guide-list">
-          <div class="guide-item">
-            <strong>标准接入</strong>
-            <p>ERP 扫描券码后，携带门店、商品、操作人和设备号调用核销接口。</p>
-          </div>
-          <div class="guide-item">
-            <strong>人工补录</strong>
-            <p>后台保留手动录入入口，便于核查异常券码或补记现场执行结果。</p>
-          </div>
-          <div class="guide-item">
-            <strong>结果落库</strong>
-            <p>建议 ERP 保存返回的券码、用户券 ID、模板 ID 和结果消息，便于后续追踪。</p>
-          </div>
-        </div>
-      </article>
+        <div v-else class="result-empty">尚未执行核销，请先填写上方表单并点击「执行核销」。</div>
+      </div>
     </section>
   </div>
 </template>
@@ -217,51 +173,63 @@ onMounted(loadOptions)
 </script>
 
 <style scoped>
-.writeoff-page-v2 {
-  gap: 22px;
+.count-pill-pending {
+  background: #fef6e7;
+  color: #b45309;
 }
 
-.writeoff-hero {
-  background:
-    radial-gradient(circle at top right, rgba(59, 130, 246, 0.14), transparent 28%),
-    linear-gradient(135deg, #ffffff 0%, #f8fbff 52%, #f4f7fb 100%);
+.result-body {
+  padding: 16px;
 }
 
-.writeoff-filter-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.result-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #fcfdff 0%, #f7fbf9 100%);
 }
 
-.filter-field input {
-  width: 100%;
-  height: 44px;
-  padding: 0 14px;
-  border: 1px solid var(--line-strong);
-  border-radius: 12px;
+.result-message {
+  font-size: 15px;
+  font-weight: 700;
+  color: #16a34a;
+}
+
+.result-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.result-meta-cell {
+  display: grid;
+  gap: 4px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
   background: #fff;
 }
 
-.field-with-selector :deep(.remote-select-field),
-.field-with-selector :deep(.remote-select-control) {
-  width: 100%;
+.result-meta-label {
+  font-size: 12px;
+  color: #475467;
+  font-weight: 600;
 }
 
-.writeoff-content-grid {
-  display: grid;
-  gap: 18px;
-  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
+.result-empty {
+  padding: 36px 16px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  background: #fcfdff;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
 }
 
-.writeoff-result-panel,
-.writeoff-guide-list {
-  display: grid;
-  gap: 12px;
-}
-
-@media (max-width: 1100px) {
-  .hero-side-grid,
-  .writeoff-filter-grid,
-  .writeoff-content-grid {
-    grid-template-columns: 1fr;
-  }
+@media (max-width: 960px) {
+  .result-meta-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 </style>

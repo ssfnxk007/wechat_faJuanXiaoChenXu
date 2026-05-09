@@ -252,15 +252,18 @@ public class MiniAppController(
             .ToListAsync(cancellationToken);
 
         var saleCouponIds = saleCoupons.Select(x => x.Id).ToArray();
-        var productSummaryMap = saleCouponIds.Length == 0
-            ? new Dictionary<long, string>()
+        var productSummaryRows = saleCouponIds.Length == 0
+            ? []
             : await dbContext.CouponTemplateProductScopes.AsNoTracking()
                 .Where(x => saleCouponIds.Contains(x.CouponTemplateId))
                 .Join(dbContext.Products.AsNoTracking(), scope => scope.ProductId, product => product.Id,
                     (scope, product) => new { scope.CouponTemplateId, product.Name })
-                .GroupBy(x => x.CouponTemplateId)
-                .Select(x => new { CouponTemplateId = x.Key, ProductSummary = string.Join(" / ", x.Select(y => y.Name).Distinct().Take(2)) })
-                .ToDictionaryAsync(x => x.CouponTemplateId, x => x.ProductSummary, cancellationToken);
+                .ToListAsync(cancellationToken);
+        var productSummaryMap = productSummaryRows
+            .GroupBy(x => x.CouponTemplateId)
+            .ToDictionary(
+                x => x.Key,
+                x => string.Join(" / ", x.Select(y => y.Name).Distinct().Take(2)));
 
         await FillSaleCouponImageUrlsAsync(saleCoupons, cancellationToken);
         foreach (var item in saleCoupons)
@@ -884,8 +887,6 @@ public class MiniAppController(
             return Unauthorized(Failure<PagedResult<MiniAppOrderCardDto>>("请先登录", 401));
         }
 
-        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
-
         if (!await dbContext.AppUsers.AsNoTracking().AnyAsync(x => x.Id == userId.Value, cancellationToken))
         {
             return NotFound(Failure<PagedResult<MiniAppOrderCardDto>>("用户不存在", 404));
@@ -1017,8 +1018,6 @@ public class MiniAppController(
             return Unauthorized(Failure<MiniAppOrderDetailDto>("请先登录", 401));
         }
 
-        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
-
         var order = await dbContext.CouponOrders.AsNoTracking()
             .Where(x => x.Id == id && x.AppUserId == userId.Value)
             .Select(couponOrder => new MiniAppOrderDetailDto
@@ -1129,8 +1128,6 @@ public class MiniAppController(
         {
             return BadRequest(Failure<MiniAppCreateOrderResultDto>("用户不能为空"));
         }
-
-        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
 
         var user = await dbContext.AppUsers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == userId.Value, cancellationToken);
         if (user is null)
@@ -1353,12 +1350,25 @@ public class MiniAppController(
             return Unauthorized(Failure<MiniAppCreateOrderPaymentResultDto>("请先登录", 401));
         }
 
-        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
-
         var order = await dbContext.CouponOrders.FirstOrDefaultAsync(x => x.Id == id && x.AppUserId == userId.Value, cancellationToken);
         if (order is null)
         {
             return NotFound(Failure<MiniAppCreateOrderPaymentResultDto>("订单不存在", 404));
+        }
+
+        if (orderExpirationService.IsExpiredPendingOrder(order.Status, order.CreatedAt))
+        {
+            var resolvedStatus = await orderExpirationService.ResolveExpiredOrderAsync(order.Id, cancellationToken);
+            if (!resolvedStatus.HasValue)
+            {
+                return NotFound(Failure<MiniAppCreateOrderPaymentResultDto>("订单不存在", 404));
+            }
+
+            order = await dbContext.CouponOrders.FirstOrDefaultAsync(x => x.Id == id && x.AppUserId == userId.Value, cancellationToken);
+            if (order is null)
+            {
+                return NotFound(Failure<MiniAppCreateOrderPaymentResultDto>("订单不存在", 404));
+            }
         }
 
         var payDescription = order.SourceType switch
@@ -1498,13 +1508,25 @@ public class MiniAppController(
             return Unauthorized(Failure<bool>("请先登录", 401));
         }
 
-        await orderExpirationService.CloseExpiredPendingOrdersAsync(cancellationToken);
-
-        var order = await dbContext.CouponOrders.AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == id && x.AppUserId == userId.Value, cancellationToken);
+        var order = await dbContext.CouponOrders.FirstOrDefaultAsync(x => x.Id == id && x.AppUserId == userId.Value, cancellationToken);
         if (order is null)
         {
             return NotFound(Failure<bool>("订单不存在", 404));
+        }
+
+        if (orderExpirationService.IsExpiredPendingOrder(order.Status, order.CreatedAt))
+        {
+            var resolvedStatus = await orderExpirationService.ResolveExpiredOrderAsync(order.Id, cancellationToken);
+            if (!resolvedStatus.HasValue)
+            {
+                return NotFound(Failure<bool>("订单不存在", 404));
+            }
+
+            order = await dbContext.CouponOrders.FirstOrDefaultAsync(x => x.Id == id && x.AppUserId == userId.Value, cancellationToken);
+            if (order is null)
+            {
+                return NotFound(Failure<bool>("订单不存在", 404));
+            }
         }
 
         if (order.Status == CouponOrderStatus.Paid)
@@ -1751,13 +1773,16 @@ public class MiniAppController(
             return;
         }
 
-        var productSummaryMap = await dbContext.CouponTemplateProductScopes.AsNoTracking()
+        var productSummaryRows = await dbContext.CouponTemplateProductScopes.AsNoTracking()
             .Where(x => templateIds.Contains(x.CouponTemplateId))
             .Join(dbContext.Products.AsNoTracking(), scope => scope.ProductId, product => product.Id,
                 (scope, product) => new { scope.CouponTemplateId, product.Name })
+            .ToListAsync(cancellationToken);
+        var productSummaryMap = productSummaryRows
             .GroupBy(x => x.CouponTemplateId)
-            .Select(x => new { CouponTemplateId = x.Key, ProductSummary = string.Join(" / ", x.Select(y => y.Name).Distinct().Take(2)) })
-            .ToDictionaryAsync(x => x.CouponTemplateId, x => x.ProductSummary, cancellationToken);
+            .ToDictionary(
+                x => x.Key,
+                x => string.Join(" / ", x.Select(y => y.Name).Distinct().Take(2)));
 
         foreach (var item in items)
         {

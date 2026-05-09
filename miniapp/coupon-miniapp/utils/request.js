@@ -38,6 +38,19 @@ function createRequestError(message, extra = {}) {
   return error
 }
 
+function resolveAuthMessage(primaryMessage) {
+  const session = useSessionStore()
+  const primary = typeof primaryMessage === 'string' ? primaryMessage.trim() : ''
+  const loginMessage = typeof session.loginMessage === 'string' ? session.loginMessage.trim() : ''
+  if (primary && primary !== '请重新登录') {
+    return primary
+  }
+  if (loginMessage) {
+    return loginMessage
+  }
+  return primary || '请重新登录'
+}
+
 function notifyAuthIssue(message) {
   const now = Date.now()
   if (now - lastAuthToastAt < 2500) {
@@ -135,8 +148,9 @@ async function triggerAuthRefresh() {
         }
       } catch (error) {
         console.warn('[coupon-miniapp][auth-refresh]', error)
-        notifyAuthIssue(error?.message || '请重新登录')
-        showAuthFailureModal(error?.message || '登录已过期，请重新登录。')
+        const message = resolveAuthMessage(error?.message)
+        notifyAuthIssue(message)
+        showAuthFailureModal(message)
         throw error
       } finally {
         pendingLoginPromise = null
@@ -191,12 +205,13 @@ export async function request(options = {}) {
   }
 
   if (isUnauthorizedResponse(response) && !options.skipAuthIntercept && options._retriedAuth) {
-    notifyAuthIssue(response.data?.message || '请重新登录')
-    showAuthFailureModal(response.data?.message || '登录已过期，请重新登录。')
+    const message = resolveAuthMessage(response.data?.message)
+    notifyAuthIssue(message)
+    showAuthFailureModal(message)
   }
 
   if (response.statusCode >= 400) {
-    throw createRequestError(response.data?.message || `HTTP ${response.statusCode}`, {
+    throw createRequestError(response.statusCode === 401 ? resolveAuthMessage(response.data?.message) : (response.data?.message || `HTTP ${response.statusCode}`), {
       statusCode: response.statusCode,
       payload: response.data,
       url: finalUrl

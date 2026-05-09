@@ -78,10 +78,11 @@ button {
   gap: 24px;
   padding: 24px 18px;
   background:
-    radial-gradient(circle at top, rgba(59, 130, 246, 0.18), transparent 30%),
+    radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.22), transparent 34%),
+    radial-gradient(circle at 50% 100%, rgba(34, 211, 238, 0.08), transparent 42%),
     linear-gradient(180deg, #0f172a 0%, #111827 48%, #0b1220 100%);
   color: var(--sidebar-text);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: 1px solid rgba(148, 163, 184, 0.08);
 }
 
 .brand-block {
@@ -114,8 +115,10 @@ button {
   font-weight: 800;
   letter-spacing: 0.06em;
   color: #fff;
-  background: linear-gradient(135deg, #3b82f6, #22c55e);
-  box-shadow: 0 10px 22px rgba(59, 130, 246, 0.3);
+  background: linear-gradient(135deg, #3b82f6, #22d3ee);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    0 10px 24px rgba(56, 189, 248, 0.32);
 }
 
 .brand-subtitle {
@@ -151,14 +154,15 @@ button {
 .brand-tag {
   display: inline-flex;
   align-items: center;
-  min-height: 24px;
+  min-height: 22px;
   padding: 0 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  color: #dbeafe;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: #cbd5e1;
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
 }
 
 .sidebar-group {
@@ -166,6 +170,21 @@ button {
   flex-direction: column;
   gap: 10px;
   padding: 0 4px;
+}
+
+.sidebar-group + .sidebar-group {
+  position: relative;
+  padding-top: 14px;
+}
+
+.sidebar-group + .sidebar-group::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.18), transparent);
 }
 
 .sidebar-group-head {
@@ -207,24 +226,26 @@ button {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  color: #d0d5dd;
+  padding: 11px 13px;
+  border-radius: 14px;
+  color: #cbd5e1;
   border: 1px solid transparent;
-  transition: all 0.18s ease;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .sidebar-link:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(148, 163, 184, 0.06);
+  border-color: rgba(148, 163, 184, 0.1);
   color: #fff;
 }
 
 .sidebar-link.router-link-active {
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.95), rgba(59, 130, 246, 0.88));
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.32), rgba(30, 64, 175, 0.16));
   color: #fff;
-  border-color: rgba(147, 197, 253, 0.36);
-  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.28);
+  border-color: rgba(96, 165, 250, 0.36);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 14px 28px rgba(8, 47, 116, 0.4);
 }
 
 .sidebar-link-text {
@@ -266,9 +287,10 @@ button {
 }
 
 .sidebar-link.router-link-active .nav-icon {
-  background: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, rgba(96, 165, 250, 0.36), rgba(34, 211, 238, 0.24));
   color: #fff;
-  border-color: rgba(255, 255, 255, 0.24);
+  border-color: rgba(147, 197, 253, 0.4);
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.36);
 }
 
 .sidebar-footer {
@@ -288,10 +310,28 @@ button {
 }
 
 .sidebar-footer-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #94a3b8;
+}
+
+.sidebar-footer-label::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+  animation: sidebar-status-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes sidebar-status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
 }
 
 .sidebar-footer-card strong {
@@ -1612,4 +1652,561 @@ button:disabled,
 .checkbox-card input {
   width: 16px;
   height: 16px;
+}
+
+/* =================================================================
+ * V3 admin baseline (compact ERP style)
+ * 所有规则均用 .admin-page 后代选择器隔离，旧 .business-page.page-v2
+ * 页面不受影响。下一轮全后台迁移完后，可统一清理旧 V2 装饰类。
+ * ================================================================= */
+
+:root {
+  --radius-card: 8px;
+  --radius-control: 6px;
+  --radius-badge: 4px;
+  --card-pad: 16px;
+  --page-pad: 16px;
+  --control-h: 32px;
+  --button-h: 32px;
+  --cell-pad-y: 8px;
+  --cell-pad-x: 12px;
+  --fs-cell: 13px;
+  --fs-th: 12px;
+}
+
+.admin-page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0;
+}
+
+/* ---- Search card ---- */
+.admin-page .search-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  padding: var(--card-pad);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-page .search-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-page .field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.admin-page .field > label {
+  font-size: 12px;
+  color: #475467;
+  font-weight: 600;
+}
+
+.admin-page .field > input,
+.admin-page .field > select {
+  width: 100%;
+  height: var(--control-h);
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  background: #fff;
+  color: var(--text);
+  font-size: 13px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-page .field > input:focus,
+.admin-page .field > select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.admin-page .field-span-2 { grid-column: span 2; }
+.admin-page .field-span-3 { grid-column: span 3; }
+.admin-page .field-span-6 { grid-column: span 6; }
+
+.admin-page .search-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ---- Compact buttons (only when class .compact present) ---- */
+.admin-page .primary-button.compact,
+.admin-page .ghost-button.compact,
+.admin-page .danger-button.compact {
+  height: var(--button-h);
+  padding: 0 14px;
+  border-radius: var(--radius-control);
+  font-size: 13px;
+  box-shadow: none;
+  border: 1px solid transparent;
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.admin-page .primary-button.compact {
+  background: linear-gradient(135deg, var(--primary), #3b82f6);
+  color: #fff;
+}
+
+.admin-page .ghost-button.compact {
+  background: #fff;
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+.admin-page .danger-button.compact {
+  background: #fff;
+  color: var(--danger);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.admin-page .primary-button.compact:hover,
+.admin-page .ghost-button.compact:hover,
+.admin-page .danger-button.compact:hover {
+  transform: none;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.admin-page .ghost-button.compact:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.admin-page .primary-button.compact:disabled,
+.admin-page .ghost-button.compact:disabled,
+.admin-page .danger-button.compact:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ---- Data card ---- */
+.admin-page .data-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+}
+
+.admin-page .data-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+  flex-wrap: wrap;
+}
+
+.admin-page .data-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-page .data-card-title h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.admin-page .count-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 4px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.admin-page .data-card-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.admin-page .data-table-wrap {
+  overflow: auto;
+}
+
+.admin-page .data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-cell);
+}
+
+.admin-page .data-table thead {
+  background: #f8fafc;
+}
+
+.admin-page .data-table th {
+  padding: var(--cell-pad-y) var(--cell-pad-x);
+  text-align: left;
+  font-size: var(--fs-th);
+  font-weight: 700;
+  color: #475467;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.admin-page .data-table td {
+  padding: var(--cell-pad-y) var(--cell-pad-x);
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+  color: var(--text);
+}
+
+.admin-page .data-table tbody tr:hover {
+  background: #f8fbff;
+}
+
+.admin-page .data-table .num-cell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-page .cell-mono {
+  font-family: Consolas, 'SFMono-Regular', Menlo, monospace;
+  font-size: 12px;
+}
+
+.admin-page .cell-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--primary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.admin-page .cell-link:hover {
+  text-decoration: underline;
+}
+
+.admin-page .cell-link:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.admin-page .cell-link.danger { color: var(--danger); }
+
+/* status-badge as small color block (only inside .admin-page) */
+.admin-page .status-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: var(--radius-badge);
+  font-size: 12px;
+  font-weight: 600;
+  background: #f2f4f7;
+  color: #475467;
+}
+.admin-page .status-badge.success { background: #e8f5ee; color: #16a34a; }
+.admin-page .status-badge.warning { background: #fef6e7; color: #b45309; }
+.admin-page .status-badge.danger  { background: #fde8e8; color: #dc2626; }
+.admin-page .status-badge.info    { background: #e8f1ff; color: var(--primary); }
+
+.admin-page .empty-row td {
+  padding: 36px 16px;
+  text-align: center;
+  color: var(--muted);
+  background: #fff;
+}
+
+/* ---- Compact pager ---- */
+.admin-page .pager-compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+  background: #fcfcfd;
+}
+
+.admin-page .pager-compact .pager-info {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.admin-page .pager-compact .pager-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.admin-page .pager-compact button {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid var(--line-strong);
+  background: #fff;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.admin-page .pager-compact button:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.admin-page .pager-compact button:disabled {
+  color: var(--muted);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ---- Lightweight dialog parts (used by MainDetailDialog) ---- */
+.dialog-card-compact {
+  width: min(720px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  border-radius: var(--radius-card);
+  background: #fff;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+}
+.dialog-card-compact.size-sm { width: min(560px, calc(100vw - 48px)); }
+.dialog-card-compact.size-md { width: min(720px, calc(100vw - 48px)); }
+.dialog-card-compact.size-lg { width: min(920px, calc(100vw - 48px)); }
+.dialog-card-compact.size-xl { width: min(1100px, calc(100vw - 48px)); }
+
+.dialog-card-compact .dialog-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+}
+
+.dialog-card-compact .dialog-card-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.dialog-card-compact .dialog-card-head p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.dialog-card-compact .dialog-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.dialog-card-compact .dialog-close:hover {
+  background: #f2f4f7;
+  color: var(--text);
+}
+
+.dialog-card-compact .dialog-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.dialog-card-compact .dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+  background: #fcfcfd;
+}
+
+@media (max-width: 1280px) {
+  .admin-page .search-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (max-width: 960px) {
+  .admin-page .search-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ---- Reusable detail/section blocks (used inside MainDetailDialog body) ---- */
+.admin-page .detail-grid,
+.dialog-card-compact .detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-page .detail-cell,
+.dialog-card-compact .detail-cell {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fcfdff;
+  font-size: 13px;
+  min-width: 0;
+}
+
+.admin-page .detail-label,
+.dialog-card-compact .detail-label {
+  font-size: 12px;
+  color: #475467;
+  font-weight: 600;
+}
+
+.admin-page .detail-section,
+.dialog-card-compact .detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.admin-page .detail-section-head,
+.dialog-card-compact .detail-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  background: #fafbfc;
+}
+
+.admin-page .detail-section-head h4,
+.dialog-card-compact .detail-section-head h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.admin-page .detail-section-tip,
+.dialog-card-compact .detail-section-tip {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.admin-page .detail-empty,
+.dialog-card-compact .detail-empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.admin-page .detail-subtle,
+.dialog-card-compact .detail-subtle {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* span helpers — work both in .search-grid and .detail-grid */
+.admin-page .detail-grid > .field-span-2,
+.dialog-card-compact .detail-grid > .field-span-2 { grid-column: span 2; }
+.admin-page .detail-grid > .field-span-3,
+.dialog-card-compact .detail-grid > .field-span-3 { grid-column: span 3; }
+.admin-page .detail-grid > .field-span-4,
+.dialog-card-compact .detail-grid > .field-span-4 { grid-column: span 4; }
+
+/* ---- Stacked cell content (e.g. 主标题 + 副字号小灰字) ---- */
+.admin-page .cell-stack {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.admin-page .cell-stack > strong {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.admin-page .cell-stack > .muted-line,
+.admin-page .cell-stack > span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ---- Helper card (info block inside dialog body) ---- */
+.admin-page .helper-card,
+.dialog-card-compact .helper-card {
+  padding: 10px 12px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 6px;
+  background: #fafbfc;
+  font-size: 12px;
+  color: var(--muted);
+  display: grid;
+  gap: 4px;
+}
+
+.admin-page .helper-card strong,
+.dialog-card-compact .helper-card strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.admin-page .helper-card code,
+.dialog-card-compact .helper-card code {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #eef2f7;
+  font-family: Consolas, 'SFMono-Regular', Menlo, monospace;
+  font-size: 12px;
+  color: #1d4ed8;
+}
+
+@media (max-width: 1100px) {
+  .admin-page .detail-grid,
+  .dialog-card-compact .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 720px) {
+  .admin-page .detail-grid,
+  .dialog-card-compact .detail-grid { grid-template-columns: 1fr; }
 }
