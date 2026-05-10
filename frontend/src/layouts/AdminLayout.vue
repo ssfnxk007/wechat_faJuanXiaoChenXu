@@ -2,18 +2,10 @@
   <div class="admin-layout">
     <aside class="sidebar">
       <div class="brand-block">
-        <div class="brand-head">
-          <div class="brand-badge">FJ</div>
-          <div class="brand-copy">
-            <p class="brand-subtitle">FaJuan Admin</p>
-            <h1 class="brand">发卷后台</h1>
-          </div>
-        </div>
-        <p class="brand-meta">围绕发放配置、订单履约、核销处理与权限治理的统一运营工作台。</p>
-        <div class="brand-tags">
-          <span class="brand-tag">混合首页</span>
-          <span class="brand-tag">高频操作优先</span>
-          <span class="brand-tag">只改 UI</span>
+        <div class="brand-badge">FJ</div>
+        <div class="brand-copy">
+          <h1 class="brand">发卷后台</h1>
+          <p class="brand-subtitle">FaJuan Admin</p>
         </div>
       </div>
 
@@ -35,9 +27,7 @@
 
       <div class="sidebar-footer">
         <div class="sidebar-footer-card">
-          <span class="sidebar-footer-label">当前设计基线</span>
-          <strong>入口优先，说明下沉</strong>
-          <p>导航、首页和业务页统一转向后台工作台结构，保留原路由与权限落点。</p>
+          <span class="sidebar-footer-label">v1.0 · 运营工作台</span>
         </div>
       </div>
     </aside>
